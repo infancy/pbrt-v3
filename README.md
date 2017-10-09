@@ -1,3 +1,66 @@
+# pbrt-v3-zh
+
+未对 pbrt-v3 源码做修改，仅添加了对应英文注释的中文注释，并包含了一些个人笔记。
+
+## 中文注释
+
+### src/accelerators
+
+### src/camera
+
+### src/core
+
+- [ ] api
+- [ ] bssrdf
+- [ ] camera
+- [ ] efloat
+- [ ] error
+- [ ] fileuti
+- [ ] film
+- [ ] filter
+- [ ] floatfile
+- [ ] geometry
+- [ ] imageio
+- [ ] integrator
+- [ ] interaction
+- [ ] interpolation
+- [ ] light
+- [ ] lightdistrib
+- [ ] lowdiscrepancy
+- [ ] material
+- [ ] medium
+- [ ] memory
+- [ ] microfacet
+- [ ] mipmap.h
+- [ ] parallel
+- [ ] paramset
+- [ ] parser
+- [ ] pbrt.h （公共头文件）
+- [ ] pbrtlex.cpp
+- [ ] pbrtlex.ll
+- [ ] pbrtparse
+- [ ] pbrtparse.output
+- [ ] pbrtparse.y
+- [ ] primitive
+- [ ] progressreporter （用于报告进度）
+- [ ] quaternion
+- [ ] reflection
+- [ ] rng.h （random number generator，随机数生成器）
+- [ ] sampler
+- [ ] sampling
+- [ ] scene
+- [ ] shape
+- [ ] sobolmatrices
+- [ ] spectrum （光谱类，可简单的视为一个 RGBColor）
+- [ ] stats
+- [ ] stringprint
+- [ ] texture
+- [ ] transform （矩阵类）
+
+### src/filter
+
+...施工中
+
 pbrt, Version 3
 ===============
 

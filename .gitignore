@@ -4,3 +4,4 @@ src/bin
 src/objs
 .sconsign.dblite
 /build
+/.vs
