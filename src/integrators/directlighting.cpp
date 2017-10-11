@@ -46,10 +46,12 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
                                           Sampler &sampler) {
     if (strategy == LightStrategy::UniformSampleAll) {
         // Compute number of samples to use for each light
+		// 如果选取对所有光源均匀采样的策略，则使用 nLightSamples 记录需要对每个光源进行采样的数量
         for (const auto &light : scene.lights)
             nLightSamples.push_back(sampler.RoundCount(light->nSamples));
 
         // Request samples for sampling all lights
+		// 在渲染前先计算需要的 sampler.sampleArray2D 的大小
         for (int i = 0; i < maxDepth; ++i) {
             for (size_t j = 0; j < scene.lights.size(); ++j) {
                 sampler.Request2DArray(nLightSamples[j]);
@@ -65,21 +67,27 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
     ProfilePhase p(Prof::SamplerIntegratorLi);
     Spectrum L(0.f);
     // Find closest ray intersection or return background radiance
+	// 计算最近的交点，若光线未与场景中物体相交，则计算所有光源向光线方向发出的辐射度
     SurfaceInteraction isect;
     if (!scene.Intersect(ray, &isect)) {
         for (const auto &light : scene.lights) L += light->Le(ray);
         return L;
     }
 
+	// 否则计算这个表面交点向光线方向发出的辐射度
+
     // Compute scattering functions for surface interaction
+	// 根据表面交点上的材质计算 bsdf
     isect.ComputeScatteringFunctions(ray, arena);
     if (!isect.bsdf)
         return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
     Vector3f wo = isect.wo;
     // Compute emitted light if ray hit an area light source
+	// 计算交点本身发出的光（如果交点在一个区域光源上）
     L += isect.Le(wo);
     if (scene.lights.size() > 0) {
         // Compute direct lighting for _DirectLightingIntegrator_ integrator
+		// 可以使用两种策略来计算表面交点上的**直接光照**
         if (strategy == LightStrategy::UniformSampleAll)
             L += UniformSampleAllLights(isect, scene, arena, sampler,
                                         nLightSamples);
@@ -89,6 +97,7 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
     if (depth + 1 < maxDepth) {
         Vector3f wi;
         // Trace rays for specular reflection and refraction
+		// 如果交点还包含镜面/玻璃材质（则相应的 BxDF 是 delta 分布的），则需要继续跟踪光线，计算镜面反射与折射产生的辐射度
         L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
         L += SpecularTransmit(ray, isect, scene, sampler, arena, depth);
     }

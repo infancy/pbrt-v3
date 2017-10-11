@@ -46,6 +46,7 @@
 namespace pbrt {
 
 // LightStrategy Declarations
+// 对光源进行采样的策略
 enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 
 // DirectLightingIntegrator Declarations
@@ -67,7 +68,7 @@ class DirectLightingIntegrator : public SamplerIntegrator {
     // DirectLightingIntegrator Private Data
     const LightStrategy strategy;
     const int maxDepth;
-    std::vector<int> nLightSamples;
+    std::vector<int> nLightSamples;		// 记录需要对每个光源进行采样的数量，用于 uniform_sample_all_lights
 };
 
 DirectLightingIntegrator *CreateDirectLightingIntegrator(

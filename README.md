@@ -1,16 +1,24 @@
 # pbrt-v3-zh
 
-未对 pbrt-v3 源码做修改，仅添加了对应英文注释的中文注释，并包含了一些个人笔记。
+未对 pbrt-v3 本身做修改，仅添加了对应英文注释的中文注释，并增加了一些个人笔记。
 
 ## 中文注释
 
 ### src/accelerators
 
+- [ ] bvh （Bounding Volume Hierarchy，层次包围盒）
+- [ ] kdtreeaccel (kdtree)
+
 ### src/camera
+
+- [ ] environment
+- [ ] orthographic	（正视投影相机）
+- [ ] perspective （透视投影相机）
+- [ ] realistic
 
 ### src/core
 
-- [ ] api
+- [ ] api （pbrt 对外提供的 api）
 - [ ] bssrdf
 - [ ] camera
 - [ ] efloat
@@ -19,13 +27,13 @@
 - [ ] film
 - [ ] filter
 - [ ] floatfile
-- [ ] geometry
+- [ ] geometry （包含了 vector3、point3、normal3、bbox、ray 等基础类）
 - [ ] imageio
-- [ ] integrator
-- [ ] interaction
+- [ ] integrator （积分器的基类，包含了核心的渲染算法）
+- [ ] interaction （记录了光线与 surface 或 volume 的交点）
 - [ ] interpolation
 - [ ] light
-- [ ] lightdistrib
+- [ ] lightdistrib （光源功率的分布）
 - [ ] lowdiscrepancy
 - [ ] material
 - [ ] medium
@@ -44,10 +52,10 @@
 - [ ] primitive
 - [ ] progressreporter （用于报告进度）
 - [ ] quaternion
-- [ ] reflection
-- [ ] rng.h （random number generator，随机数生成器）
-- [ ] sampler
-- [ ] sampling
+- [ ] reflection （brdf）
+- [ ] rng.h （Random Number Generator，随机数生成器）
+- [x] sampler 
+- [ ] sampling （独立的采样算法）
 - [ ] scene
 - [ ] shape
 - [ ] sobolmatrices
@@ -59,7 +67,44 @@
 
 ### src/filter
 
-...施工中
+### src/integrators
+
+- [ ] ao      （Ambient Occlusion，环境光遮蔽）
+- [ ] bdpt    （Bidirectional Path Tracing，双向路径跟踪）
+- [x] dl      （directlighting，直接光照）
+- [ ] mlt     （Metropolis Light Transport，梅特波利斯光线传输）
+- [ ] path    （Path Tracing，路径跟踪）
+- [ ] sppm	  （Stochastic Progressive Photon Mapping，随机渐进光子映射）
+- [ ] volpath （Volume Path Tracing，体积路径跟踪）
+- [ ] whitted （Recursive Ray Tracing，递归光线跟踪）
+
+### src/materials
+
+- [ ] disney
+- [ ] fourier
+- [ ] glass
+- [ ] hair
+- [ ] kdsubsurface
+- [ ] matte
+- [ ] metal
+- [ ] mirror
+- [ ] mixmat
+- [ ] plastic
+- [ ] substrate
+- [ ] subsurface
+- [ ] translucent 
+- [ ] uber
+
+### src/samplers
+
+- [ ] halton 
+- [ ] maxmin
+- [ ] random
+- [ ] sobol
+- [ ] stratified
+- [ ] zerotwosequence
+
+施工中...
 
 pbrt, Version 3
 ===============

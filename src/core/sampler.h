@@ -52,23 +52,34 @@ class Sampler {
     // Sampler Interface
     virtual ~Sampler();
     Sampler(int64_t samplesPerPixel);
+
+	// 渲染一个像素时采样器所需要用到的方法
     virtual void StartPixel(const Point2i &p);
-    virtual Float Get1D() = 0;
-    virtual Point2f Get2D() = 0;
-    CameraSample GetCameraSample(const Point2i &pRaster);
-    void Request1DArray(int n);
+	virtual bool StartNextSample();
+	virtual bool SetSampleNumber(int64_t sampleNum);
+	int64_t CurrentSampleNumber() const { return currentPixelSampleIndex; }
+
+	// 使用 Get1D()、Get2D()、GetCameraSample() 获得独立的样本 
+	virtual Float   Get1D() = 0;
+	virtual Point2f Get2D() = 0;
+	CameraSample GetCameraSample(const Point2i &pRaster);
+
+	// Request2DArray()  确定样本数组大小
+	// StartPixel()      在初始化的同时填充样本
+	// StartNextSample() 
+	// Get2DArray()      使用样本数组中的样本
+	// 可以结合 directlighting.cpp 中对这一对函数的使用方法，来理解用法
+    void Request1DArray(int n);		
     void Request2DArray(int n);
+	const Float   *Get1DArray(int n);
+	const Point2f *Get2DArray(int n);
+
     virtual int RoundCount(int n) const { return n; }
-    const Float *Get1DArray(int n);
-    const Point2f *Get2DArray(int n);
-    virtual bool StartNextSample();
     virtual std::unique_ptr<Sampler> Clone(int seed) = 0;
-    virtual bool SetSampleNumber(int64_t sampleNum);
     std::string StateString() const {
       return StringPrintf("(%d,%d), sample %" PRId64, currentPixel.x,
                           currentPixel.y, currentPixelSampleIndex);
     }
-    int64_t CurrentSampleNumber() const { return currentPixelSampleIndex; }
 
     // Sampler Public Data
     const int64_t samplesPerPixel;
@@ -77,12 +88,22 @@ class Sampler {
     // Sampler Protected Data
     Point2i currentPixel;
     int64_t currentPixelSampleIndex;
-    std::vector<int> samples1DArraySizes, samples2DArraySizes;
+
+	//void Sampler::Request1DArray(int n) {
+	//	  ...
+	//	  samples1DArraySizes.push_back(n);
+	//	  sampleArray1D.push_back(std::vector<Float>(n * samplesPerPixel));}
+	// 每个子数组的大小为 n * samplesPerPixel，samples1/2DArraySizes 记录的是这个 n 的大小
+    std::vector<int> samples1DArraySizes, samples2DArraySizes;	
     std::vector<std::vector<Float>> sampleArray1D;
     std::vector<std::vector<Point2f>> sampleArray2D;
 
   private:
     // Sampler Private Data
+	//const Point2f *Sampler::Get2DArray(int n) {
+	//	  ...
+	//	  return &sampleArray2D[array2DOffset++][currentPixelSampleIndex * n];}
+	// array1/2DOffset 记录 sampleArray1/2D 当前使用的下标
     size_t array1DOffset, array2DOffset;
 };
 
