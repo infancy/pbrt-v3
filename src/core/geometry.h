@@ -831,6 +831,7 @@ typedef Bounds2<int> Bounds2i;
 typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
+// 当使用如 for (Point2i pixel : tileBounds) 这样的范围 for 循环时需要相应的迭代器支持
 class Bounds2iIterator : public std::forward_iterator_tag {
   public:
     Bounds2iIterator(const Bounds2i &b, const Point2i &pt)

@@ -51,7 +51,15 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
             nLightSamples.push_back(sampler.RoundCount(light->nSamples));
 
         // Request samples for sampling all lights
-		// 在渲染前先计算需要的 sampler.sampleArray2D 的大小
+		// 在均匀采样所有光源时需要提前生成所用的样本
+
+		// Request2DArray() -> StartPixel() -> Get2DArray() -> StartNextSample()____
+		//										    ^___________<<<_________________|
+		// 在渲染前由 Request2DArray() 计算需要的样本数组 sampler.sampleArray2D 的大小
+		// 在渲染每一个像素前调用 StartPixel()，初始化的同时生成样本
+		// 渲染像素中的某个采样点时调用 Get2DArray() 得到样本
+		// 渲染下一个采样点前调用 StartNextSample() 移动样本数组的下标
+		// (采样器的这部分方法与渲染的整个流程紧密相关，可以结合 SamplerIntegrator::Render(const Scene &scene) 理解）
         for (int i = 0; i < maxDepth; ++i) {
             for (size_t j = 0; j < scene.lights.size(); ++j) {
                 sampler.Request2DArray(nLightSamples[j]);

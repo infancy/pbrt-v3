@@ -64,11 +64,7 @@ class Sampler {
 	virtual Point2f Get2D() = 0;
 	CameraSample GetCameraSample(const Point2i &pRaster);
 
-	// Request2DArray()  确定样本数组大小
-	// StartPixel()      在初始化的同时填充样本
-	// StartNextSample() 
-	// Get2DArray()      使用样本数组中的样本
-	// 可以结合 directlighting.cpp 中对这一对函数的使用方法，来理解用法
+	// 这一对函数是紧密相连的，可以结合 directlighting 对其的使用来理解用法
     void Request1DArray(int n);		
     void Request2DArray(int n);
 	const Float   *Get1DArray(int n);
