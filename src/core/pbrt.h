@@ -188,6 +188,9 @@ static PBRT_CONSTEXPR Float Infinity = std::numeric_limits<Float>::infinity();
 static PBRT_CONSTEXPR Float MachineEpsilon =
     std::numeric_limits<Float>::epsilon() * 0.5;
 #endif
+// 之前 pbrt.h 会引用一个 port.h 解决跨平台的问题
+// 现在则由 cmake 在生成 vs 解决方案时将相关宏定义加入到项目 -> C/C++ -> 预处理器定义中
+// 在 win10 64bit-vs2017 中 PBRT_CONSTEXPR = constexpr
 static PBRT_CONSTEXPR Float ShadowEpsilon = 0.0001f;
 static PBRT_CONSTEXPR Float Pi = 3.14159265358979323846;
 static PBRT_CONSTEXPR Float InvPi = 0.31830988618379067154;

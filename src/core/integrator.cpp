@@ -314,7 +314,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
 			// 这个 tile 在 image 中覆盖到的像素范围为：（则假设 pMin 为 0）
 			// x0 = 119 * 16 = 1904，y0 = 79 * 16 = 1064，x1 = 1920， y1 = 1080
 			// 即这个线程需要渲染从图像坐标 (1904, 1064) 开始，(1920, 1080) 结束的这个矩形区域内的像素（也不包含右边和下边的边界）
-            int x0 = sampleBounds.pMin.x + tile.x * tileSize;
+            // （如果限制渲染的图像长宽总为 16（或 tileSize）的倍数，可以把这段代码简化不少）
+			int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);	
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);

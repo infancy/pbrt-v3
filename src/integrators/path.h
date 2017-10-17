@@ -52,7 +52,7 @@ class PathIntegrator : public SamplerIntegrator {
     PathIntegrator(int maxDepth, std::shared_ptr<const Camera> camera,
                    std::shared_ptr<Sampler> sampler,
                    const Bounds2i &pixelBounds, Float rrThreshold = 1,
-                   const std::string &lightSampleStrategy = "spatial");
+                   const std::string &lightSampleStrategy = "spatial");	// 默认采用基于空间的光源采样策略
 
     void Preprocess(const Scene &scene, Sampler &sampler);
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
@@ -61,7 +61,7 @@ class PathIntegrator : public SamplerIntegrator {
   private:
     // PathIntegrator Private Data
     const int maxDepth;
-    const Float rrThreshold;
+    const Float rrThreshold;	// Russian Roulette Threshold，俄罗斯轮盘赌的阀限
     const std::string lightSampleStrategy;
     std::unique_ptr<LightDistribution> lightDistribution;
 };

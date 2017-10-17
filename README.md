@@ -73,7 +73,7 @@
 - [ ] bdpt    （Bidirectional Path Tracing，双向路径跟踪）
 - [x] dl      （directlighting，直接光照）
 - [ ] mlt     （Metropolis Light Transport，梅特波利斯光线传输）
-- [ ] path    （Path Tracing，路径跟踪）
+- [x] path    （Path Tracing，路径跟踪）
 - [ ] sppm	  （Stochastic Progressive Photon Mapping，随机渐进光子映射）
 - [ ] volpath （Volume Path Tracing，体积路径跟踪）
 - [ ] whitted （Recursive Ray Tracing，递归光线跟踪）
