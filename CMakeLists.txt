@@ -2,7 +2,7 @@
 # (https://www.slideshare.net/DanielPfeifer1/cmake-48475415) are violated
 # in this file. Would be nice to address some of these.
 
-CMAKE_MINIMUM_REQUIRED ( VERSION 2.8 )
+CMAKE_MINIMUM_REQUIRED ( VERSION 2.8.4 )
 
 # For sanitizers
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -103,6 +103,7 @@ ENDIF ()
 # define workarounds.
 
 INCLUDE (CheckCXXSourceCompiles)
+INCLUDE (CheckCXXSourceRuns)
 
 CHECK_CXX_SOURCE_COMPILES (
   "int main() { float x = 0x1p-32f; }"
@@ -142,7 +143,7 @@ IF ( HAVE_ALIGNOF )
   ADD_DEFINITIONS ( -D PBRT_HAVE_ALIGNOF )
 ENDIF ()
 
-CHECK_CXX_SOURCE_COMPILES ( "
+CHECK_CXX_SOURCE_RUNS ( "
 #include <signal.h>
 #include <string.h>
 #include <sys/time.h>
@@ -155,7 +156,7 @@ int main() {
     sigemptyset(&sa.sa_mask);
     sigaction(SIGPROF, &sa, NULL);
     static struct itimerval timer;
-    setitimer(ITIMER_PROF, &timer, NULL);
+    return setitimer(ITIMER_PROF, &timer, NULL) == 0 ? 0 : 1;
 }
 " HAVE_ITIMER )
 IF ( HAVE_ITIMER )
@@ -184,10 +185,10 @@ CHECK_CXX_SOURCE_COMPILES (
 int main() { }"
 HAVE_ATTRIBUTE_NOINLINE )
 
-IF ( HAVE_DECLSPEC_NOINLINE )
-  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
-ELSEIF ( HAVE_ATTRIBUTE_NOINLINE )
+IF ( HAVE_ATTRIBUTE_NOINLINE )
   ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__attribute__\\(\\(noinline\\)\\)" )
+ELSEIF ( HAVE_DECLSPEC_NOINLINE )
+  ADD_DEFINITIONS ( -D "PBRT_NOINLINE=__declspec(noinline)" )
 ELSE ()
   ADD_DEFINITIONS ( -D PBRT_NOINLINE )
 ENDIF ()
@@ -227,6 +228,10 @@ ENDIF ()
 # thread-local variables
 
 CHECK_CXX_SOURCE_COMPILES ( "
+#ifdef __CYGWIN__
+// Hack to work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64697
+#error \"No thread_local on cygwin\"
+#endif  // __CYGWIN__
 thread_local int x; int main() { }
 " HAVE_THREAD_LOCAL )
 
@@ -240,10 +245,10 @@ __thread int x; int main() { }
 
 IF ( HAVE_THREAD_LOCAL )
   ADD_DEFINITIONS ( -D PBRT_THREAD_LOCAL=thread_local )
-ELSEIF ( HAVE_DECLSPEC_THREAD )
-  ADD_DEFINITIONS ( -D "PBRT_THREAD_LOCAL=__declspec(thread)" )
 ELSEIF ( HAVE___THREAD )
   ADD_DEFINITIONS ( -D PBRT_THREAD_LOCAL=__thread )
+ELSEIF ( HAVE_DECLSPEC_THREAD )
+  ADD_DEFINITIONS ( -D "PBRT_THREAD_LOCAL=__declspec(thread)" )
 ELSE ()
   MESSAGE ( SEND_ERROR "Unable to find a way to declare a thread-local variable")
 ENDIF ()
