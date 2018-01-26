@@ -57,7 +57,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 bool handleMedia) {
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
-	// ¼ÆËãËùÓĞ¹âÔ´¾­ÓÉ½»µã it Ïò it.wo ·½Ïò·¢ÉäµÄ·øÉä¶È
+	// è®¡ç®—æ‰€æœ‰å…‰æºç»ç”±äº¤ç‚¹ it å‘ it.wo æ–¹å‘å‘å°„çš„è¾å°„åº¦
     for (size_t j = 0; j < scene.lights.size(); ++j) {
         // Accumulate contribution of _j_th light to _L_
         const std::shared_ptr<Light> &light = scene.lights[j];
@@ -65,8 +65,8 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
 		
         const Point2f *uLightArray = sampler.Get2DArray(nSamples);
         const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
-		// Èç¹û Get2DArray() ·½·¨²»¿ÉÓÃ£¨ÈçÑù±¾Êı×é±»ÓÃ¹âÊ±£©£¬ÔòÖ»½øĞĞµ¥´Î²ÉÑù
-		// ·ñÔò¸ù¾İ nSamples µÄ´óĞ¡£¬ÔÚ¹âÔ´ÉÏÈ¡ n ¸ö²ÉÑùµã£¬¼ÆËãÆ½¾ù·øÉä¶È
+		// å¦‚æœ Get2DArray() æ–¹æ³•ä¸å¯ç”¨ï¼ˆå¦‚æ ·æœ¬æ•°ç»„è¢«ç”¨å…‰æ—¶ï¼‰ï¼Œåˆ™åªè¿›è¡Œå•æ¬¡é‡‡æ ·
+		// å¦åˆ™æ ¹æ® nSamples çš„å¤§å°ï¼Œåœ¨å…‰æºä¸Šå– n ä¸ªé‡‡æ ·ç‚¹ï¼Œè®¡ç®—å¹³å‡è¾å°„åº¦
         if (!uLightArray || !uScatteringArray) {
             // Use a single sample for illumination from _light_
             Point2f uLight = sampler.Get2D();
@@ -91,12 +91,12 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                bool handleMedia, const Distribution1D *lightDistrib) {
     ProfilePhase p(Prof::DirectLighting);
     // Randomly choose a single light to sample, _light_
-	// ´Ó¹âÔ´ÖĞËæ»úÑ¡È¡Ò»¸ö½øĞĞ²ÉÑù
+	// ä»å…‰æºä¸­éšæœºé€‰å–ä¸€ä¸ªè¿›è¡Œé‡‡æ ·
     int nLights = int(scene.lights.size());
     if (nLights == 0) return Spectrum(0.f);
     int lightNum;
     Float lightPdf;
-	// Èç¹û¹âÔ´µÄ¹¦ÂÊ·Ö²¼¿ÉÓÃ£¬Ôò¸ù¾İÆä¹¦ÂÊ·Ö²¼£¨ÓÉÄæ±ä»»Ëã·¨£©Ñ¡È¡Ò»¸ö¹âÔ´£¬²¢¼ÆËãÆä¸ÅÂÊÃÜ¶È
+	// å¦‚æœå…‰æºçš„åŠŸç‡åˆ†å¸ƒå¯ç”¨ï¼Œåˆ™æ ¹æ®å…¶åŠŸç‡åˆ†å¸ƒï¼ˆç”±é€†å˜æ¢ç®—æ³•ï¼‰é€‰å–ä¸€ä¸ªå…‰æºï¼Œå¹¶è®¡ç®—å…¶æ¦‚ç‡å¯†åº¦
     if (lightDistrib) {
         lightNum = lightDistrib->SampleDiscrete(sampler.Get1D(), &lightPdf);
         if (lightPdf == 0) return Spectrum(0.f);
@@ -107,26 +107,26 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f uLight = sampler.Get2D();
     Point2f uScattering = sampler.Get2D();
-	// ²ÉÑùµ¥¸ö¹âÔ´£¬²¢³ıÒÔÆä¹¦ÂÊµÄ¸ÅÂÊÃÜ¶È£¨power_pdf£©£¬µÃµ½½üËÆ²ÉÑùËùÓĞ¹âÔ´µÄ½á¹û
+	// é‡‡æ ·å•ä¸ªå…‰æºï¼Œå¹¶é™¤ä»¥å…¶åŠŸç‡çš„æ¦‚ç‡å¯†åº¦ï¼ˆpower_pdfï¼‰ï¼Œå¾—åˆ°è¿‘ä¼¼é‡‡æ ·æ‰€æœ‰å…‰æºçš„ç»“æœ
     return EstimateDirect(it, uScattering, *light, uLight,
                           scene, sampler, arena, handleMedia) / lightPdf;
 }
 
-//	¼ÆËãµ¥¸ö light ¾­ÓÉ isect Ïò wo ·½Ïò·¢ÉäµÄ·øÉä¶È
+//	è®¡ç®—å•ä¸ª light ç»ç”± isect å‘ wo æ–¹å‘å‘å°„çš„è¾å°„åº¦
 //
-//	prev_isect  light
-//		  ----  ----
-//		   ^      ^
+//     prev_isect     light
+//	      ----  ----
+//	       ^      ^
 //	        \    /
 //	      wo \  / wi
-//			  \/
-//			------
-//			isect
+//		  \/
+//		------
+//		isect
 //
-//	µ± bsdf ³Ê¾µÃæ×´Ì¬¶ø¹âÔ´·Ö²¼½Ï¹ãÊ±´Ó bsdf ²ÉÑù½ÏÎª¸ßĞ§
-//	µ± bsdf ³ÊÂş·´Éä·Ö²¼×´Ì¬¶ø¹âÔ´½ÏĞ¡Ê±´Ó¹âÔ´²ÉÑù¸ü¸ßĞ§
-//	Òò¶øÊ¹ÓÃ¶àÖØÖØÒªĞÔ²ÉÑù£¨MIS£©·Ö±ğ¶Ô light ºÍ bsdf ½øĞĞ²ÉÑù
-//	ÔÚ¹âÔ´ÉÏ²ÉÑùÒ»µã p ¼ÆËã Le£¬ÔÚ bsdf ÉÏ²ÉÑùÒ»·½Ïò wi ¼ÆËã Li£¬×îºó Ld = MIS(Le, Li)
+//	å½“ bsdf å‘ˆé•œé¢çŠ¶æ€è€Œå…‰æºåˆ†å¸ƒè¾ƒå¹¿æ—¶ä» bsdf é‡‡æ ·è¾ƒä¸ºé«˜æ•ˆ
+//	å½“ bsdf å‘ˆæ¼«åå°„åˆ†å¸ƒçŠ¶æ€è€Œå…‰æºè¾ƒå°æ—¶ä»å…‰æºé‡‡æ ·æ›´é«˜æ•ˆ
+//	å› è€Œä½¿ç”¨å¤šé‡é‡è¦æ€§é‡‡æ ·ï¼ˆMISï¼‰åˆ†åˆ«å¯¹ light å’Œ bsdf è¿›è¡Œé‡‡æ ·
+//	åœ¨å…‰æºä¸Šé‡‡æ ·ä¸€ç‚¹ p è®¡ç®— Leï¼Œåœ¨ bsdf ä¸Šé‡‡æ ·ä¸€æ–¹å‘ wi è®¡ç®— Liï¼Œæœ€å Ld = MIS(Le, Li)
 
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                         const Light &light, const Point2f &uLight,
@@ -136,22 +136,22 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
     Spectrum Ld(0.f);
 	// Sample light source with multiple importance sampling
-	// ´Ó¹âÔ´²¿·Ö½øĞĞ¶àÖØÖØÒªĞÔ²ÉÑù
+	// ä»å…‰æºéƒ¨åˆ†è¿›è¡Œå¤šé‡é‡è¦æ€§é‡‡æ ·
     Vector3f wi;
     Float lightPdf = 0, scatteringPdf = 0;
     VisibilityTester visibility;
-	// ´«Èë½»µã£¬ÔÚ¹âÔ´ÉÏÑ¡È¡Ò»µã£¬¼ÆËãÑ¡µ½¸ÃµãµÄ¸ÅÂÊÃÜ¶È£¬½»µãµ½¸ÃµãµÄ·½Ïò wi¡¢ÈëÉä·øÉä¶È Li ¼°¿É¼ûĞÔ
+	// ä¼ å…¥äº¤ç‚¹ï¼Œåœ¨å…‰æºä¸Šé€‰å–ä¸€ç‚¹ï¼Œè®¡ç®—é€‰åˆ°è¯¥ç‚¹çš„æ¦‚ç‡å¯†åº¦ï¼Œäº¤ç‚¹åˆ°è¯¥ç‚¹çš„æ–¹å‘ wiã€å…¥å°„è¾å°„åº¦ Li åŠå¯è§æ€§
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li << ", wi: "
             << wi << ", pdf: " << lightPdf;
     if (lightPdf > 0 && !Li.IsBlack()) {
         // Compute BSDF or phase function's value for light sample
-		// ¼ÆËã BSDF£¨Èç¹û½»µãÔÚ surface ÖĞ£©»òÏàÎ»º¯Êı£¨Èç¹û½»µãÔÚ medium ÖĞ£©µÄÖµ
+		// è®¡ç®— BSDFï¼ˆå¦‚æœäº¤ç‚¹åœ¨ surface ä¸­ï¼‰æˆ–ç›¸ä½å‡½æ•°ï¼ˆå¦‚æœäº¤ç‚¹åœ¨ medium ä¸­ï¼‰çš„å€¼
         Spectrum f;
         if (it.IsSurfaceInteraction()) {
             // Evaluate BSDF for light sampling strategy
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-			// ¼ÆËã f(p, wo, wi) * cos(eta_light_isect) Ïî
+			// è®¡ç®— f(p, wo, wi) * cos(eta_light_isect) é¡¹
             f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
                 AbsDot(wi, isect.shading.n);
             scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
@@ -166,8 +166,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         }
         if (!f.IsBlack()) {
             // Compute effect of visibility for light source sample
-			// visibility ¸ºÔğ´¦Àí¹âÔ´ÉÏµÄ²ÉÑùµãºÍ½»µãµÄ¿É¼ûĞÔÎÊÌâ£¬µ±Á½µã²»¿É¼ûÊ± Li = 0
-			// µ±ĞèÒª¿¼ÂÇ medium Ê±£¬Ôòµ÷ÓÃ Tr(scene, sampler) ½øÒ»²½¼ÆËã Li µÄÖµ
+			// visibility è´Ÿè´£å¤„ç†å…‰æºä¸Šçš„é‡‡æ ·ç‚¹å’Œäº¤ç‚¹çš„å¯è§æ€§é—®é¢˜ï¼Œå½“ä¸¤ç‚¹ä¸å¯è§æ—¶ Li = 0
+			// å½“éœ€è¦è€ƒè™‘ medium æ—¶ï¼Œåˆ™è°ƒç”¨ Tr(scene, sampler) è¿›ä¸€æ­¥è®¡ç®— Li çš„å€¼
             if (handleMedia) {	
                 Li *= visibility.Tr(scene, sampler);
                 VLOG(2) << "  after Tr, Li: " << Li;
@@ -181,11 +181,11 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 
             // Add light's contribution to reflected radiance
             if (!Li.IsBlack()) {
-                if (IsDeltaLight(light.flags))	// Èç¹ûÊÇ delta ¹âÔ´£¬ÎŞĞèÊ¹ÓÃ MIS
+                if (IsDeltaLight(light.flags))	// å¦‚æœæ˜¯ delta å…‰æºï¼Œæ— éœ€ä½¿ç”¨ MIS
                     Ld += f * Li / lightPdf;	// return f * Li / lightPdf;
                 else {
                     Float weight =
-                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);	// Ê¹ÓÃ¹¦ÂÊÆô·¢Ê½·½·¨¼ÆËãÈ¨ÖØ
+                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);	// ä½¿ç”¨åŠŸç‡å¯å‘å¼æ–¹æ³•è®¡ç®—æƒé‡
                     Ld += f * Li * weight / lightPdf;
                 }
             }
@@ -193,7 +193,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     }
 
     // Sample BSDF with multiple importance sampling
-	// ´Ó BSDF ²¿·Ö½øĞĞ¶àÖØÖØÒªĞÔ²ÉÑù
+	// ä» BSDF éƒ¨åˆ†è¿›è¡Œå¤šé‡é‡è¦æ€§é‡‡æ ·
     if (!IsDeltaLight(light.flags)) {		   
         Spectrum f;
         bool sampledSpecular = false;
@@ -201,11 +201,11 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             // Sample scattered direction for surface interactions
             BxDFType sampledType;
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-			// ÔÚ½»µãÉÏ°ëÇò·½ÏòËæ»úÑ¡È¡Ò»µã£¬¼ÆËãÏàÓ¦µÄ wi¡¢scatteringPdf ºÍ sampledType
-			// ²¢¼ÆËã f(p, wo, wi) Ïî
+			// åœ¨äº¤ç‚¹ä¸ŠåŠçƒæ–¹å‘éšæœºé€‰å–ä¸€ç‚¹ï¼Œè®¡ç®—ç›¸åº”çš„ wiã€scatteringPdf å’Œ sampledType
+			// å¹¶è®¡ç®— f(p, wo, wi) é¡¹
             f = isect.bsdf->Sample_f(isect.wo, &wi, uScattering, &scatteringPdf,
                                      bsdfFlags, &sampledType);
-			// ¼ÆËã cos(eta_light_isect) Ïî
+			// è®¡ç®— cos(eta_light_isect) é¡¹
             f *= AbsDot(wi, isect.shading.n);
             sampledSpecular = (sampledType & BSDF_SPECULAR) != 0;
         } else {
@@ -219,17 +219,17 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             scatteringPdf;
         if (!f.IsBlack() && scatteringPdf > 0) {
             // Account for light contributions along sampled direction _wi_
-			// ¼ÆËãÑØ²ÉÑù·½Ïò wi µÄ¹âÕÕ¹±Ï×
+			// è®¡ç®—æ²¿é‡‡æ ·æ–¹å‘ wi çš„å…‰ç…§è´¡çŒ®
 
             Float weight = 1;
             if (!sampledSpecular) {
-                lightPdf = light.Pdf_Li(it, wi);	// ¼ÆËãÑØ wi ·½Ïò²ÉÑùµ½ light µÄ¸ÅÂÊ
+                lightPdf = light.Pdf_Li(it, wi);	// è®¡ç®—æ²¿ wi æ–¹å‘é‡‡æ ·åˆ° light çš„æ¦‚ç‡
                 if (lightPdf == 0) return Ld;
                 weight = PowerHeuristic(1, scatteringPdf, 1, lightPdf);
             }
 
             // Find intersection and compute transmittance
-			// ¼ÆËãÑØ wi ·½ÏòÊÇ·ñÓë£¨Ãæ»ı£©¹âÔ´Ïà½»
+			// è®¡ç®—æ²¿ wi æ–¹å‘æ˜¯å¦ä¸ï¼ˆé¢ç§¯ï¼‰å…‰æºç›¸äº¤
             SurfaceInteraction lightIsect;
             Ray ray = it.SpawnRay(wi);
             Spectrum Tr(1.f);
@@ -238,7 +238,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                             : scene.Intersect(ray, &lightIsect);
 
             // Add light contribution from material sampling
-			// Èç¹û wi ÓëÃæ»ı¹âÔ´Ïà½»£¬ÔòĞèÒª½øÒ»²½´¦Àí£¬·ñÔòÖ±½Ó¼ÆËã light Ïò ray ·½Ïò·¢ÉäµÄ·øÉä¶È
+			// å¦‚æœ wi ä¸é¢ç§¯å…‰æºç›¸äº¤ï¼Œåˆ™éœ€è¦è¿›ä¸€æ­¥å¤„ç†ï¼Œå¦åˆ™ç›´æ¥è®¡ç®— light å‘ ray æ–¹å‘å‘å°„çš„è¾å°„åº¦
             Spectrum Li(0.f);
             if (foundSurfaceInteraction) {
                 if (lightIsect.primitive->GetAreaLight() == &light)
@@ -279,42 +279,42 @@ void SamplerIntegrator::Render(const Scene &scene) {
 	//		| tile	| tile	| tile	| tile	|
 	//		|_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
 	//										 (filmResolution.width, filmResolution.height)
-	// ½«Í¼ÏñÆ½Ãæ·Ö³ÉÒ»¿é¿é tile£¬Ã¿¸öÏß³ÌÃ¿´ÎäÖÈ¾Ò»¿é tile
+	// å°†å›¾åƒå¹³é¢åˆ†æˆä¸€å—å— tileï¼Œæ¯ä¸ªçº¿ç¨‹æ¯æ¬¡æ¸²æŸ“ä¸€å— tile
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
-	// ¼ÆËã tile µÄÊıÁ¿£¨ÎªÁË¼òµ¥Æğ¼û£¬pbrt ×ÜÊÇÊ¹ÓÃ 16*16 ÏñËØ´óĞ¡µÄ tile£©
+	// è®¡ç®— tile çš„æ•°é‡ï¼ˆä¸ºäº†ç®€å•èµ·è§ï¼Œpbrt æ€»æ˜¯ä½¿ç”¨ 16*16 åƒç´ å¤§å°çš„ tileï¼‰
 	Bounds2i sampleBounds = camera->film->GetSampleBounds();	
-    Vector2i sampleExtent = sampleBounds.Diagonal();	// Ïàµ±ÓÚ¼ÆËãÉú³ÉÍ¼ÏñµÄ·Ö±æÂÊ
+    Vector2i sampleExtent = sampleBounds.Diagonal();	// ç›¸å½“äºè®¡ç®—ç”Ÿæˆå›¾åƒçš„åˆ†è¾¨ç‡
     const int tileSize = 16;
-	// ¼ÆËã tile_numbers Ê±ÏòÉÏÈ¡Õû
+	// è®¡ç®— tile_numbers æ—¶å‘ä¸Šå–æ•´
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
 
-	// Ìá¹©Ò»¸ö¹ØÓÚ pbrt µ±Ç°½ø¶ÈµÄÖ±¹Û·´À¡
+	// æä¾›ä¸€ä¸ªå…³äº pbrt å½“å‰è¿›åº¦çš„ç›´è§‚åé¦ˆ
 	ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
-		// Ã¿¸ö tile ÓÉµ¥¶ÀµÄÏß³ÌÖ´ĞĞ£¬Ã¿´Î¶Ô lambda ±í´ïÊ½´«ÈëÒ»¸ö¸Ã tile ÔÚ nTiles ÖĞµÄÎ»ÖÃ
+		// æ¯ä¸ª tile ç”±å•ç‹¬çš„çº¿ç¨‹æ‰§è¡Œï¼Œæ¯æ¬¡å¯¹ lambda è¡¨è¾¾å¼ä¼ å…¥ä¸€ä¸ªè¯¥ tile åœ¨ nTiles ä¸­çš„ä½ç½®
         ParallelFor2D([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
-			// Ã¿¸öÏß³ÌÊ¹ÓÃµ¥¶ÀµÄÄÚ´æ³Ø
+			// æ¯ä¸ªçº¿ç¨‹ä½¿ç”¨å•ç‹¬çš„å†…å­˜æ± 
             MemoryArena arena;
 
             // Get sampler instance for tile
-			// Ã¿¸öÏß³ÌÊ¹ÓÃµ¥¶ÀµÄ²ÉÑùÆ÷
+			// æ¯ä¸ªçº¿ç¨‹ä½¿ç”¨å•ç‹¬çš„é‡‡æ ·å™¨
             int seed = tile.y * nTiles.x + tile.x;
 			std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
 
             // Compute sample bounds for tile
-			// ¼ÆËãÕâ¸ö tile ÔÚ image ÖĞ¸²¸Çµ½µÄÏñËØ·¶Î§
+			// è®¡ç®—è¿™ä¸ª tile åœ¨ image ä¸­è¦†ç›–åˆ°çš„åƒç´ èŒƒå›´
 
-			// ¼ÙÉè image µÄ·Ö±æÂÊÎª 1920 * 1080£¬Ôò nTiles µÄ´óĞ¡Îª 120 * 80£¨¼´ÓĞ 119 * 79 ¿é tile µÈ´ıäÖÈ¾£¬²»°üº¬ÓÒÏÂ·½µÄ±ß½ç£©
-			// µ±Ä³¸öÏß³ÌÔÚÄ³´Îµ÷ÓÃ lambda ±í´ïÊ½²¢½ÓÊÕµ½Ò»¸öÎ»ÖÃÎª (119, 79) µÄ tile Ê±
-			// Õâ¸ö tile ÔÚ image ÖĞ¸²¸Çµ½µÄÏñËØ·¶Î§Îª£º£¨Ôò¼ÙÉè pMin Îª 0£©
-			// x0 = 119 * 16 = 1904£¬y0 = 79 * 16 = 1064£¬x1 = 1920£¬ y1 = 1080
-			// ¼´Õâ¸öÏß³ÌĞèÒªäÖÈ¾´ÓÍ¼Ïñ×ø±ê (1904, 1064) ¿ªÊ¼£¬(1920, 1080) ½áÊøµÄÕâ¸ö¾ØĞÎÇøÓòÄÚµÄÏñËØ£¨Ò²²»°üº¬ÓÒ±ßºÍÏÂ±ßµÄ±ß½ç£©
-            // £¨Èç¹ûÏŞÖÆäÖÈ¾µÄÍ¼Ïñ³¤¿í×ÜÎª 16£¨»ò tileSize£©µÄ±¶Êı£¬¿ÉÒÔ°ÑÕâ¶Î´úÂë¼ò»¯²»ÉÙ£©
+			// å‡è®¾ image çš„åˆ†è¾¨ç‡ä¸º 1920 * 1080ï¼Œåˆ™ nTiles çš„å¤§å°ä¸º 120 * 80ï¼ˆå³æœ‰ 119 * 79 å— tile ç­‰å¾…æ¸²æŸ“ï¼Œä¸åŒ…å«å³ä¸‹æ–¹çš„è¾¹ç•Œï¼‰
+			// å½“æŸä¸ªçº¿ç¨‹åœ¨æŸæ¬¡è°ƒç”¨ lambda è¡¨è¾¾å¼å¹¶æ¥æ”¶åˆ°ä¸€ä¸ªä½ç½®ä¸º (119, 79) çš„ tile æ—¶
+			// è¿™ä¸ª tile åœ¨ image ä¸­è¦†ç›–åˆ°çš„åƒç´ èŒƒå›´ä¸ºï¼šï¼ˆåˆ™å‡è®¾ pMin ä¸º 0ï¼‰
+			// x0 = 119 * 16 = 1904ï¼Œy0 = 79 * 16 = 1064ï¼Œx1 = 1920ï¼Œ y1 = 1080
+			// å³è¿™ä¸ªçº¿ç¨‹éœ€è¦æ¸²æŸ“ä»å›¾åƒåæ ‡ (1904, 1064) å¼€å§‹ï¼Œ(1920, 1080) ç»“æŸçš„è¿™ä¸ªçŸ©å½¢åŒºåŸŸå†…çš„åƒç´ ï¼ˆä¹Ÿä¸åŒ…å«å³è¾¹å’Œä¸‹è¾¹çš„è¾¹ç•Œï¼‰
+            // ï¼ˆå¦‚æœé™åˆ¶æ¸²æŸ“çš„å›¾åƒé•¿å®½æ€»ä¸º 16ï¼ˆæˆ– tileSizeï¼‰çš„å€æ•°ï¼Œå¯ä»¥æŠŠè¿™æ®µä»£ç ç®€åŒ–ä¸å°‘ï¼‰
 			int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);	
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
@@ -323,17 +323,17 @@ void SamplerIntegrator::Render(const Scene &scene) {
             LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
-			// ÏÈ½«äÖÈ¾µÃµ½µÄÍ¼Ïñ´æÈëÕâ¸ö fileTile ÖĞ£¬´ıäÖÈ¾½áÊøºó½« fileTile ºÏ²¢µ½ file ÖĞ
+			// å…ˆå°†æ¸²æŸ“å¾—åˆ°çš„å›¾åƒå­˜å…¥è¿™ä¸ª fileTile ä¸­ï¼Œå¾…æ¸²æŸ“ç»“æŸåå°† fileTile åˆå¹¶åˆ° file ä¸­
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
 
             // Loop over pixels in tile to render them
-            for (Point2i pixel : tileBounds) {	// ±éÀú¸Ã¶şÎ¬°üÎ§ºĞÉÏµÄÃ¿Ò»¸öÏñËØ£¨Bounds2i ¶¨ÒåÁËÏàÓ¦µÄµü´úÆ÷ºÍ begin()¡¢end() º¯Êı£©
+            for (Point2i pixel : tileBounds) {	// éå†è¯¥äºŒç»´åŒ…å›´ç›’ä¸Šçš„æ¯ä¸€ä¸ªåƒç´ ï¼ˆBounds2i å®šä¹‰äº†ç›¸åº”çš„è¿­ä»£å™¨å’Œ begin()ã€end() å‡½æ•°ï¼‰
                 {
                     ProfilePhase pp(Prof::StartPixel);
-                    tileSampler->StartPixel(pixel);		// ²ÉÑùÒ»¸öĞÂµÄÏñËØÊ±£¬²ÉÑùÆ÷½øĞĞÒ»Ğ©ÉèÖÃ
+                    tileSampler->StartPixel(pixel);		// é‡‡æ ·ä¸€ä¸ªæ–°çš„åƒç´ æ—¶ï¼Œé‡‡æ ·å™¨è¿›è¡Œä¸€äº›è®¾ç½®
                 }
-				//¼ì²é¸ÃÏñËØÊÇ·ñÔÚ pixelBounds ÄÚ£¨pixelBounds ¿ÉÄÜ±ÈÍ¼ÏñÆ½ÃæĞ¡£©
+				//æ£€æŸ¥è¯¥åƒç´ æ˜¯å¦åœ¨ pixelBounds å†…ï¼ˆpixelBounds å¯èƒ½æ¯”å›¾åƒå¹³é¢å°ï¼‰
                 // Do this check after the StartPixel() call; this keeps
                 // the usage of RNG values from (most) Samplers that use
                 // RNGs consistent, which improves reproducability /
@@ -347,7 +347,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                         tileSampler->GetCameraSample(pixel);
 
                     // Generate camera ray for current sample
-					// Îªµ±Ç°Ñù±¾Éú³ÉÏà»ú¹âÏß
+					// ä¸ºå½“å‰æ ·æœ¬ç”Ÿæˆç›¸æœºå…‰çº¿
                     RayDifferential ray;
                     Float rayWeight =
                         camera->GenerateRayDifferential(cameraSample, &ray);
@@ -356,12 +356,12 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
-					//¼ÆËãÑØÕâÌõ¹âÏß£¨-ray.direction)µÄ·øÉä¶È
+					//è®¡ç®—æ²¿è¿™æ¡å…‰çº¿ï¼ˆ-ray.direction)çš„è¾å°„åº¦
 					Spectrum L(0.f);
                     if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
 
                     // Issue warning if unexpected radiance value returned
-					//¶ÔµÃµ½µÄ·øÉä¶È×ö¼ì²é
+					//å¯¹å¾—åˆ°çš„è¾å°„åº¦åšæ£€æŸ¥
 					if (L.HasNaNs()) {
                         LOG(ERROR) << StringPrintf(
                             "Not-a-number radiance value returned "
@@ -398,7 +398,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
-			// ½« filmTile ºÏ²¢µ½ film ÖĞ
+			// å°† filmTile åˆå¹¶åˆ° film ä¸­
             camera->film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
         }, nTiles);
@@ -407,7 +407,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
     LOG(INFO) << "Rendering finished";
 
     // Save final image after rendering
-	// äÖÈ¾½áÊø£¬±£´æÍ¼Æ¬
+	// æ¸²æŸ“ç»“æŸï¼Œä¿å­˜å›¾ç‰‡
     camera->film->WriteImage();
 }
 
@@ -418,16 +418,16 @@ Spectrum SamplerIntegrator::SpecularReflect(
     Vector3f wo = isect.wo, wi;
     Float pdf;
     BxDFType type = BxDFType(BSDF_REFLECTION | BSDF_SPECULAR);
-	// ÔÚ isect ÉÏ°ëÇòÃæÑ¡È¡Ò»·½Ïò wi£¬²¢¼ÆËãÏàÓ¦µÄ¸ÅÂÊÃÜ¶È¼° f(p, wo, wi)
+	// åœ¨ isect ä¸ŠåŠçƒé¢é€‰å–ä¸€æ–¹å‘ wiï¼Œå¹¶è®¡ç®—ç›¸åº”çš„æ¦‚ç‡å¯†åº¦åŠ f(p, wo, wi)
     Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, type);
 
     // Return contribution of specular reflection
-	// ¼ÆËã¾µÃæ·´ÉäµÄ¹±Ï×
+	// è®¡ç®—é•œé¢åå°„çš„è´¡çŒ®
     const Normal3f &ns = isect.shading.n;
     if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
         // Compute ray differential _rd_ for specular reflection
         RayDifferential rd = isect.SpawnRay(wi);
-		// ¹ØÓÚ¹âÏßÎ¢·ÖµÄ×¢ÊÍÔİÊ±Ìø¹ı
+		// å…³äºå…‰çº¿å¾®åˆ†çš„æ³¨é‡Šæš‚æ—¶è·³è¿‡
         if (ray.hasDifferentials) {
             rd.hasDifferentials = true;
             rd.rxOrigin = isect.p + isect.dpdx;
@@ -460,7 +460,7 @@ Spectrum SamplerIntegrator::SpecularTransmit(
     const Point3f &p = isect.p;
     const Normal3f &ns = isect.shading.n;
     const BSDF &bsdf = *isect.bsdf;
-	// ÔÚ isect ÏÂ°ëÇòÃæÑ¡È¡Ò»·½Ïò wi£¬²¢¼ÆËãÏàÓ¦µÄ¸ÅÂÊÃÜ¶È¼° f(p, wo, wi)
+	// åœ¨ isect ä¸‹åŠçƒé¢é€‰å–ä¸€æ–¹å‘ wiï¼Œå¹¶è®¡ç®—ç›¸åº”çš„æ¦‚ç‡å¯†åº¦åŠ f(p, wo, wi)
     Spectrum f = bsdf.Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
     Spectrum L = Spectrum(0.f);
