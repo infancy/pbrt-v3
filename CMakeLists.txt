@@ -24,15 +24,22 @@ if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/openexr/OpenEXR")
     "by running \"git submodule update --init --recursive\"")
 endif()
 
-if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog")
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/glog/cmake")
   message(FATAL_ERROR "The glog submodule directory is missing! "
     "You probably did not clone the project with --recursive, or first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
 endif()
 
-if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/ptex")
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/ptex/src")
   message(FATAL_ERROR "The ptex submodule directory is missing! "
+    "You probably did not clone the project with --recursive, or first checked out "
+    "pbrt before it was added. It is possible to recover by running "
+    "\"git submodule update --init --recursive\"")
+endif()
+
+if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/ext/zlib/doc")
+  message(FATAL_ERROR "The zlib submodule directory is missing! "
     "You probably did not clone the project with --recursive, or first checked out "
     "pbrt before it was added. It is possible to recover by running "
     "\"git submodule update --init --recursive\"")
@@ -91,11 +98,6 @@ ENDIF ()
 CHECK_INCLUDE_FILES ( memory.h HAVE_MEMORY_H )
 IF ( HAVE_MEMORY_H )
   ADD_DEFINITIONS ( -D PBRT_HAVE_MEMORY_H )
-ENDIF ()
-
-CHECK_INCLUDE_FILES ( unistd.h HAVE_UNISTD_H )
-IF ( NOT HAVE_UNISTD_H )
-  ADD_DEFINITIONS ( -D YY_NO_UNISTD_H )
 ENDIF ()
 
 ###########################################################################
@@ -170,6 +172,24 @@ int main() { Foo f; }
 " HAVE_NONPOD_IN_UNIONS )
 IF ( HAVE_NONPOD_IN_UNIONS )
   ADD_DEFINITIONS ( -D PBRT_HAVE_NONPOD_IN_UNIONS )
+ENDIF ()
+
+CHECK_CXX_SOURCE_COMPILES ( "
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+int main() {
+   int fd = open(\"foo\", O_RDONLY);
+   struct stat s;
+   fstat(fd, &s);
+   size_t len = s.st_size;
+   void *ptr = mmap(0, len, PROT_READ, MAP_FILE | MAP_SHARED, fd, 0);
+   munmap(ptr, len);   
+}
+" HAVE_MMAP )
+if ( HAVE_MMAP )
+  ADD_DEFINITIONS ( -D PBRT_HAVE_MMAP )
 ENDIF ()
 
 ########################################
@@ -252,46 +272,6 @@ ELSEIF ( HAVE_DECLSPEC_THREAD )
 ELSE ()
   MESSAGE ( SEND_ERROR "Unable to find a way to declare a thread-local variable")
 ENDIF ()
-
-###########################################################################
-# flex / bison
-
-# Optionally use Bison and Flex to regenerate parser files
-# Use pregenerated files otherwise (may be outdated)
-FIND_PACKAGE ( BISON )
-FIND_PACKAGE ( FLEX )
-IF(BISON_FOUND AND FLEX_FOUND)
-  SET(BisonOutput ${CMAKE_BINARY_DIR}/pbrtparse.cpp)
-  ADD_CUSTOM_COMMAND(
-    OUTPUT ${BisonOutput} ${CMAKE_BINARY_DIR}/pbrtparse.h
-    DEPENDS ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.y
-    COMMAND ${BISON_EXECUTABLE} -d -v -t
-            --output=${CMAKE_BINARY_DIR}/pbrtparse.c
-            ${CMAKE_SOURCE_DIR}/src/core/pbrtparse.y
-    COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_BINARY_DIR}/pbrtparse.c ${CMAKE_BINARY_DIR}/pbrtparse.cpp
-    COMMENT "Generating pbrtparse.cpp and pbrtparse.h"
-  )
-
-  SET(FlexOutput ${CMAKE_BINARY_DIR}/pbrtlex.cpp)
-  ADD_CUSTOM_COMMAND(
-    OUTPUT ${FlexOutput}
-    DEPENDS ${CMAKE_BINARY_DIR}/pbrtparse.h ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
-    COMMAND ${FLEX_EXECUTABLE}
-            -o${FlexOutput}
-            ${CMAKE_SOURCE_DIR}/src/core/pbrtlex.ll
-    COMMENT "Generating pbrtlex.cpp"
-  )
-
-  SET ( PBRT_YACC_LEX_SOURCE
-    ${BisonOutput}
-    ${FlexOutput}
-    )
-ELSE()
-  SET ( PBRT_YACC_LEX_SOURCE
-    src/core/pbrtlex.cpp
-    src/core/pbrtparse.cpp
-    )
-ENDIF()
 
 ###########################################################################
 # zlib

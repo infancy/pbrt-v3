@@ -210,26 +210,23 @@ void Film::WriteImage(Float splatScale) {
 }
 
 Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
-    // Intentionally use FindOneString() rather than FindOneFilename() here
-    // so that the rendered image is left in the working directory, rather
-    // than the directory the scene file lives in.
-    std::string filename = params.FindOneString("filename", "");
+    std::string filename;
     if (PbrtOptions.imageFile != "") {
-        if (filename != "") {
+        filename = PbrtOptions.imageFile;
+        std::string paramsFilename = params.FindOneString("filename", "");
+        if (paramsFilename != "")
             Warning(
-                "Output filename supplied on command line, \"%s\", ignored "
-                "due to filename provided in scene description file, \"%s\".",
-                PbrtOptions.imageFile.c_str(), filename.c_str());
-        } else
-            filename = PbrtOptions.imageFile;
-    }
-    if (filename == "") filename = "pbrt.exr";
+                "Output filename supplied on command line, \"%s\" is overriding "
+                "filename provided in scene description file, \"%s\".",
+                PbrtOptions.imageFile.c_str(), paramsFilename.c_str());
+    } else
+        filename = params.FindOneString("filename", "pbrt.exr");
 
     int xres = params.FindOneInt("xresolution", 1280);
     int yres = params.FindOneInt("yresolution", 720);
     if (PbrtOptions.quickRender) xres = std::max(1, xres / 4);
     if (PbrtOptions.quickRender) yres = std::max(1, yres / 4);
-    Bounds2f crop(Point2f(0, 0), Point2f(1, 1));
+    Bounds2f crop;
     int cwi;
     const Float *cr = params.FindFloat("cropwindow", &cwi);
     if (cr && cwi == 4) {
@@ -239,6 +236,11 @@ Film *CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter) {
         crop.pMax.y = Clamp(std::max(cr[2], cr[3]), 0.f, 1.f);
     } else if (cr)
         Error("%d values supplied for \"cropwindow\". Expected 4.", cwi);
+    else
+        crop = Bounds2f(Point2f(Clamp(PbrtOptions.cropWindow[0][0], 0, 1),
+                                Clamp(PbrtOptions.cropWindow[1][0], 0, 1)),
+                        Point2f(Clamp(PbrtOptions.cropWindow[0][1], 0, 1),
+                                Clamp(PbrtOptions.cropWindow[1][1], 0, 1)));
 
     Float scale = params.FindOneFloat("scale", 1.);
     Float diagonal = params.FindOneFloat("diagonal", 35.);
