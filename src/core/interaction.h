@@ -47,6 +47,9 @@
 
 namespace pbrt {
 
+// Interaction 用于记录 ray 与 surface/media 相交测试后所生成交点的各种信息，
+// 用于后续着色计算、生成次级光线等
+
 // Interaction Declarations
 struct Interaction {
     // Interaction Public Methods
@@ -92,11 +95,11 @@ struct Interaction {
     }
 
     // Interaction Public Data
-    Point3f p;
+    Point3f p;     // （世界空间中）交点的位置
     Float time;
-    Vector3f pError;
-    Vector3f wo;
-    Normal3f n;
+    Vector3f pError;  // 累积的浮点数绝对误差
+    Vector3f wo;   // 入射光线的方向
+    Normal3f n;    // 交点的法线
     MediumInterface mediumInterface;
 };
 
@@ -135,15 +138,18 @@ class SurfaceInteraction : public Interaction {
     Spectrum Le(const Vector3f &w) const;
 
     // SurfaceInteraction Public Data
-    Point2f uv;
-    Vector3f dpdu, dpdv;
-    Normal3f dndu, dndv;
+	Point2f uv;				// 基于表面参数化的UV坐标
+	Vector3f dpdu, dpdv;	// 参数偏微分，位于切平面上，可生成法线
+	Normal3f dndu, dndv;	// 表面法线变化的的偏微分
     const Shape *shape = nullptr;
+
+	// 存储由凹凸纹理或三角形网格逐顶点法线插值得到的着色法线等值
     struct {
-        Normal3f n;
+        Normal3f n;		// 着色法线
         Vector3f dpdu, dpdv;
         Normal3f dndu, dndv;
     } shading;
+
     const Primitive *primitive = nullptr;
     BSDF *bsdf = nullptr;
     BSSRDF *bssrdf = nullptr;

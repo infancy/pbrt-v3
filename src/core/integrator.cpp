@@ -112,16 +112,16 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                           scene, sampler, arena, handleMedia) / lightPdf;
 }
 
-//	计算单个 light 经由 isect 向 wo 方向发射的辐射度
+// 计算单个 light 经由 isect 向 wo 方向发射的辐射度
 //
-//     prev_isect     light
-//	      ----  ----
-//	       ^      ^
-//	        \    /
-//	      wo \  / wi
-//		  \/
-//		------
-//		isect
+// prev   light
+// -----  -----
+//   ^      ^
+//    \    /
+//  wo \  / wi
+//      \/
+//    ------
+//    isect
 //
 //	当 bsdf 呈镜面状态而光源分布较广时从 bsdf 采样较为高效
 //	当 bsdf 呈漫反射分布状态而光源较小时从光源采样更高效
@@ -311,7 +311,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
 			// 假设 image 的分辨率为 1920 * 1080，则 nTiles 的大小为 120 * 80（即有 119 * 79 块 tile 等待渲染，不包含右下方的边界）
 			// 当某个线程在某次调用 lambda 表达式并接收到一个位置为 (119, 79) 的 tile 时
-			// 这个 tile 在 image 中覆盖到的像素范围为：（则假设 pMin 为 0）
+			// 这个 tile 在 image 中覆盖到的像素范围为（则假设 pMin 为 0）：
 			// x0 = 119 * 16 = 1904，y0 = 79 * 16 = 1064，x1 = 1920， y1 = 1080
 			// 即这个线程需要渲染从图像坐标 (1904, 1064) 开始，(1920, 1080) 结束的这个矩形区域内的像素（也不包含右边和下边的边界）
             // （如果限制渲染的图像长宽总为 16（或 tileSize）的倍数，可以把这段代码简化不少）
@@ -323,7 +323,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
-			// 先将渲染得到的图像存入这个 fileTile 中，待渲染结束后将 fileTile 合并到 file 中
+			// 先将渲染得到的图像存入这个 filmTile 中，待渲染结束后将 filmTile 合并到 film 中
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
 
@@ -331,9 +331,11 @@ void SamplerIntegrator::Render(const Scene &scene) {
             for (Point2i pixel : tileBounds) {	// 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
                 {
                     ProfilePhase pp(Prof::StartPixel);
-                    tileSampler->StartPixel(pixel);		// 采样一个新的像素时，采样器进行一些设置
+					// 采样一个新的像素前，先对采样器进行一些设置
+                    tileSampler->StartPixel(pixel);		
                 }
-				//检查该像素是否在 pixelBounds 内（pixelBounds 可能比图像平面小）
+				// 检查该像素是否在 pixelBounds 内（pixelBounds 可能比图像平面小）
+				// 这可以保持（大多数）采样器中所使用的 RNG 值的一致性，方便重现？？？、调试
                 // Do this check after the StartPixel() call; this keeps
                 // the usage of RNG values from (most) Samplers that use
                 // RNGs consistent, which improves reproducability /

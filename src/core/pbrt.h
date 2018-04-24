@@ -199,7 +199,7 @@ static PBRT_CONSTEXPR Float MachineEpsilon =
 #endif
 // 之前 pbrt.h 会引用一个 port.h 解决跨平台的问题
 // 现在则由 cmake 在生成 vs 解决方案时将相关宏定义加入到项目 -> C/C++ -> 预处理器定义中
-// 在 win10 64bit-vs2017 中 PBRT_CONSTEXPR = constexpr
+// 例如在 win10 64bit-vs2017 中 PBRT_CONSTEXPR = constexpr
 static PBRT_CONSTEXPR Float ShadowEpsilon = 0.0001f;
 static PBRT_CONSTEXPR Float Pi = 3.14159265358979323846;
 static PBRT_CONSTEXPR Float InvPi = 0.31830988618379067154;
@@ -365,6 +365,10 @@ inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {
     return v && !(v & (v - 1));
 }
 
+// 类似于 std::round()，向上取 2^n，如
+// if x <= 0 -> 0
+// x == 1 -> 1
+// 2^(n-1) < x <= 2^n -> 2^n
 inline int32_t RoundUpPow2(int32_t v) {
     v--;
     v |= v >> 1;
@@ -412,7 +416,7 @@ int FindInterval(int size, const Predicate &pred) {
     }
     return Clamp(first - 1, 0, size - 2);
 }
-
+// 插值
 inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
