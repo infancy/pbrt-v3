@@ -429,7 +429,7 @@ Spectrum SamplerIntegrator::SpecularReflect(
     if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
         // Compute ray differential _rd_ for specular reflection
         RayDifferential rd = isect.SpawnRay(wi);
-		// 关于光线微分的注释暂时跳过
+		// 关于光线微分的代码没细看，暂时不做解释
         if (ray.hasDifferentials) {
             rd.hasDifferentials = true;
             rd.rxOrigin = isect.p + isect.dpdx;

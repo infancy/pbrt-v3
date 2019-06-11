@@ -370,8 +370,8 @@ inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {
 }
 
 // 类似于 std::round()，向上取 2^n，如
-// if x <= 0 -> 0
-// x == 1 -> 1
+// x <= 0             -> 0
+// x == 1             -> 1
 // 2^(n-1) < x <= 2^n -> 2^n
 inline int32_t RoundUpPow2(int32_t v) {
     v--;

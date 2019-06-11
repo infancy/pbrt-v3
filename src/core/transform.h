@@ -240,6 +240,7 @@ inline Vector3<T> Transform::operator()(const Vector3<T> &v) const {
                       m.m[2][0] * x + m.m[2][1] * y + m.m[2][2] * z);
 }
 
+// 需要使用变换矩阵 m 的逆矩阵 mInv 的**转置矩阵**乘以法线 n
 template <typename T>
 inline Normal3<T> Transform::operator()(const Normal3<T> &n) const {
     T x = n.x, y = n.y, z = n.z;

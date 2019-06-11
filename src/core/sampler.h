@@ -96,9 +96,9 @@ class Sampler {
 
   private:
     // Sampler Private Data
-	//const Point2f *Sampler::Get2DArray(int n) {
-	//	  ...
-	//	  return &sampleArray2D[array2DOffset++][currentPixelSampleIndex * n];}
+	// const Point2f *Sampler::Get2DArray(int n) {
+	//     ...
+	//     return &sampleArray2D[array2DOffset++][currentPixelSampleIndex * n]; }
 	// array1/2DOffset 记录 sampleArray1/2D 当前使用的下标
     size_t array1DOffset, array2DOffset;
 };

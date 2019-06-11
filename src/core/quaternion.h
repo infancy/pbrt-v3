@@ -46,6 +46,7 @@
 namespace pbrt {
 
 // Quaternion Declarations
+// 用四元数进行球面平滑插值
 struct Quaternion {
     // Quaternion Public Methods
     Quaternion() : v(0, 0, 0), w(1) {}
@@ -104,7 +105,7 @@ struct Quaternion {
         return os;
     }
 
-    // Quaternion Public Data
+    // Quaternion Public Data 
     Vector3f v;
     Float w;
 };
