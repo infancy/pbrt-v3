@@ -103,7 +103,6 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
             L += UniformSampleOneLight(isect, scene, arena, sampler);
     }
     if (depth + 1 < maxDepth) {
-        Vector3f wi;
         // Trace rays for specular reflection and refraction
 		// 如果交点还包含镜面/玻璃材质（则相应的 BxDF 是 delta 分布的），则需要继续跟踪光线，计算镜面反射与折射产生的辐射度
         L += SpecularReflect(ray, isect, scene, sampler, arena, depth);
