@@ -38,6 +38,36 @@
 #ifndef PBRT_CORE_GEOMETRY_H
 #define PBRT_CORE_GEOMETRY_H
 
+/*
+
+from bottom to top:
+
+pbrt.h(每个头文件都包含了 pbrt.h, 不妨忽略掉它)
+ \    \ 
+  \    stringprint.h
+   \      /   \
+    \    /     \
+  geometry.h quaternion.h
+      \      /
+       \    /
+     transform.h
+        ...
+*/
+
+/*
+
+- isNaN
+- Vector2
+- Vector3
+- Point2
+- Point3
+- Normal3
+- Bounds2
+- Bounds3
+- Ray
+- Raydiffen
+*/
+
 // core/geometry.h*
 #include "pbrt.h"
 #include "stringprint.h"
@@ -67,6 +97,7 @@ class Vector2 {
 #ifndef NDEBUG
     // The default versions of these are fine for release builds; for debug
     // we define them so that we can add the Assert checks.
+    // 在 release 中用编译器生成的, debug 中为了断言测试用手写版本的
     Vector2(const Vector2<T> &v) {
         DCHECK(!v.HasNaNs());
         x = v.x;
@@ -102,6 +133,7 @@ class Vector2 {
         y -= v.y;
         return *this;
     }
+    // 就这么直接比较好吗
     bool operator==(const Vector2<T> &v) const { return x == v.x && y == v.y; }
     bool operator!=(const Vector2<T> &v) const { return x != v.x || y != v.y; }
     template <typename U>
@@ -675,6 +707,10 @@ inline std::ostream &operator<<(std::ostream &os, const Normal3<Float> &v) {
 
 typedef Normal3<Float> Normal3f;
 
+// PBRT 用的包围盒是轴对齐包围盒 AABB(axis-aligned bounding boxes, section2.6), 而非有向包围盒 OBB(oriented bounding boxes)
+// AABB 可以用一个顶点加三个长度, 或者两个顶点的方式实现, PBRT 用的是后者
+
+// Bounds2 主要是用在划分图像平面(File, section7.9)上
 // Bounds Declarations
 template <typename T>
 class Bounds2 {
@@ -745,6 +781,7 @@ class Bounds2 {
     Point2<T> pMin, pMax;
 };
 
+// Bounds3 主要是用在空间加速结构, 即层次包围盒(bounding volume hierarchy, section4.3)上
 template <typename T>
 class Bounds3 {
   public:
@@ -752,6 +789,7 @@ class Bounds3 {
     Bounds3() {
         T minNum = std::numeric_limits<T>::lowest();
         T maxNum = std::numeric_limits<T>::max();
+        // 这种"错误"的设置使得之后所有的操作(如 Union() )都是正确的
         pMin = Point3<T>(maxNum, maxNum, maxNum);
         pMax = Point3<T>(minNum, minNum, minNum);
     }
@@ -769,21 +807,28 @@ class Bounds3 {
     bool operator!=(const Bounds3<T> &b) const {
         return b.pMin != pMin || b.pMax != pMax;
     }
+    // 按索引 i(0~7) 返回整个包围盒的八个角之一
+    // PBRT 使用左手系
+    // TODO
     Point3<T> Corner(int corner) const {
         DCHECK(corner >= 0 && corner < 8);
         return Point3<T>((*this)[(corner & 1)].x,
                          (*this)[(corner & 2) ? 1 : 0].y,
                          (*this)[(corner & 4) ? 1 : 0].z);
     }
+    // 对角线
     Vector3<T> Diagonal() const { return pMax - pMin; }
+    // 六个面的表面积
     T SurfaceArea() const {
         Vector3<T> d = Diagonal();
         return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
     }
+    // 体积
     T Volume() const {
         Vector3<T> d = Diagonal();
         return d.x * d.y * d.z;
     }
+    // 最长的一条边
     int MaximumExtent() const {
         Vector3<T> d = Diagonal();
         if (d.x > d.y && d.x > d.z)
@@ -793,11 +838,15 @@ class Bounds3 {
         else
             return 2;
     }
+    // 返回从 pMin 到 pMax 的插值结果
     Point3<T> Lerp(const Point3f &t) const {
         return Point3<T>(pbrt::Lerp(t.x, pMin.x, pMax.x),
                          pbrt::Lerp(t.y, pMin.y, pMax.y),
                          pbrt::Lerp(t.z, pMin.z, pMax.z));
     }
+    
+    // 返回点 p 相对于 pMin, pMax 的偏移量
+    // 假设点 p 在直线(pMin, pMax)上, 当 p == pMin 时, 返回(0, 0, 0); 当 p == pMax 时, 返回(1, 1, 1)
     Vector3<T> Offset(const Point3<T> &p) const {
         Vector3<T> o = p - pMin;
         if (pMax.x > pMin.x) o.x /= pMax.x - pMin.x;
@@ -805,6 +854,7 @@ class Bounds3 {
         if (pMax.z > pMin.z) o.z /= pMax.z - pMin.z;
         return o;
     }
+    // 返回包含 bounds3 的球体
     void BoundingSphere(Point3<T> *center, Float *radius) const {
         *center = (pMin + pMax) / 2;
         *radius = Inside(*center, *this) ? Distance(*center, pMax) : 0;
@@ -832,6 +882,7 @@ typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
 // 当使用如 for (Point2i pixel : tileBounds) 这样的范围 for 循环时需要相应的迭代器支持
+// 在遍历 imageTile 时会用到
 class Bounds2iIterator : public std::forward_iterator_tag {
   public:
     Bounds2iIterator(const Bounds2i &b, const Point2i &pt)
@@ -1247,6 +1298,7 @@ inline Point3<T> &Bounds3<T>::operator[](int i) {
     return (i == 0) ? pMin : pMax;
 }
 
+// 返回两者的并集 b∪p
 template <typename T>
 Bounds3<T> Union(const Bounds3<T> &b, const Point3<T> &p) {
     Bounds3<T> ret;
@@ -1263,6 +1315,7 @@ Bounds3<T> Union(const Bounds3<T> &b1, const Bounds3<T> &b2) {
     return ret;
 }
 
+// 返回两者的交集 b ∩ p
 template <typename T>
 Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T> &b2) {
     // Important: assign to pMin/pMax directly and don't run the Bounds2()
@@ -1275,6 +1328,7 @@ Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T> &b2) {
     return ret;
 }
 
+// 两个包围盒是否有交叠的部分(看 Figure2.9 会比较容易理解)
 template <typename T>
 bool Overlaps(const Bounds3<T> &b1, const Bounds3<T> &b2) {
     bool x = (b1.pMax.x >= b2.pMin.x) && (b1.pMin.x <= b2.pMax.x);
@@ -1283,12 +1337,14 @@ bool Overlaps(const Bounds3<T> &b1, const Bounds3<T> &b2) {
     return (x && y && z);
 }
 
+// 点是否在包围盒内部或边界上
 template <typename T>
 bool Inside(const Point3<T> &p, const Bounds3<T> &b) {
     return (p.x >= b.pMin.x && p.x <= b.pMax.x && p.y >= b.pMin.y &&
             p.y <= b.pMax.y && p.z >= b.pMin.z && p.z <= b.pMax.z);
 }
 
+// 点是否在包围盒内部
 template <typename T>
 bool InsideExclusive(const Point3<T> &p, const Bounds3<T> &b) {
     return (p.x >= b.pMin.x && p.x < b.pMax.x && p.y >= b.pMin.y &&
