@@ -710,7 +710,7 @@ typedef Normal3<Float> Normal3f;
 // PBRT 用的包围盒是轴对齐包围盒 AABB(axis-aligned bounding boxes, section2.6), 而非有向包围盒 OBB(oriented bounding boxes)
 // AABB 可以用一个顶点加三个长度, 或者两个顶点的方式实现, PBRT 用的是后者
 
-// Bounds2 主要是用在划分图像平面(File, section7.9)上
+// Bounds2 主要是用在划分胶片平面(File, section7.9)上
 // Bounds Declarations
 template <typename T>
 class Bounds2 {
@@ -882,7 +882,7 @@ typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
 // 当使用如 for (Point2i pixel : tileBounds) 这样的范围 for 循环时需要相应的迭代器支持
-// 在遍历 imageTile 时会用到
+// 在遍历胶片平面 imageTile 时会用到
 class Bounds2iIterator : public std::forward_iterator_tag {
   public:
     Bounds2iIterator(const Bounds2i &b, const Point2i &pt)
@@ -918,15 +918,20 @@ class Bounds2iIterator : public std::forward_iterator_tag {
 };
 
 // Ray Declarations
+// $ \mathrm{r}(t)=\mathrm{o} + t \mathrm{d} \quad 0 \leq t < \infty $
 class Ray {
   public:
     // Ray Public Methods
     Ray() : tMax(Infinity), time(0.f), medium(nullptr) {}
+
     Ray(const Point3f &o, const Vector3f &d, Float tMax = Infinity,
         Float time = 0.f, const Medium *medium = nullptr)
         : o(o), d(d), tMax(tMax), time(time), medium(medium) {}
+
+    // 给定 t, 将光线从位置 Origin 沿方向 Direction 移动 t 个单位到新位置
     Point3f operator()(Float t) const { return o + d * t; }
     bool HasNaNs() const { return (o.HasNaNs() || d.HasNaNs() || isNaN(tMax)); }
+
     friend std::ostream &operator<<(std::ostream &os, const Ray &r) {
         os << "[o=" << r.o << ", d=" << r.d << ", tMax=" << r.tMax
            << ", time=" << r.time << "]";
@@ -934,13 +939,26 @@ class Ray {
     }
 
     // Ray Public Data
+    // 起点和方向, 为了方便表示成 o & d
     Point3f o;
+    // d 是单位向量吗???
     Vector3f d;
+    // as parameters to ray–object intersection testing routines, which will record the offsets to the closest intersection in tMax.
+    // tMax 代表了 t 的最大值, 限制了 ray 的范围
     mutable Float tMax;
+    // Each ray has a time value associated with it. In scenes with animated objects, the rendering system constructs a representation of the scene at the appropriate time for each ray
+    // 当场景包含运动物体时, 系统会通过 time 为这条光线构造一个合适的场景表示
     Float time;
+    // Finally, each ray records the medium containing its origin. The Medium class, introduced in Section 11.3, encapsulates the (potentially spatially varying) properties of media such as a foggy atmosphere, smoke, or scattering liquids like milk or shampoo. Associating this information with rays makes it possible for other parts of the system to account correctly for the effect of rays passing from one medium to another.
+    // 
+    // const Medium* 意味着只访问资源, 不管理 medium 的生命周期
     const Medium *medium;
 };
 
+// 光线微分
+// 需要先理解纹理采样, 走样, 过滤, 反走样等概念, 否则可以先跳过 RayDifferential
+// 主要用于纹理采样时的反走样(anti-aliasing)操作
+// 详细解释可以参考《全局光照技术》6.5.1节和 https://blog.csdn.net/suian0424/article/details/81485563
 class RayDifferential : public Ray {
   public:
     // RayDifferential Public Methods
@@ -951,18 +969,22 @@ class RayDifferential : public Ray {
         hasDifferentials = false;
     }
     RayDifferential(const Ray &ray) : Ray(ray) { hasDifferentials = false; }
+
     bool HasNaNs() const {
         return Ray::HasNaNs() ||
                (hasDifferentials &&
                 (rxOrigin.HasNaNs() || ryOrigin.HasNaNs() ||
                  rxDirection.HasNaNs() || ryDirection.HasNaNs()));
     }
+
+    // 通过估计样本距离 $\mathrm{s}$ 对辅助光线进行(更大幅度的)偏移, 以...
     void ScaleDifferentials(Float s) {
         rxOrigin = o + (rxOrigin - o) * s;
         ryOrigin = o + (ryOrigin - o) * s;
         rxDirection = d + (rxDirection - d) * s;
         ryDirection = d + (ryDirection - d) * s;
     }
+
     friend std::ostream &operator<<(std::ostream &os, const RayDifferential &r) {
         os << "[ " << (Ray &)r << " has differentials: " <<
             (r.hasDifferentials ? "true" : "false") << ", xo = " << r.rxOrigin <<
@@ -973,6 +995,11 @@ class RayDifferential : public Ray {
 
     // RayDifferential Public Data
     bool hasDifferentials;
+    // 主光线有两条辅助光线
+    // These extra rays represent camera rays offset by one sample in the $x$ and $y$ direction from the main ray on the film plane.
+    // 它们是通过胶片平面上主光线的起点, 向右方和上方分别偏移一个像素单位得到的
+    // By determining the area that these three rays project to on an object being shaded, the Texture can estimate an area to average over for proper antialiasing.
+    // 通过确定三条光线所投射到的对象上着色区域的大小, 纹理对象可以估计出用于反走样的区域大小(一般是取这个区域上贴图颜色的均值)
     Point3f rxOrigin, ryOrigin;
     Vector3f rxDirection, ryDirection;
 };
