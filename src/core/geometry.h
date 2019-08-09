@@ -55,6 +55,15 @@ pbrt.h(每个头文件都包含了 pbrt.h, 不妨忽略掉它)
 */
 
 /*
+### Section2.1 Coordinate Systems
+
+$$ \mathbf{v}=s_{1} \mathbf{v}_{1}+\cdots+s_{n} \mathbf{v}_{n} $$
+$$ \mathrm{p}=\mathrm{p}_{0}+s_{1} \mathbf{v}_{1}+\cdots+s_{n} \mathbf{v}_{n} $$
+
+PBRT 使用左手系
+*/
+
+/*
 
 - isNaN
 - Vector2
@@ -65,7 +74,8 @@ pbrt.h(每个头文件都包含了 pbrt.h, 不妨忽略掉它)
 - Bounds2
 - Bounds3
 - Ray
-- Raydiffen
+- RayDifferential
+
 */
 
 // core/geometry.h*
@@ -955,9 +965,8 @@ class Ray {
     const Medium *medium;
 };
 
-// 光线微分
+// 光线微分, 主要用于纹理采样时的反走样(anti-aliasing)操作
 // 需要先理解纹理采样, 走样, 过滤, 反走样等概念, 否则可以先跳过 RayDifferential
-// 主要用于纹理采样时的反走样(anti-aliasing)操作
 // 详细解释可以参考《全局光照技术》6.5.1节和 https://blog.csdn.net/suian0424/article/details/81485563
 class RayDifferential : public Ray {
   public:
