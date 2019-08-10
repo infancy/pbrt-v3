@@ -25,7 +25,7 @@
 - [ ] film
 - [ ] filter
 - [ ] floatfile
-- [ ] geometry （包含了 vector3、point3、normal3、bbox、ray 等基础类）
+- [x] geometry （包含了 vector、point、normal、bounds、ray 等基础几何对象及其相关操作）
 - [ ] imageio
 - [x] integrator （积分器的基类，包含了核心的渲染算法）
 - [ ] interaction （记录了光线与 surface 或 volume 的交点）
@@ -106,6 +106,12 @@
 
 ## Book
 
+### Notation
+
+// TODO: 首页的数学记号
+
+### Preface
+
 - [ ] Preface
 - [ ] Further Reading
 - [ ] Preface to the Online Edition
@@ -125,9 +131,9 @@
 ### 2 Geometry and Transformations
 
 - [x] 2.1 Coordinate Systems
-- [ ] 2.2 Vectors
-- [ ] 2.3 Points
-- [ ] 2.4 Normals
+- [x] 2.2 Vectors
+- [x] 2.3 Points
+- [x] 2.4 Normals
 - [x] 2.5 Rays
 - [x] 2.6 Bounding Boxes
 - [ ] 2.7 Transformations

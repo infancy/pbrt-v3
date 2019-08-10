@@ -52,29 +52,46 @@ pbrt.h(每个头文件都包含了 pbrt.h, 不妨忽略掉它)
        \    /
      transform.h
         ...
+
 */
 
 /*
+
 ### Section2.1 Coordinate Systems
 
 $$ \mathbf{v}=s_{1} \mathbf{v}_{1}+\cdots+s_{n} \mathbf{v}_{n} $$
 $$ \mathrm{p}=\mathrm{p}_{0}+s_{1} \mathbf{v}_{1}+\cdots+s_{n} \mathbf{v}_{n} $$
 
 PBRT 使用左手系
+
 */
 
 /*
 
+Overview:
+
 - isNaN
-- Vector2
-- Vector3
-- Point2
-- Point3
-- Normal3
-- Bounds2
-- Bounds3
-- Ray
-- RayDifferential
+
+- class
+    - Vector2
+    - Vector3
+    - Point2
+    - Point3
+    - Normal3
+    - Bounds2
+    - Bounds3
+    - Ray
+    - RayDifferential
+
+- function
+    - Vector3
+    - Vector2
+    - Point3
+    - Point2
+    - Normal3
+    - Bounds3
+    - Bounds2
+    - others
 
 */
 
@@ -300,6 +317,7 @@ class Vector3 {
     }
     Vector3<T> operator-() const { return Vector3<T>(-x, -y, -z); }
     Float LengthSquared() const { return x * x + y * y + z * z; }
+    // 用于归一化, 计算两点距离等
     Float Length() const { return std::sqrt(LengthSquared()); }
     explicit Vector3(const Normal3<T> &n);
 
@@ -329,6 +347,7 @@ template <typename T>
 class Point2 {
   public:
     // Point2 Public Methods
+    // 允许从 Point3 到 Point2 的显式转换
     explicit Point2(const Point3<T> &p) : x(p.x), y(p.y) { DCHECK(!HasNaNs()); }
     Point2() { x = y = 0; }
     Point2(T xx, T yy) : x(xx), y(yy) { DCHECK(!HasNaNs()); }
@@ -464,6 +483,7 @@ class Point3 {
     // Point3 Public Methods
     Point3() { x = y = z = 0; }
     Point3(T x, T y, T z) : x(x), y(y), z(z) { DCHECK(!HasNaNs()); }
+    //允许从 Point3<U> 到 Point3<T> 的显式转化
     template <typename U>
     explicit Point3(const Point3<U> &p)
         : x((T)p.x), y((T)p.y), z((T)p.z) {
@@ -489,6 +509,7 @@ class Point3 {
         return *this;
     }
 #endif  // !NDEBUG
+    // Point ± Vector, Point - Point 的操作要有趣一点
     Point3<T> operator+(const Vector3<T> &v) const {
         DCHECK(!v.HasNaNs());
         return Point3<T>(x + v.x, y + v.y, z + v.z);
@@ -515,6 +536,7 @@ class Point3 {
         z -= v.z;
         return *this;
     }
+    // 虽然 Point + Point 在数学上是没有意义的, 但计算其权重(weight)之和是有意义的
     Point3<T> &operator+=(const Point3<T> &p) {
         DCHECK(!p.HasNaNs());
         x += p.x;
@@ -596,6 +618,11 @@ typedef Point3<Float> Point3f;
 typedef Point3<int> Point3i;
 
 // Normal Declarations
+// A surface normal (or just normal) is a vector that is perpendicular to a surface at a particular position. 
+// It can be defined as the cross product of any two nonparallel vectors that are tangent to the surface at a point.
+// because normals are defined in terms of their relationship to a particular surface, they behave differently than vectors in some situations, particularly when applying transformations.
+// a normal cannot be added to a point, and one cannot take the cross product of two normals. 
+// Note that, in an unfortunate turn of terminology, normals are not necessarily normalized.
 template <typename T>
 class Normal3 {
   public:
@@ -1014,6 +1041,10 @@ class RayDifferential : public Ray {
 };
 
 // Geometry Inline Functions
+// 都是先高维版本(Vector3, Point3...), 再低维版本(Vector2, Point2...)
+
+// Vector
+
 template <typename T>
 inline Vector3<T>::Vector3(const Point3<T> &p)
     : x(p.x), y(p.y), z(p.z) {
@@ -1029,6 +1060,8 @@ Vector3<T> Abs(const Vector3<T> &v) {
     return Vector3<T>(std::abs(v.x), std::abs(v.y), std::abs(v.z));
 }
 
+// $$ \mathbf{v} \cdot \mathbf{w} = \|\mathbf{v}\| \|\mathbf{w}\| \cos \theta   \tag{2.1} $$
+// It immediately follows from Equation (2.1) that if $v$ and $w$ are unit vectors, their dot product is the cosine of the angle between them.
 template <typename T>
 inline T Dot(const Vector3<T> &v1, const Vector3<T> &v2) {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
@@ -1041,11 +1074,23 @@ inline T AbsDot(const Vector3<T> &v1, const Vector3<T> &v2) {
     return std::abs(Dot(v1, v2));
 }
 
+// the (result of) cross product $\|\mathbf{v} \times \mathbf{w}\|$ is a vector that is perpendicular to both of them. 
+// Given orthogonal vectors $v$ and $w$, then $\|\mathbf{v} \times \mathbf{w}\|$ is defined to be a vector such that $(\mathbf{V}, \mathbf{W}, \mathbf{V} \times \mathbf{W})$ form an orthogonal coordinate system
+
+// $$ \|\mathbf{v} \times \mathbf{w}\| = \|\mathbf{v}\| \|\mathbf{w}\| |\sin \theta| $$
+// An important implication of this is that the cross product of two perpendicular unit vectors is itself a unit vector. 
+// Note also that the result of the cross product is a degenerate vector if $v$ and $w$ are parallel.
+
 template <typename T>
 inline Vector3<T> Cross(const Vector3<T> &v1, const Vector3<T> &v2) {
     DCHECK(!v1.HasNaNs() && !v2.HasNaNs());
+    // Using extra precision for 32-bit floating-point values here protects against error from catastrophic cancellation, a type of floating-point error that can happen when subtracting two values that are very close together.
+    // 在这里使用 double 的拓展精度可以避免一种灾难性的错误, 即在减去两个非常接近的值时可能发生的浮点错误
     double v1x = v1.x, v1y = v1.y, v1z = v1.z;
     double v2x = v2.x, v2y = v2.y, v2z = v2.z;
+    //  ( y1 * z2 - z1 * y2 )
+    // -( x1 * z2 - z1 * x2 ) 
+    //  ( x1 * y2 - y1 * x2 )
     return Vector3<T>((v1y * v2z) - (v1z * v2y), (v1z * v2x) - (v1x * v2z),
                       (v1x * v2y) - (v1y * v2x));
 }
@@ -1072,6 +1117,7 @@ template <typename T>
 inline Vector3<T> Normalize(const Vector3<T> &v) {
     return v / v.Length();
 }
+
 template <typename T>
 T MinComponent(const Vector3<T> &v) {
     return std::min(v.x, std::min(v.y, v.z));
@@ -1082,11 +1128,13 @@ T MaxComponent(const Vector3<T> &v) {
     return std::max(v.x, std::max(v.y, v.z));
 }
 
+// 返回最大维度的索引, 用 0, 1, 2 指代 x, y, z
 template <typename T>
 int MaxDimension(const Vector3<T> &v) {
     return (v.x > v.y) ? ((v.x > v.z) ? 0 : 2) : ((v.y > v.z) ? 1 : 2);
 }
 
+// 逐分量的 min, max 操作
 template <typename T>
 Vector3<T> Min(const Vector3<T> &p1, const Vector3<T> &p2) {
     return Vector3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
@@ -1099,18 +1147,26 @@ Vector3<T> Max(const Vector3<T> &p1, const Vector3<T> &p2) {
                       std::max(p1.z, p2.z));
 }
 
+// poor swizzle(e.g. v.xxy, v.zzz)
+// TODO: fay::vec3().(_x, _y, _x)
 template <typename T>
 Vector3<T> Permute(const Vector3<T> &v, int x, int y, int z) {
     return Vector3<T>(v[x], v[y], v[z]);
 }
 
+// Because the cross product of two vectors is orthogonal to both, we can apply the cross product two times to get a set of three orthogonal vectors for the coordinate system
+// Note that the two vectors generated by this technique are unique only up to a rotation about the given vector.
+// 对于给定的 v1, 只有在限定相对它的旋转角度时, 生成的 v2, v3 才是唯一的
 template <typename T>
 inline void CoordinateSystem(const Vector3<T> &v1, Vector3<T> *v2,
                              Vector3<T> *v3) {
     if (std::abs(v1.x) > std::abs(v1.y))
+        // 该实现假定 v1 已经是归一化的
+        // 通过 Vector3<T>(-v1.z, 0, v1.x) 构造出垂直于 v1 的 v2, 然后对 v2 归一化
         *v2 = Vector3<T>(-v1.z, 0, v1.x) / std::sqrt(v1.x * v1.x + v1.z * v1.z);
     else
         *v2 = Vector3<T>(0, v1.z, -v1.y) / std::sqrt(v1.y * v1.y + v1.z * v1.z);
+
     *v3 = Cross(v1, *v2);
 }
 
@@ -1151,6 +1207,8 @@ Vector2<T> Abs(const Vector2<T> &v) {
     return Vector2<T>(std::abs(v.x), std::abs(v.y));
 }
 
+// Point
+
 template <typename T>
 inline Float Distance(const Point3<T> &p1, const Point3<T> &p2) {
     return (p1 - p2).Length();
@@ -1167,11 +1225,13 @@ inline Point3<T> operator*(U f, const Point3<T> &p) {
     return p * f;
 }
 
+// 计算两点的线性插值
 template <typename T>
 Point3<T> Lerp(Float t, const Point3<T> &p0, const Point3<T> &p1) {
     return (1 - t) * p0 + t * p1;
 }
 
+// 以下五个操作都是逐分量的
 template <typename T>
 Point3<T> Min(const Point3<T> &p1, const Point3<T> &p2) {
     return Point3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y),
@@ -1245,6 +1305,8 @@ Point3<T> Permute(const Point3<T> &p, int x, int y, int z) {
     return Point3<T>(p[x], p[y], p[z]);
 }
 
+// Normal3
+
 template <typename T, typename U>
 inline Normal3<T> operator*(U f, const Normal3<T> &n) {
     return Normal3<T>(f * n.x, f * n.y, f * n.z);
@@ -1297,6 +1359,8 @@ inline T AbsDot(const Normal3<T> &n1, const Normal3<T> &n2) {
     return std::abs(n1.x * n2.x + n1.y * n2.y + n1.z * n2.z);
 }
 
+// Faceforward 执行法线和向量的翻转操作
+// 注意第一个参数是要翻转的参数, 第二个是指向的目标
 template <typename T>
 inline Normal3<T> Faceforward(const Normal3<T> &n, const Vector3<T> &v) {
     return (Dot(n, v) < 0.f) ? -n : n;
@@ -1333,6 +1397,8 @@ inline Point3<T> &Bounds3<T>::operator[](int i) {
     DCHECK(i == 0 || i == 1);
     return (i == 0) ? pMin : pMax;
 }
+
+// Bounds
 
 // 返回两者的并集 b∪p
 template <typename T>
@@ -1387,6 +1453,7 @@ bool InsideExclusive(const Point3<T> &p, const Bounds3<T> &b) {
             p.y < b.pMax.y && p.z >= b.pMin.z && p.z < b.pMax.z);
 }
 
+// 向外扩张(或向内收缩)
 template <typename T, typename U>
 inline Bounds3<T> Expand(const Bounds3<T> &b, U delta) {
     return Bounds3<T>(b.pMin - Vector3<T>(delta, delta, delta),
@@ -1395,8 +1462,11 @@ inline Bounds3<T> Expand(const Bounds3<T> &b, U delta) {
 
 // Minimum squared distance from point to box; returns zero if point is
 // inside.
+// 计算点 p 到包围盒的最小距离的平方
+// 若 p 在包围盒内部, 则返回 0
 template <typename T, typename U>
 inline Float DistanceSquared(const Point3<T> &p, const Bounds3<U> &b) {
+    // TODO: remove fay::max
     Float dx = std::max({Float(0), b.pMin.x - p.x, p.x - b.pMax.x});
     Float dy = std::max({Float(0), b.pMin.y - p.y, p.y - b.pMax.y});
     Float dz = std::max({Float(0), b.pMin.z - p.z, p.z - b.pMax.z});
@@ -1476,6 +1546,8 @@ Bounds2<T> Expand(const Bounds2<T> &b, U delta) {
     return Bounds2<T>(b.pMin - Vector2<T>(delta, delta),
                       b.pMax + Vector2<T>(delta, delta));
 }
+
+// TODO
 
 template <typename T>
 inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
