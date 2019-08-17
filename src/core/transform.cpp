@@ -37,14 +37,36 @@
 
 namespace pbrt {
 
+/*
+
+求解两元一次方程组(2x2 的线性系统)
+
+$$
+\left(\begin{array}{ll} {a_{00}} & {a_{01}} \\ 
+{a_{10}} & {a_{11}}\end{array}\right)
+
+\left(\begin{array}{l} {x_{0}} \\
+{x_{1}}\end{array}\right)=
+
+\left(\begin{array}{l} {b_{0}} \\
+{b_{1}}\end{array}\right)
+$$
+
+*/
 // Matrix4x4 Method Definitions
 bool SolveLinearSystem2x2(const Float A[2][2], const Float B[2], Float *x0,
                           Float *x1) {
     Float det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
-    if (std::abs(det) < 1e-10f) return false;
+
+    if (std::abs(det) < 1e-10f) 
+        return false;
+
     *x0 = (A[1][1] * B[0] - A[0][1] * B[1]) / det;
     *x1 = (A[0][0] * B[1] - A[1][0] * B[0]) / det;
-    if (std::isnan(*x0) || std::isnan(*x1)) return false;
+
+    if (std::isnan(*x0) || std::isnan(*x1)) 
+        return false;
+
     return true;
 }
 
@@ -79,6 +101,7 @@ Matrix4x4 Transpose(const Matrix4x4 &m) {
                      m.m[3][3]);
 }
 
+// The implementation uses a numerically stable Gauss–Jordan elimination routine to compute the inverse.
 Matrix4x4 Inverse(const Matrix4x4 &m) {
     int indxc[4], indxr[4];
     int ipiv[4] = {0, 0, 0, 0};
@@ -139,48 +162,78 @@ Matrix4x4 Inverse(const Matrix4x4 &m) {
 void Transform::Print(FILE *f) const { m.Print(f); }
 
 Transform Translate(const Vector3f &delta) {
-    Matrix4x4 m(1, 0, 0, delta.x, 0, 1, 0, delta.y, 0, 0, 1, delta.z, 0, 0, 0,
-                1);
-    Matrix4x4 minv(1, 0, 0, -delta.x, 0, 1, 0, -delta.y, 0, 0, 1, -delta.z, 0,
-                   0, 0, 1);
+    Matrix4x4 m(
+        1, 0, 0, delta.x, 
+        0, 1, 0, delta.y, 
+        0, 0, 1, delta.z, 
+        0, 0, 0,       1);
+    Matrix4x4 minv(
+        1, 0, 0, -delta.x, 
+        0, 1, 0, -delta.y, 
+        0, 0, 1, -delta.z, 
+        0, 0, 0,        1);
     return Transform(m, minv);
 }
 
 Transform Scale(Float x, Float y, Float z) {
-    Matrix4x4 m(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
-    Matrix4x4 minv(1 / x, 0, 0, 0, 0, 1 / y, 0, 0, 0, 0, 1 / z, 0, 0, 0, 0, 1);
+    Matrix4x4 m(
+        x, 0, 0, 0, 
+        0, y, 0, 0, 
+        0, 0, z, 0, 
+        0, 0, 0, 1);
+    Matrix4x4 minv(
+        1 / x,     0,     0, 0, 
+            0, 1 / y,     0, 0, 
+            0,     0, 1 / z, 0, 
+            0,     0,     0, 1);
     return Transform(m, minv);
 }
 
+// For a left-handed coordinate system, the matrix for clockwise rotation around the $x$ axis is:
+// 左手系, 面朝 $x$ 轴的顺时针旋转(Figure2.11 的 $z$ 轴往右边画会不会更好理解点)
+// It maps the $y$ axis $(0, 1, 0)$ to $(0, \cos \theta, \sin \theta)$ and the $z$ axis $(0, 0, 1)$ to $(0, -\sin \theta, \cos \theta)$.
+// 记住绕 $x$ 轴对 $y, z$ 轴的变换, 就很容易得出绕 $y, z$ 轴旋转的情况了
 Transform RotateX(Float theta) {
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
-    Matrix4x4 m(1, 0, 0, 0, 0, cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0,
-                0, 0, 0, 1);
+    Matrix4x4 m(
+        1,        0,         0, 0, 
+        0, cosTheta, -sinTheta, 0, 
+        0, sinTheta,  cosTheta, 0,
+        0,        0,         0, 1);
     return Transform(m, Transpose(m));
 }
 
 Transform RotateY(Float theta) {
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
-    Matrix4x4 m(cosTheta, 0, sinTheta, 0, 0, 1, 0, 0, -sinTheta, 0, cosTheta, 0,
-                0, 0, 0, 1);
+    Matrix4x4 m(
+         cosTheta, 0, sinTheta, 0, 
+                0, 1,        0, 0, 
+        -sinTheta, 0, cosTheta, 0,
+                0, 0,        0, 1);
     return Transform(m, Transpose(m));
 }
 
 Transform RotateZ(Float theta) {
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
-    Matrix4x4 m(cosTheta, -sinTheta, 0, 0, sinTheta, cosTheta, 0, 0, 0, 0, 1, 0,
-                0, 0, 0, 1);
+    Matrix4x4 m(
+        cosTheta, -sinTheta, 0, 0, 
+        sinTheta,  cosTheta, 0, 0, 
+               0,         0, 1, 0,
+               0,         0, 0, 1);
     return Transform(m, Transpose(m));
 }
 
 Transform Rotate(Float theta, const Vector3f &axis) {
+
     Vector3f a = Normalize(axis);
     Float sinTheta = std::sin(Radians(theta));
     Float cosTheta = std::cos(Radians(theta));
+
     Matrix4x4 m;
+
     // Compute rotation of first basis vector
     m.m[0][0] = a.x * a.x + (1 - a.x * a.x) * cosTheta;
     m.m[0][1] = a.x * a.y * (1 - cosTheta) - a.z * sinTheta;
@@ -197,9 +250,14 @@ Transform Rotate(Float theta, const Vector3f &axis) {
     m.m[2][1] = a.y * a.z * (1 - cosTheta) + a.x * sinTheta;
     m.m[2][2] = a.z * a.z + (1 - a.z * a.z) * cosTheta;
     m.m[2][3] = 0;
+
     return Transform(m, Transpose(m));
 }
 
+// The caller specifies the desired position of the camera, a point the camera is looking at, and an “up” vector that orients the camera along the viewing direction implied by the first two parameters. All of these values are given in world space coordinates.
+// 给定相机的世界坐标 pos, 关注点 look, 正上方 up, 生成将相机空间内的几何体, 变换到世界空间的矩阵 cameraToWorld 
+// In order to find the entries of the look-at transformation matrix, we use principles described earlier in this section: 
+// the columns of a transformation matrix give the effect of the transformation on the basis of a coordinate system.
 Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
     Matrix4x4 cameraToWorld;
     // Initialize fourth column of viewing matrix
@@ -209,6 +267,8 @@ Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
     cameraToWorld.m[3][3] = 1;
 
     // Initialize first three columns of viewing matrix
+
+    // 如果 up 和 dir 的朝向相同, 则这样的变换矩阵是病态的
     Vector3f dir = Normalize(look - pos);
     if (Cross(Normalize(up), dir).Length() == 0) {
         Error(
@@ -218,23 +278,29 @@ Transform LookAt(const Point3f &pos, const Point3f &look, const Vector3f &up) {
             up.x, up.y, up.z, dir.x, dir.y, dir.z);
         return Transform();
     }
+
     Vector3f right = Normalize(Cross(Normalize(up), dir));
     Vector3f newUp = Cross(dir, right);
+
     cameraToWorld.m[0][0] = right.x;
     cameraToWorld.m[1][0] = right.y;
     cameraToWorld.m[2][0] = right.z;
     cameraToWorld.m[3][0] = 0.;
+
     cameraToWorld.m[0][1] = newUp.x;
     cameraToWorld.m[1][1] = newUp.y;
     cameraToWorld.m[2][1] = newUp.z;
     cameraToWorld.m[3][1] = 0.;
+
     cameraToWorld.m[0][2] = dir.x;
     cameraToWorld.m[1][2] = dir.y;
     cameraToWorld.m[2][2] = dir.z;
     cameraToWorld.m[3][2] = 0.;
+
     return Transform(Inverse(cameraToWorld), cameraToWorld);
 }
 
+// The easiest way to transform an axis-aligned bounding box is to transform all eight of its corner vertices and then compute a new bounding box that encompasses those points
 Bounds3f Transform::operator()(const Bounds3f &b) const {
     const Transform &M = *this;
     Bounds3f ret(M(Point3f(b.pMin.x, b.pMin.y, b.pMin.z)));
@@ -248,11 +314,18 @@ Bounds3f Transform::operator()(const Bounds3f &b) const {
     return ret;
 }
 
+// 变换的级联, 即由一系列单独变换产生的聚合变换, 这将展现用矩阵表示变换的真正价值
+// $\mathbf{A}(\mathbf{B}(\mathbf{C}(\mathrm{p})))=\mathbf{T}(\mathrm{p})$ => Transform T = A * B * C;
 Transform Transform::operator*(const Transform &t2) const {
+// The inverse of the resulting transformation is equal to the product of t2. mInv * mInv. 
+// This is a result of the matrix identity: $$(\mathbf{A B}) ^ { -1 } =\mathbf{B} ^ { -1 } \mathbf{A} ^ { -1 } $$
     return Transform(Matrix4x4::Mul(m, t2.m), Matrix4x4::Mul(t2.mInv, mInv));
 }
 
+// 某些类型的变换会将左手系变成右手系，反之亦然。
+// 一些例程需要知道源坐标系的手性是否与目标坐标系的手性不同。尤其是那些想要确保表面法线总是指向"外部"的例程, 可能需要在变换后翻转法线的方向。
 bool Transform::SwapsHandedness() const {
+    // 当矩阵左上3x3子矩阵的行列式为负时, 手性会发生变化
     Float det = m.m[0][0] * (m.m[1][1] * m.m[2][2] - m.m[1][2] * m.m[2][1]) -
                 m.m[0][1] * (m.m[1][0] * m.m[2][2] - m.m[1][2] * m.m[2][0]) +
                 m.m[0][2] * (m.m[1][0] * m.m[2][1] - m.m[1][1] * m.m[2][0]);

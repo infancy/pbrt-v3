@@ -30,6 +30,8 @@
 
  */
 
+// 这个文件更确切的说, 应该叫 log.cpp ?
+
 // core/error.cpp*
 #include "error.h"
 #include "stringprint.h"

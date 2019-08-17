@@ -136,8 +136,8 @@
 - [x] 2.4 Normals
 - [x] 2.5 Rays
 - [x] 2.6 Bounding Boxes
-- [ ] 2.7 Transformations
-- [ ] 2.8 Applying Transformations
+- [x] 2.7 Transformations
+- [x] 2.8 Applying Transformations
 - [ ] 2.9 Animating Transformations
 - [ ] 2.10 Interactions
 - [ ] Further Reading
@@ -307,7 +307,7 @@
 - [ ] A.2 Image File Input and Output
 - [ ] A.3 Communicating with the User
 - [ ] A.4 Memory Management
-- [ ] A.5 Mathematical Routines
+- [x] A.5 Mathematical Routines
 - [ ] A.6 Parallelism
 - [ ] A.7 Statistics
 - [ ] Further Reading

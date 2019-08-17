@@ -420,11 +420,17 @@ int FindInterval(int size, const Predicate &pred) {
     }
     return Clamp(first - 1, 0, size - 2);
 }
-// 插值
+
+// 线性插值
 inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
+// 求解一元二次方程 $ a t^{2} + b t + c=0 $
+// 返回值表示是否有解
+// t0 和 t1 传递较小和较大的结果
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
     // Find quadratic discriminant
+    
+    // 总是使用双精度, 以返回浮点错误更小的值
     double discrim = (double)b * (double)b - 4 * (double)a * (double)c;
     if (discrim < 0) return false;
     double rootDiscrim = std::sqrt(discrim);
@@ -435,9 +441,13 @@ inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {
         q = -.5 * (b - rootDiscrim);
     else
         q = -.5 * (b + rootDiscrim);
+
+    // The usual version of the quadratic equation can give poor numerical precision when $b \approx \pm \sqrt{b^{2}-4 a c}$ due to cancellation error. 
+    // It can be rewritten algebraically to a more stable form:
     *t0 = q / a;
     *t1 = c / q;
     if (*t0 > *t1) std::swap(*t0, *t1);
+
     return true;
 }
 

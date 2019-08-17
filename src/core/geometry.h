@@ -57,7 +57,7 @@ pbrt.h(每个头文件都包含了 pbrt.h, 不妨忽略掉它)
 
 /*
 
-### Section2.1 Coordinate Systems
+## Section2.1 Coordinate Systems
 
 $$ \mathbf{v}=s_{1} \mathbf{v}_{1}+\cdots+s_{n} \mathbf{v}_{n} $$
 $$ \mathrm{p}=\mathrm{p}_{0}+s_{1} \mathbf{v}_{1}+\cdots+s_{n} \mathbf{v}_{n} $$
@@ -1462,7 +1462,7 @@ inline Bounds3<T> Expand(const Bounds3<T> &b, U delta) {
 
 // Minimum squared distance from point to box; returns zero if point is
 // inside.
-// 计算点 p 到包围盒的最小距离的平方
+// 计算点 p 到包围盒的最小距离的平方值
 // 若 p 在包围盒内部, 则返回 0
 template <typename T, typename U>
 inline Float DistanceSquared(const Point3<T> &p, const Bounds3<U> &b) {
