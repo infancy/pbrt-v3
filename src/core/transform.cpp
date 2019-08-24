@@ -335,35 +335,41 @@ bool Transform::SwapsHandedness() const {
 SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
     SurfaceInteraction ret;
     // Transform _p_ and _pError_ in _SurfaceInteraction_
+    // p 和 pError 的转换要特殊处理
     ret.p = (*this)(si.p, si.pError, &ret.pError);
 
     // Transform remaining members of _SurfaceInteraction_
     const Transform &t = *this;
+
     ret.n = Normalize(t(si.n));
     ret.wo = Normalize(t(si.wo));
     ret.time = si.time;
     ret.mediumInterface = si.mediumInterface;
+
     ret.uv = si.uv;
     ret.shape = si.shape;
     ret.dpdu = t(si.dpdu);
     ret.dpdv = t(si.dpdv);
     ret.dndu = t(si.dndu);
     ret.dndv = t(si.dndv);
+
     ret.shading.n = Normalize(t(si.shading.n));
     ret.shading.dpdu = t(si.shading.dpdu);
     ret.shading.dpdv = t(si.shading.dpdv);
     ret.shading.dndu = t(si.shading.dndu);
     ret.shading.dndv = t(si.shading.dndv);
+
     ret.dudx = si.dudx;
     ret.dvdx = si.dvdx;
     ret.dudy = si.dudy;
     ret.dvdy = si.dvdy;
     ret.dpdx = t(si.dpdx);
     ret.dpdy = t(si.dpdy);
+
     ret.bsdf = si.bsdf;
     ret.bssrdf = si.bssrdf;
     ret.primitive = si.primitive;
-    //    ret.n = Faceforward(ret.n, ret.shading.n);
+    //      ret.n = Faceforward(ret.n, ret.shading.n);
     ret.shading.n = Faceforward(ret.shading.n, ret.n);
     ret.faceIndex = si.faceIndex;
     return ret;
@@ -375,8 +381,11 @@ Transform Orthographic(Float zNear, Float zFar) {
 
 Transform Perspective(Float fov, Float n, Float f) {
     // Perform projective divide for perspective projection
-    Matrix4x4 persp(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, f / (f - n), -f * n / (f - n),
-                    0, 0, 1, 0);
+    Matrix4x4 persp(
+        1, 0, 0, 0, 
+        0, 1, 0, 0, 
+        0, 0, f / (f - n), -f * n / (f - n),
+        0, 0, 1, 0);
 
     // Scale canonical perspective view to specified field of view
     Float invTanAng = 1 / std::tan(Radians(fov) / 2);
@@ -474,14 +483,24 @@ AnimatedTransform::AnimatedTransform(const Transform *startTransform,
       endTransform(endTransform),
       startTime(startTime),
       endTime(endTime),
-      actuallyAnimated(*startTransform != *endTransform) {
+      actuallyAnimated(*startTransform != *endTransform) 
+{
     if (!actuallyAnimated)
         return;
+
     Decompose(startTransform->m, &T[0], &R[0], &S[0]);
     Decompose(endTransform->m, &T[1], &R[1], &S[1]);
+
+    // For every rotation matrix, there are two unit quaternions that correspond to the matrix that only differ in sign.
+    // If the dot product of the two rotations that we have extracted is negative, then a slerp between them won’t take the shortest path between the two corresponding rotations. 
+    // Negating one of them (here the second was chosen arbitrarily) causes the shorter path to be taken instead.
     // Flip _R[1]_ if needed to select shortest path
-    if (Dot(R[0], R[1]) < 0) R[1] = -R[1];
+    if (Dot(R[0], R[1]) < 0) 
+        R[1] = -R[1];
+
     hasRotation = Dot(R[0], R[1]) < 0.9995f;
+
+    // 将近七百行机器生成代码, 用于 BoundPointMotion 函数, 计算包围盒的 motion derivative function 的系数 c1[3], c2[3], c3[3], c4[3], c5[3]
     // Compute terms of motion derivative function
     if (hasRotation) {
         Float cosTheta = Dot(R[0], R[1]);
@@ -1182,10 +1201,18 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
 
     // Compute new transformation matrix _M_ without translation
     Matrix4x4 M = m;
-    for (int i = 0; i < 3; ++i) M.m[i][3] = M.m[3][i] = 0.f;
+    for (int i = 0; i < 3; ++i) 
+        M.m[i][3] = M.m[3][i] = 0.f;
     M.m[3][3] = 1.f;
 
+    // Next we'd like to extract the pure rotation component of M. We'll use a technique called polar decomposition to do this. 
+    // It can be shown that the polar decomposition of a matrix $\mathrm{M}$ into rotation $\mathrm{R}$ and scale $\mathrm{S}$ can be computed by successively averaging $\mathrm{M}$ with its inverse transpose
+    // https://ccjou.wordpress.com/2009/09/09/%E6%A5%B5%E5%88%86%E8%A7%A3/
+    // https://zhuanlan.zhihu.com/p/42235452
+    // https://www.qiujiawei.com/linear-algebra-8/
+
     // Extract rotation _R_ from transformation matrix
+    // 使用极化分解从矩阵 M 中提取旋转矩阵 R, 后者是一个正交矩阵
     Float norm;
     int count = 0;
     Matrix4x4 R = M;
@@ -1193,6 +1220,8 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
         // Compute next matrix _Rnext_ in series
         Matrix4x4 Rnext;
         Matrix4x4 Rit = Inverse(Transpose(R));
+
+        // Rnext = 0.5f * (R + Rit);
         for (int i = 0; i < 4; ++i)
             for (int j = 0; j < 4; ++j)
                 Rnext.m[i][j] = 0.5f * (R.m[i][j] + Rit.m[i][j]);
@@ -1206,11 +1235,14 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
             norm = std::max(norm, n);
         }
         R = Rnext;
-    } while (++count < 100 && norm > .0001);
+    } 
+    // To compute this series, we iteratively apply Equation (2.10) until either the difference between successive terms is small **or** a fixed number of iterations have been performed. In practice, this series generally converges quickly.
+    while (++count < 100 && norm > .0001);
     // XXX TODO FIXME deal with flip...
     *Rquat = Quaternion(R);
 
     // Compute scale _S_ using rotation and original matrix
+    // $\mathbf{M}=\mathbf{R} \mathbf{S} \Leftrightarrow \mathbf{S}=\mathbf{R}^{-1} \mathbf{M}$
     *S = Matrix4x4::Mul(Inverse(R), M);
 }
 
@@ -1224,7 +1256,9 @@ void AnimatedTransform::Interpolate(Float time, Transform *t) const {
         *t = *endTransform;
         return;
     }
+
     Float dt = (time - startTime) / (endTime - startTime);
+
     // Interpolate translation at _dt_
     Vector3f trans = (1 - dt) * T[0] + dt * T[1];
 
@@ -1289,18 +1323,24 @@ Bounds3f AnimatedTransform::MotionBounds(const Bounds3f &b) const {
     if (!actuallyAnimated) return (*startTransform)(b);
     if (hasRotation == false)
         return Union((*startTransform)(b), (*endTransform)(b));
+
     // Return motion bounds accounting for animated rotation
     Bounds3f bounds;
+
     for (int corner = 0; corner < 8; ++corner)
         bounds = Union(bounds, BoundPointMotion(b.Corner(corner)));
+
     return bounds;
 }
 
 Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
     if (!actuallyAnimated) return Bounds3f((*startTransform)(p));
+
     Bounds3f bounds((*startTransform)(p), (*endTransform)(p));
+
     Float cosTheta = Dot(R[0], R[1]);
     Float theta = std::acos(Clamp(cosTheta, -1, 1));
+
     for (int c = 0; c < 3; ++c) {
         // Find any motion derivative zeros for the component _c_
         Float zeros[8];
@@ -1316,6 +1356,7 @@ Bounds3f AnimatedTransform::BoundPointMotion(const Point3f &p) const {
             bounds = Union(bounds, pz);
         }
     }
+
     return bounds;
 }
 

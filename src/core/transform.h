@@ -540,23 +540,50 @@ inline Ray Transform::operator()(const Ray &r, const Vector3f &oErrorIn,
     return Ray(o, d, tMax, r.time, r.medium);
 }
 
+/*
+
+## Section2.9 Animating Transformations
+
+The approach used for transformation interpolation in pbrt is based on matrix decomposition - given an arbitrary transformation matrix $\mathbf{M}$ , we decompose it into a concatenation of scale (S), rotation (R), and translation (T) transformations, $$ \mathrm{M}=\mathrm{SRT} $$ where each of those
+components is independently interpolated and then the composite interpolated matrix is found by multiplying the three interpolated matrices together.
+
+### 2.9.3 AnimatedTransform Implementation
+
+### 2.9.4 Bounding Moving Bounding Boxes
+
+TODO: 暂时跳过, 以后再看
+
+*/
+
 // AnimatedTransform Declarations
 class AnimatedTransform {
   public:
     // AnimatedTransform Public Methods
     AnimatedTransform(const Transform *startTransform, Float startTime,
                       const Transform *endTransform, Float endTime);
+
+    // decomposes the given composite transformation matrices into scaling, rotation, and translation components
     static void Decompose(const Matrix4x4 &m, Vector3f *T, Quaternion *R,
                           Matrix4x4 *S);
+
+    // computes the interpolated transformation matrix at a given time
     void Interpolate(Float time, Transform *t) const;
+
+    // Ray 自带 time 参数
     Ray operator()(const Ray &r) const;
     RayDifferential operator()(const RayDifferential &r) const;
     Point3f operator()(Float time, const Point3f &p) const;
     Vector3f operator()(Float time, const Vector3f &v) const;
+
     bool HasScale() const {
         return startTransform->HasScale() || endTransform->HasScale();
     }
+
+    // 返回整个动画过程中, 包围盒移动所"触及"过的空间(包围盒的足迹)
     Bounds3f MotionBounds(const Bounds3f &b) const;
+
+  private:
+    // 计算包围盒一点在动画中所触及过的空间
     Bounds3f BoundPointMotion(const Point3f &p) const;
 
   private:
@@ -564,10 +591,14 @@ class AnimatedTransform {
     const Transform *startTransform, *endTransform;
     const Float startTime, endTime;
     const bool actuallyAnimated;
+
     Vector3f T[2];
     Quaternion R[2];
     Matrix4x4 S[2];
+
     bool hasRotation;
+
+    // 用于 BoundPointMotion 函数的计算
     struct DerivativeTerm {
         DerivativeTerm() {}
         DerivativeTerm(Float c, Float x, Float y, Float z)

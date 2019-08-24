@@ -46,8 +46,7 @@ SurfaceInteraction::SurfaceInteraction(
     const Vector3f &wo, const Vector3f &dpdu, const Vector3f &dpdv,
     const Normal3f &dndu, const Normal3f &dndv, Float time, const Shape *shape,
     int faceIndex)
-    : Interaction(p, Normal3f(Normalize(Cross(dpdu, dpdv))), pError, wo, time,
-                  nullptr),
+    : Interaction(p, Normal3f(Normalize(Cross(dpdu, dpdv))), pError, wo, time, nullptr),
       uv(uv),
       dpdu(dpdu),
       dpdv(dpdv),
@@ -62,7 +61,9 @@ SurfaceInteraction::SurfaceInteraction(
     shading.dndu = dndu;
     shading.dndv = dndv;
 
-    // Adjust normal based on orientation and handedness
+    // The surface normal has special meaning to pbrt, which assumes that, for closed shapes, the normal is oriented such that it points to the outside of the shape. 
+    // For geometry used as an area light source, light is emitted from only the side of the surface that the normal points toward; the other side is black.
+    // Adjust normal based on orientation and handedness. The normal’s direction is swapped if one but not both of these two conditions is met; if both were met, their effect would cancel out. The exclusive-OR operation tests this condition.
     if (shape &&
         (shape->reverseOrientation ^ shape->transformSwapsHandedness)) {
         n *= -1;
@@ -77,8 +78,12 @@ void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
                                             bool orientationIsAuthoritative) {
     // Compute _shading.n_ for _SurfaceInteraction_
     shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
+
     if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))
         shading.n = -shading.n;
+
+    // n 和 shading.n 应总是位于同一半球上
+    // 根据用户传入参数来决定是翻转 n 还是 shading.n
     if (orientationIsAuthoritative)
         n = Faceforward(n, shading.n);
     else
@@ -96,6 +101,8 @@ void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,
                                                     bool allowMultipleLobes,
                                                     TransportMode mode) {
     ComputeDifferentials(ray);
+    // 由交点所处的图元来计算交点上的散射方程
+    // 而图元则根据自身的材质特征来计算
     primitive->ComputeScatteringFunctions(this, arena, mode,
                                           allowMultipleLobes);
 }

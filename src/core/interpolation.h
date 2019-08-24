@@ -44,6 +44,7 @@
 namespace pbrt {
 
 // Spline Interpolation Declarations
+// ÑùÌõ²åÖµ
 Float CatmullRom(int size, const Float *nodes, const Float *values, Float x);
 bool CatmullRomWeights(int size, const Float *nodes, Float x, int *offset,
                        Float *weights);

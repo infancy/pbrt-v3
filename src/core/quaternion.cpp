@@ -37,6 +37,15 @@
 
 namespace pbrt {
 
+/*
+
+四元数旋转, 插值的具体推导过程:
+https://github.com/Krasjet/quaternion
+https://www.qiujiawei.com/understanding-quaternions/
+https://www.zhihu.com/question/23005815
+
+*/
+
 // Quaternion Method Definitions
 Transform Quaternion::ToTransform() const {
     Float xx = v.x * v.x, yy = v.y * v.y, zz = v.z * v.z;
@@ -93,12 +102,16 @@ Quaternion::Quaternion(const Transform &t) {
 
 Quaternion Slerp(Float t, const Quaternion &q1, const Quaternion &q2) {
     Float cosTheta = Dot(q1, q2);
+    // 如果两者接近平行, 则直接使用线性插值以消除数值不稳定性
     if (cosTheta > .9995f)
         return Normalize((1 - t) * q1 + t * q2);
     else {
         Float theta = std::acos(Clamp(cosTheta, -1, 1));
         Float thetap = theta * t;
+
+        // 计算正交于 q1 的 $\mathbf{q}_{\perp}$
         Quaternion qperp = Normalize(q2 - q1 * cosTheta);
+
         return q1 * std::cos(thetap) + qperp * std::sin(thetap);
     }
 }

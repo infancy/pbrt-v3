@@ -1,37 +1,41 @@
 # 进度
 
+## Index
+
+现有大局观, 了解整体流程, 后续才不会陷入到细节中
+
 ## Code
 
-### src/accelerators
+### src/accelerators (空间加速结构)
 
-- [ ] bvh （Bounding Volume Hierarchy，层次包围盒）
-- [ ] kdtreeaccel (kdtree)
+- [ ] bvh (Bounding Volume Hierarchy，基于对象划分的层次包围盒)
+- [ ] kdtreeaccel (基于空间划分的 kdtree)
 
 ### src/camera
 
 - [ ] environment
-- [ ] orthographic	（正视投影相机）
-- [ ] perspective （透视投影相机）
+- [ ] orthographic	(正视投影相机)
+- [ ] perspective (透视投影相机)
 - [ ] realistic
 
 ### src/core
 
-- [ ] api （pbrt 对外提供的 api）
+- [ ] api (pbrt 对外提供的 api)
 - [ ] bssrdf
 - [ ] camera
 - [ ] efloat
 - [ ] error
 - [ ] fileuti
-- [ ] film
-- [ ] filter
+- [ ] film (camera 内的胶片平面)
+- [ ] filter (film 上用采样点进行图像重建时用的过滤器)
 - [ ] floatfile
-- [x] geometry （包含了 vector、point、normal、bounds、ray 等基础几何对象及其相关操作）
+- [x] geometry (包含了 vector、point、normal、bounds、ray 等基础几何对象及其相关操作)
 - [ ] imageio
-- [x] integrator （积分器的基类，包含了核心的渲染算法）
-- [ ] interaction （记录了光线与 surface 或 volume 的交点）
+- [x] integrator (积分器的基类，包含了核心的渲染算法)
+- [ ] interaction (记录了光线与 surface 或 volume 的交点)
 - [ ] interpolation
 - [ ] light
-- [ ] lightdistrib （光源功率的分布）
+- [ ] lightdistrib (光源功率的分布)
 - [ ] lowdiscrepancy
 - [ ] material
 - [ ] medium
@@ -41,40 +45,40 @@
 - [ ] parallel
 - [ ] paramset
 - [ ] parser
-- [ ] pbrt.h （公共头文件）
+- [ ] pbrt.h (公共头文件)
 - [ ] pbrtlex.cpp
 - [ ] pbrtlex.ll
 - [ ] pbrtparse
 - [ ] pbrtparse.output
 - [ ] pbrtparse.y
 - [ ] primitive
-- [ ] progressreporter （用于报告进度）
+- [ ] progressreporter (用于报告进度)
 - [ ] quaternion
-- [ ] reflection （brdf）
-- [ ] rng.h （Random Number Generator，随机数生成器）
+- [ ] reflection (brdf)
+- [ ] rng.h (Random Number Generator，随机数生成器)
 - [x] sampler 
-- [ ] sampling （独立的采样算法）
+- [ ] sampling (独立的采样算法)
 - [ ] scene
 - [ ] shape
 - [ ] sobolmatrices
-- [ ] spectrum （光谱类，可简单的视为一个 RGBColor）
+- [ ] spectrum (光谱类，可简单的视为一个 RGBColor)
 - [ ] stats
 - [ ] stringprint
 - [ ] texture
-- [ ] transform （矩阵类）
+- [ ] transform (矩阵类)
 
 ### src/filter
 
 ### src/integrators
 
-- [ ] ao      （Ambient Occlusion，环境光遮蔽）
-- [ ] bdpt    （Bidirectional Path Tracing，双向路径跟踪）
-- [x] dl      （directlighting，直接光照）
-- [ ] mlt     （Metropolis Light Transport，梅特波利斯光线传输）
-- [x] path    （Path Tracing，路径跟踪）
-- [ ] sppm	  （Stochastic Progressive Photon Mapping，随机渐进光子映射）
-- [ ] volpath （Volume Path Tracing，体积路径跟踪）
-- [ ] whitted （Recursive Ray Tracing，递归光线跟踪）
+- [ ] ao      (Ambient Occlusion，环境光遮蔽)
+- [ ] bdpt    (Bidirectional Path Tracing，双向路径跟踪)
+- [x] dl      (directlighting，直接光照)
+- [ ] mlt     (Metropolis Light Transport，梅特波利斯光线传输)
+- [x] path    (Path Tracing，路径跟踪)
+- [ ] sppm	  (Stochastic Progressive Photon Mapping，随机渐进光子映射)
+- [ ] volpath (Volume Path Tracing，体积路径跟踪)
+- [ ] whitted (Recursive Ray Tracing，递归光线跟踪)
 
 ### src/materials
 
@@ -138,9 +142,9 @@
 - [x] 2.6 Bounding Boxes
 - [x] 2.7 Transformations
 - [x] 2.8 Applying Transformations
-- [ ] 2.9 Animating Transformations
-- [ ] 2.10 Interactions
-- [ ] Further Reading
+- [x] 2.9 Animating Transformations
+- [x] 2.10 Interactions
+- [x] Further Reading
 - [ ] Exercises
 
 ### 3 Shapes

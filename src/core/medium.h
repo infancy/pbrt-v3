@@ -47,6 +47,7 @@
 namespace pbrt {
 
 // Media Declarations
+// ½×¶Î, Öð²½
 class PhaseFunction {
   public:
     // PhaseFunction Interface
@@ -105,7 +106,9 @@ struct MediumInterface {
     MediumInterface(const Medium *medium) : inside(medium), outside(medium) {}
     MediumInterface(const Medium *inside, const Medium *outside)
         : inside(inside), outside(outside) {}
+
     bool IsMediumTransition() const { return inside != outside; }
+
     const Medium *inside, *outside;
 };
 
