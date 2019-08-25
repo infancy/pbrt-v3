@@ -149,7 +149,7 @@
 
 ### 3 Shapes
 
-- [ ] 3.1 Basic Shape Interface
+- [x] 3.1 Basic Shape Interface
 - [ ] 3.2 Spheres
 - [ ] 3.3 Cylinders
 - [ ] 3.4 Disks

@@ -38,6 +38,19 @@
 #ifndef PBRT_CORE_SHAPE_H
 #define PBRT_CORE_SHAPE_H
 
+/*
+pbrt hides details about primitives behind a two-level abstraction. 
+The Shape class provides access to the raw geometric properties of the primitive, such as its surface area and bounding box, and provides a ray intersection routine. 
+The Primitive class encapsulates additional nongeometric information about the primitive, such as its material properties. The rest of the renderer then deals only with the abstract Primitive interface. This chapter will focus on the geometry-only Shape class; the Primitive interface is a key topic of Chapter 4.
+各种 Shape 只表达了场景中对象的几何结构, GeometricPrimitive 则包含了 Shape, Material, AreaLight
+
+All shapes are defined in object coordinate space; for example, all spheres are defined in a coordinate system where the center of the sphere is at the origin.
+所有 shape 都被定义在对象坐标空间中(因此 sphere 对象无需定义球心的位置, 球心总是在对象坐标中的原点位置)
+
+
+
+*/
+
 // core/shape.h*
 #include "pbrt.h"
 #include "geometry.h"
@@ -54,15 +67,23 @@ class Shape {
     Shape(const Transform *ObjectToWorld, const Transform *WorldToObject,
           bool reverseOrientation);
     virtual ~Shape();
+
+	// 分别返回对象坐标系和世界坐标系下的包围盒
+	// 使用对象的包围盒进行提前相交测试, 可以节省相交计算的开销
     virtual Bounds3f ObjectBound() const = 0;
     virtual Bounds3f WorldBound() const;
+
+	// 判断 ray 是否与 shape 相交, 若相交则继续计算交点上的微分属性
+	// 细节见 Section 3.1.3 Intersection Tests
     virtual bool Intersect(const Ray &ray, Float *tHit,
                            SurfaceInteraction *isect,
                            bool testAlphaTexture = true) const = 0;
+	// 只判断 ray 是否与 shape 相交
     virtual bool IntersectP(const Ray &ray,
                             bool testAlphaTexture = true) const {
         return Intersect(ray, nullptr, nullptr, testAlphaTexture);
     }
+
     virtual Float Area() const = 0;
     // Sample a point on the surface of the shape and return the PDF with
     // respect to area on the surface.
@@ -83,9 +104,17 @@ class Shape {
     virtual Float SolidAngle(const Point3f &p, int nSamples = 512) const;
 
     // Shape Public Data
+	// 在 ray-intersection test 时需要将 ray 变换到对象坐标系中, 计算...时需要将 shape 变换到世界坐标系中, shape 同时包含了这两个变换
+	// because multiple shapes in the scene will frequently have the same transformation applied to them, pbrt keeps a pool of Transforms so that they can be reused and passes pointers to the shared Transforms to the shapes.
+	// As such, the Shape destructor does not delete its Transform pointers, leaving the Transform management code to manage that memory instead.
     const Transform *ObjectToWorld, *WorldToObject;
-    const bool reverseOrientation;
-    const bool transformSwapsHandedness;
+
+	// Shapes also take a Boolean parameter, reverseOrientation, that indicates whether their surface normal directions should be reversed from the default. 
+	// This capability is useful because the orientation of the surface normal is used to determine which side of a shape is “outside.”
+	// For example, shapes that emit illumination are emissive only on the side the surface normal lies on. 
+	// The value of this parameter is managed via the ReverseOrientation statement in pbrt input files.
+    const bool reverseOrientation; // 是否翻转法线朝向, 或者说定义 shape 的外部
+    const bool transformSwapsHandedness; // ObjectToWorld 变换是否改变了坐标系的手性(左手 -> 右手)
 };
 
 }  // namespace pbrt

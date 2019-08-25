@@ -38,6 +38,8 @@
 #ifndef PBRT_CORE_STATS_H
 #define PBRT_CORE_STATS_H
 
+// 性能统计(performance statistics)
+
 // core/stats.h*
 #include "pbrt.h"
 #include <map>

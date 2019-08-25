@@ -1547,14 +1547,38 @@ Bounds2<T> Expand(const Bounds2<T> &b, U delta) {
                       b.pMax + Vector2<T>(delta, delta));
 }
 
-// TODO
+/*
 
+## Section 3.1.2 Ray–Bounds Intersections
+https://zhuanlan.zhihu.com/p/42397911
+
+把轴对齐包围盒看作是三对分别和 xyz 轴垂直的平面, 依次计算 ray 到每对平面的距离, 得到三组区间 : 
+$\left[t_{\text {near}}, t_{\text {far}}\right]_{x},
+ \left[t_{\text {near}}, t_{\text {far}}\right]_{y},
+ \left[t_{\text {near}}, t_{\text {far}}\right]_{z}$
+
+当三组区间存在重叠时, 即 $\max \left\{t_{near}\right\} < \min \left\{t_{far}\right\}$, 存在交点:
+$t_{0}=\max \left\{t_{near}\right\}, 
+ t_{1}=\min \left\{t_{far}\right\}$
+
+若 ray 在包围盒内部, 则总是相交, 返回 hitt0 = 0, hitt1 仍为 $\min \left\{t_{far}\right\}$
+
+对于 Num / 0 = inf/-inf 和 0 / 0 = NaN 的情况, 按正常执行路径可以处理, 无需特殊考虑
+
+*/
+
+// 若相交则通过 hit_t0 和 hit_t1 返回从 ray 到近, 远两个交点的距离(通过 ray 的 operator() 操作可以很容易得到对应的位置)
 template <typename T>
 inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
                                    Float *hitt1) const {
     Float t0 = 0, t1 = ray.tMax;
+
     for (int i = 0; i < 3; ++i) {
         // Update interval for _i_th bounding box slab
+		// $0 = a\left(\mathrm{o}_{x}+t \mathbf{d}_{x}\right)+b\left(\mathrm{o}_{y}+t \mathbf{d}_{y}\right)+c\left(\mathrm{o}_{z}+t \mathbf{d}_{z}\right)+d$
+		// => $t = \frac{-d-((a, b, c) \cdot \mathrm{o})}{((a, b, c) \cdot \mathbf{d})}$
+		// 因为每组平面都是垂直于坐标轴的, abc 三个参数中有两个为 0, 计算结果简化为 
+		// $t_{i}=\frac{x_{i}-\mathrm{O}_{x}}{\mathrm{d}_{x}}$
         Float invRayDir = 1 / ray.d[i];
         Float tNear = (pMin[i] - ray.o[i]) * invRayDir;
         Float tFar = (pMax[i] - ray.o[i]) * invRayDir;
@@ -1564,34 +1588,49 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, Float *hitt0,
 
         // Update _tFar_ to ensure robust ray--bounds intersection
         tFar *= 1 + 2 * gamma(3);
+
         t0 = tNear > t0 ? tNear : t0;
         t1 = tFar < t1 ? tFar : t1;
+
         if (t0 > t1) return false;
     }
+
     if (hitt0) *hitt0 = t0;
     if (hitt1) *hitt1 = t1;
+
     return true;
 }
 
+/*
+
+This intersection test is at the heart of traversing the BVHAccel acceleration structure, which is introduced in Section 4.3. 
+Because so many ray–bounding box intersection tests are performed while traversing the BVH tree, 
+we found that this optimized method provided approximately a 15% performance improvement in overall rendering time
+compared to using the Bounds3::IntersectP() variant that didn’t take the precomputed direction reciprocals and signs.
+只用在 bvh.cpp 里, Ray–Bounds Intersections 是其核心之一, 通过预先计算 invDir 和 dirIsNeg 带来了 15% 的性能提升 
+
+*/
 template <typename T>
 inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
                                    const int dirIsNeg[3]) const {
     const Bounds3f &bounds = *this;
     // Check for ray intersection against $x$ and $y$ slabs
-    Float tMin = (bounds[dirIsNeg[0]].x - ray.o.x) * invDir.x;
-    Float tMax = (bounds[1 - dirIsNeg[0]].x - ray.o.x) * invDir.x;
-    Float tyMin = (bounds[dirIsNeg[1]].y - ray.o.y) * invDir.y;
+    Float tMin  = (bounds[    dirIsNeg[0]].x - ray.o.x) * invDir.x;
+    Float tMax  = (bounds[1 - dirIsNeg[0]].x - ray.o.x) * invDir.x;
+    Float tyMin = (bounds[    dirIsNeg[1]].y - ray.o.y) * invDir.y;
     Float tyMax = (bounds[1 - dirIsNeg[1]].y - ray.o.y) * invDir.y;
 
     // Update _tMax_ and _tyMax_ to ensure robust bounds intersection
-    tMax *= 1 + 2 * gamma(3);
+    tMax  *= 1 + 2 * gamma(3);
     tyMax *= 1 + 2 * gamma(3);
-    if (tMin > tyMax || tyMin > tMax) return false;
+    if (tMin > tyMax || tyMin > tMax) 
+		return false;
+
     if (tyMin > tMin) tMin = tyMin;
     if (tyMax < tMax) tMax = tyMax;
 
     // Check for ray intersection against $z$ slab
-    Float tzMin = (bounds[dirIsNeg[2]].z - ray.o.z) * invDir.z;
+    Float tzMin = (bounds[    dirIsNeg[2]].z - ray.o.z) * invDir.z;
     Float tzMax = (bounds[1 - dirIsNeg[2]].z - ray.o.z) * invDir.z;
 
     // Update _tzMax_ to ensure robust bounds intersection

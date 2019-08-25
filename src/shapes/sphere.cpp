@@ -68,6 +68,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     EFloat t0, t1;
     if (!Quadratic(a, b, c, &t0, &t1)) return false;
 
+	// 相交计算中总是去寻找最近的交点
     // Check quadric shape _t0_ and _t1_ for nearest intersection
     if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
     EFloat tShapeHit = t0;

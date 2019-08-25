@@ -79,8 +79,8 @@ class Triangle : public Shape {
         triMeshBytes += sizeof(*this);
         faceIndex = mesh->faceIndices.size() ? mesh->faceIndices[triNumber] : 0;
     }
-    Bounds3f ObjectBound() const;
-    Bounds3f WorldBound() const;
+    Bounds3f ObjectBound() const override;
+    Bounds3f WorldBound() const override;
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture = true) const;
     bool IntersectP(const Ray &ray, bool testAlphaTexture = true) const;
