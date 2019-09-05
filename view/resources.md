@@ -74,6 +74,29 @@
 
 ### courses
 
+- https://github.com/prakhar1989/awesome-courses#computer-graphics
+
+- http://15462.courses.cs.cmu.edu/spring2019/
+- http://15462.courses.cs.cmu.edu/fall2019/
+
+- http://web.stanford.edu/class/cs148/
+- http://cs248.stanford.edu/winter19/
+- https://web.stanford.edu/class/cs348a/
+- http://graphics.stanford.edu/courses/cs348b/
+- http://graphics.stanford.edu/courses/cs348c/
+- http://cs348k.stanford.edu/fall18/
+- http://graphics.stanford.edu/courses/cs348v-18-winter/
+
+- http://www.cs.cornell.edu/courses/cs4620/2019fa/
+- http://www.cs.cornell.edu/courses/cs5643/2015sp/
+- http://www.cs.cornell.edu/courses/cs6630/2012sp/about.stm
+- http://www.cs.cornell.edu/courses/cs6630/2015fa/index.shtml
+
+- https://sites.cs.ucsb.edu/~lingqi/teaching/cs291a.html
+- https://sites.cs.ucsb.edu/~holl/CS291A/
+
+- http://am207.github.io/2016/index.html
+
 ### book
 
 - ¡¶Ray Tracing from the Ground Up¡·: http://www.raytracegroundup.com/
@@ -149,3 +172,6 @@
 - https://github.com/FancyVin/fun-with-graphics
 - https://www.jendrikillner.com/article_database/
 - http://kesen.realtimerendering.com/
+- https://github.com/mattdesl/graphics-resources
+- https://extremeistan.wordpress.com/2014/05/11/realtime-global-illumination-techniques-collection/
+- http://blog.hvidtfeldts.net/index.php/generative-art-links/

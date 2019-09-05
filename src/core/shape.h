@@ -73,7 +73,7 @@ class Shape {
     virtual Bounds3f ObjectBound() const = 0;
     virtual Bounds3f WorldBound() const;
 
-	// 判断 ray 是否与 shape 相交, 若相交则继续计算交点上的微分属性
+	// 判断 ray 是否与 shape 相交, 若相交则继续计算交点上的微分几何属性
 	// 细节见 Section 3.1.3 Intersection Tests
     virtual bool Intersect(const Ray &ray, Float *tHit,
                            SurfaceInteraction *isect,
