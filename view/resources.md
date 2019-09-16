@@ -119,6 +119,7 @@
 ### renderers
 
 - mitsuba: http://www.mitsuba-renderer.org/
+- mitsuba2: https://rgl.epfl.ch/publications/NimierDavidVicini2019Mitsuba2
 - LuxRenderer: https://luxcorerender.org/
 - takua: https://www.yiningkarlli.com/projects/takuarender.html
 - tungsten: https://github.com/tunabrain/tungsten
