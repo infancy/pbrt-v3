@@ -52,26 +52,32 @@ static void PlyErrorCallback(p_ply, const char *message) {
 // Triangle Method Definitions
 STAT_RATIO("Scene/Triangles per triangle mesh", nTris, nMeshes);
 TriangleMesh::TriangleMesh(
-    const Transform &ObjectToWorld, int nTriangles, const int *vertexIndices,
-    int nVertices, const Point3f *P, const Vector3f *S, const Normal3f *N,
-    const Point2f *UV, const std::shared_ptr<Texture<Float>> &alphaMask,
+    const Transform &ObjectToWorld, int nTriangles, 
+    const int *vertexIndices, int nVertices, const Point3f *P, 
+    const Vector3f *S, const Normal3f *N, const Point2f *UV, 
+    const std::shared_ptr<Texture<Float>> &alphaMask,
     const std::shared_ptr<Texture<Float>> &shadowAlphaMask,
     const int *fIndices)
+    // 通过复制获得数据
     : nTriangles(nTriangles),
       nVertices(nVertices),
       vertexIndices(vertexIndices, vertexIndices + 3 * nTriangles),
       alphaMask(alphaMask),
-      shadowAlphaMask(shadowAlphaMask) {
+      shadowAlphaMask(shadowAlphaMask) 
+{
     ++nMeshes;
     nTris += nTriangles;
     triMeshBytes += sizeof(*this) + this->vertexIndices.size() * sizeof(int) +
-                    nVertices * (sizeof(*P) + (N ? sizeof(*N) : 0) +
-                                 (S ? sizeof(*S) : 0) + (UV ? sizeof(*UV) : 0) +
+                    nVertices * (sizeof(*P) + 
+                                 (N ? sizeof(*N) : 0) +
+                                 (S ? sizeof(*S) : 0) + 
+                                 (UV ? sizeof(*UV) : 0) +
                                  (fIndices ? sizeof(*fIndices) : 0));
 
     // Transform mesh vertices to world space
     p.reset(new Point3f[nVertices]);
-    for (int i = 0; i < nVertices; ++i) p[i] = ObjectToWorld(P[i]);
+    for (int i = 0; i < nVertices; ++i) 
+        p[i] = ObjectToWorld(P[i]); // 三角形网格转化在世界空间中, 避免光线求交的频繁重复计算
 
     // Copy _UV_, _N_, and _S_ vertex data, if present
     if (UV) {
@@ -91,18 +97,23 @@ TriangleMesh::TriangleMesh(
         faceIndices = std::vector<int>(fIndices, fIndices + nTriangles);
 }
 
+// 从别的 shape (通过曲面细分???)生成三角形网格和三角形列表
 std::vector<std::shared_ptr<Shape>> CreateTriangleMesh(
     const Transform *ObjectToWorld, const Transform *WorldToObject,
-    bool reverseOrientation, int nTriangles, const int *vertexIndices,
-    int nVertices, const Point3f *p, const Vector3f *s, const Normal3f *n,
-    const Point2f *uv, const std::shared_ptr<Texture<Float>> &alphaMask,
+    bool reverseOrientation, int nTriangles, 
+    const int *vertexIndices, int nVertices, const Point3f *p, 
+    const Vector3f *s, const Normal3f *n, const Point2f *uv, 
+    const std::shared_ptr<Texture<Float>> &alphaMask,
     const std::shared_ptr<Texture<Float>> &shadowAlphaMask,
-    const int *faceIndices) {
+    const int *faceIndices) 
+{
     std::shared_ptr<TriangleMesh> mesh = std::make_shared<TriangleMesh>(
         *ObjectToWorld, nTriangles, vertexIndices, nVertices, p, s, n, uv,
         alphaMask, shadowAlphaMask, faceIndices);
+
     std::vector<std::shared_ptr<Shape>> tris;
     tris.reserve(nTriangles);
+
     for (int i = 0; i < nTriangles; ++i)
         tris.push_back(std::make_shared<Triangle>(ObjectToWorld, WorldToObject,
                                                   reverseOrientation, mesh, i));
@@ -173,6 +184,7 @@ Bounds3f Triangle::ObjectBound() const {
     const Point3f &p0 = mesh->p[v[0]];
     const Point3f &p1 = mesh->p[v[1]];
     const Point3f &p2 = mesh->p[v[2]];
+
     return Union(Bounds3f((*WorldToObject)(p0), (*WorldToObject)(p1)),
                  (*WorldToObject)(p2));
 }
@@ -182,19 +194,23 @@ Bounds3f Triangle::WorldBound() const {
     const Point3f &p0 = mesh->p[v[0]];
     const Point3f &p1 = mesh->p[v[1]];
     const Point3f &p2 = mesh->p[v[2]];
+
     return Union(Bounds3f(p0, p1), p2);
 }
 
+// 超长的相交测试函数
 bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                          bool testAlphaTexture) const {
     ProfilePhase p(Prof::TriIntersect);
     ++nTests;
+
     // Get triangle vertices in _p0_, _p1_, and _p2_
     const Point3f &p0 = mesh->p[v[0]];
     const Point3f &p1 = mesh->p[v[1]];
     const Point3f &p2 = mesh->p[v[2]];
 
     // Perform ray--triangle intersection test
+    // 在相交测试前, 首先将 ray 和 triangle 变换到一个以 ray.o 为原点, ray.d 为 +z 方向的空间中, 以简化后续求交运算
 
     // Transform triangle vertices to ray coordinate space
 
@@ -204,17 +220,21 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Point3f p2t = p2 - Vector3f(ray.o);
 
     // Permute components of triangle vertices and ray direction
+    // 为了让 ray.d 不为 0, 把 ray.d 的最大分量作为 z 轴分量来重排列坐标顺序
     int kz = MaxDimension(Abs(ray.d));
     int kx = kz + 1;
     if (kx == 3) kx = 0;
     int ky = kx + 1;
     if (ky == 3) ky = 0;
+
+    // 这个求交空间中的 ray.d 和三个顶点
     Vector3f d = Permute(ray.d, kx, ky, kz);
     p0t = Permute(p0t, kx, ky, kz);
     p1t = Permute(p1t, kx, ky, kz);
     p2t = Permute(p2t, kx, ky, kz);
 
     // Apply shear transformation to translated vertex positions
+    // 先对 xy 进行错切, 如果找到了交点, 再计算 z
     Float Sx = -d.x / d.z;
     Float Sy = -d.y / d.z;
     Float Sz = 1.f / d.z;
@@ -225,14 +245,19 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     p2t.x += Sx * p2t.z;
     p2t.y += Sy * p2t.z;
 
+    // 这时求交就被简化为判断 (0, 0) 坐标是否能**投影**到三角形中, 这可以通过 edge function 来判断
+    // (这就类似于光栅化的过程了)
+
     // Compute edge function coefficients _e0_, _e1_, and _e2_
     Float e0 = p1t.x * p2t.y - p1t.y * p2t.x;
     Float e1 = p2t.x * p0t.y - p2t.y * p0t.x;
     Float e2 = p0t.x * p1t.y - p0t.y * p1t.x;
 
+    // 如果单精度算出来的交点在某条边上, 可能是精度不够, 用双精度继续算
     // Fall back to double precision test at triangle edges
     if (sizeof(Float) == sizeof(float) &&
-        (e0 == 0.0f || e1 == 0.0f || e2 == 0.0f)) {
+        (e0 == 0.0f || e1 == 0.0f || e2 == 0.0f)) 
+    {
         double p2txp1ty = (double)p2t.x * (double)p1t.y;
         double p2typ1tx = (double)p2t.y * (double)p1t.x;
         e0 = (float)(p2typ1tx - p2txp1ty);
@@ -244,17 +269,30 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         e2 = (float)(p1typ0tx - p1txp0ty);
     }
 
+    // The edge function gives a positive value for points to the left of the line, 
+    // and negative value for points to the right. 
+    // Thus, if a point has edge function values of the same sign for all three edges of a triangle, 
+    // it must be on the same side of all three edges and thus must be inside the triangle.
+
+    // 仅当 e0, e1, e2 的符号相同(且均不为 0 时)才有三角形内的交点
     // Perform triangle edge and determinant tests
     if ((e0 < 0 || e1 < 0 || e2 < 0) && (e0 > 0 || e1 > 0 || e2 > 0))
         return false;
+    // ...Second, if the sum of the three edge function values is zero, then
+    // the ray is approaching the triangle edge-on, and we report no intersection. (For a closed
+    // triangle mesh, the ray will hit a neighboring triangle instead.)
     Float det = e0 + e1 + e2;
     if (det == 0) return false;
+
+    // 可以用交点处的重心坐标计算 z 值, 考虑到 ray.d 是沿 +z 轴的单位向量, 所以到三角形的距离 t 等于 z
 
     // Compute scaled hit distance to triangle and test against ray $t$ range
     p0t.z *= Sz;
     p1t.z *= Sz;
     p2t.z *= Sz;
     Float tScaled = e0 * p0t.z + e1 * p1t.z + e2 * p2t.z;
+
+    // 这里是判断 0 <= t < ray.tMax 的优化做法
     if (det < 0 && (tScaled >= 0 || tScaled < ray.tMax * det))
         return false;
     else if (det > 0 && (tScaled <= 0 || tScaled > ray.tMax * det))
@@ -265,24 +303,21 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Float b0 = e0 * invDet;
     Float b1 = e1 * invDet;
     Float b2 = e2 * invDet;
-    Float t = tScaled * invDet;
+    Float t = tScaled * invDet; // (e0 * p0t.z + e1 * p1t.z + e2 * p2t.z) / (e0 + e1 + e2)
 
     // Ensure that computed triangle $t$ is conservatively greater than zero
 
     // Compute $\delta_z$ term for triangle $t$ error bounds
     Float maxZt = MaxComponent(Abs(Vector3f(p0t.z, p1t.z, p2t.z)));
     Float deltaZ = gamma(3) * maxZt;
-
     // Compute $\delta_x$ and $\delta_y$ terms for triangle $t$ error bounds
     Float maxXt = MaxComponent(Abs(Vector3f(p0t.x, p1t.x, p2t.x)));
     Float maxYt = MaxComponent(Abs(Vector3f(p0t.y, p1t.y, p2t.y)));
     Float deltaX = gamma(5) * (maxXt + maxZt);
     Float deltaY = gamma(5) * (maxYt + maxZt);
-
     // Compute $\delta_e$ term for triangle $t$ error bounds
     Float deltaE =
         2 * (gamma(2) * maxXt * maxYt + deltaY * maxXt + deltaX * maxYt);
-
     // Compute $\delta_t$ term for triangle $t$ error bounds and check _t_
     Float maxE = MaxComponent(Abs(Vector3f(e0, e1, e2)));
     Float deltaT = 3 *
@@ -290,11 +325,11 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    std::abs(invDet);
     if (t <= deltaT) return false;
 
+    // 计算 dpdu, dpdv
     // Compute triangle partial derivatives
     Vector3f dpdu, dpdv;
     Point2f uv[3];
     GetUVs(uv);
-
     // Compute deltas for triangle partial derivatives
     Vector2f duv02 = uv[0] - uv[2], duv12 = uv[1] - uv[2];
     Vector3f dp02 = p0 - p2, dp12 = p1 - p2;
@@ -305,7 +340,8 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
         dpdu = (duv12[1] * dp02 - duv02[1] * dp12) * invdet;
         dpdv = (-duv12[0] * dp02 + duv02[0] * dp12) * invdet;
     }
-    if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0) {
+    // 如果三角形是退化的, 或者 dpdu ^ dpdv 生成的法线是退化的
+    /*else*/if (degenerateUV || Cross(dpdu, dpdv).LengthSquared() == 0) {
         // Handle zero determinant for triangle partial derivative matrix
         Vector3f ng = Cross(p2 - p0, p1 - p0);
         if (ng.LengthSquared() == 0)
@@ -313,6 +349,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
             // bogus.
             return false;
 
+        // 用几何法线 ng 构建一个切线坐标系
         CoordinateSystem(Normalize(ng), &dpdu, &dpdv);
     }
 
@@ -326,10 +363,13 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
     Vector3f pError = gamma(7) * Vector3f(xAbsSum, yAbsSum, zAbsSum);
 
     // Interpolate $(u,v)$ parametric coordinates and hit point
+    // 用重心坐标算出来的 p/uvHit 精度更高
     Point3f pHit = b0 * p0 + b1 * p1 + b2 * p2;
     Point2f uvHit = b0 * uv[0] + b1 * uv[1] + b2 * uv[2];
 
     // Test intersection against alpha texture, if present
+    // This functionality is less often useful for other shapes, so pbrt only supports it for triangles.
+    // 这个交点是否透明
     if (testAlphaTexture && mesh->alphaMask) {
         SurfaceInteraction isectLocal(pHit, Vector3f(0, 0, 0), uvHit, -ray.d,
                                       dpdu, dpdv, Normal3f(0, 0, 0),
@@ -342,10 +382,14 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                                 Normal3f(0, 0, 0), Normal3f(0, 0, 0), ray.time,
                                 this, faceIndex);
 
+    // 使用着色法线 ns 可以渲染出更光滑的表面
     // Override surface normal in _isect_ for triangle
     isect->n = isect->shading.n = Normal3f(Normalize(Cross(dp02, dp12)));
     if (mesh->n || mesh->s) {
         // Initialize _Triangle_ shading geometry
+
+        // 使用重心坐标计算着色法线 ns, 切向量 ts
+        // 然后用 ns 和 ts 计算另一切向量 ss
 
         // Compute shading normal _ns_ for triangle
         Normal3f ns;
@@ -378,8 +422,11 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
             CoordinateSystem((Vector3f)ns, &ss, &ts);
 
         // Compute $\dndu$ and $\dndv$ for triangle shading geometry
+        // 使用了着色法线后, 法线偏导数 dndu, dndv 就不再只是 0 了
+        // 计算过程类似于求解 dpdu, dpdv 的过程
         Normal3f dndu, dndv;
-        if (mesh->n) {
+        if (mesh->n) 
+        {
             // Compute deltas for triangle partial derivatives of normal
             Vector2f duv02 = uv[0] - uv[2];
             Vector2f duv12 = uv[1] - uv[2];
@@ -394,6 +441,7 @@ bool Triangle::Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                 // (rather than giving up) so that ray differentials for
                 // rays reflected from triangles with degenerate
                 // parameterizations are still reasonable.
+                // 计算法线偏导数出现奇异值时, 还可以拯救一下
                 Vector3f dn = Cross(Vector3f(mesh->n[v[2]] - mesh->n[v[0]]),
                                     Vector3f(mesh->n[v[1]] - mesh->n[v[0]]));
                 if (dn.LengthSquared() == 0)
@@ -577,6 +625,7 @@ Float Triangle::Area() const {
     const Point3f &p0 = mesh->p[v[0]];
     const Point3f &p1 = mesh->p[v[1]];
     const Point3f &p2 = mesh->p[v[2]];
+    
     return 0.5 * Cross(p1 - p0, p2 - p0).Length();
 }
 

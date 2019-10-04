@@ -38,6 +38,10 @@
 #ifndef PBRT_SHAPES_TRIANGLE_H
 #define PBRT_SHAPES_TRIANGLE_H
 
+// Triangles have a dual role among the shapes in pbrt: 
+// not only are they frequently directly speci?ed in scene description ?les, 
+// but other shapes often tessellate themselves into triangle meshes.
+
 // shapes/triangle.h*
 #include "shape.h"
 #include "stats.h"
@@ -45,8 +49,10 @@
 
 namespace pbrt {
 
+// triMeshBytes 记录三角形所有数据所占据的内存大小
 STAT_MEMORY_COUNTER("Memory/Triangle meshes", triMeshBytes);
 
+// TriangleMesh 使用顶点属性列表+索引列表的方式, 存储了一个三角形网格的所有数据
 // Triangle Declarations
 struct TriangleMesh {
     // TriangleMesh Public Methods
@@ -59,31 +65,40 @@ struct TriangleMesh {
 
     // TriangleMesh Data
     const int nTriangles, nVertices;
-    std::vector<int> vertexIndices;
+    std::vector<int> vertexIndices; // vertexIndices.size() == 3 * nTriangles
+
+    // 顶点属性(vertex attribute)
+    // For the ith triangle, its three vertex positions are 
+    // P[vertexIndices[3*i]], P[vertexIndices[3*i+1]], and P[vertexIndices[3*i+2]].
     std::unique_ptr<Point3f[]> p;
     std::unique_ptr<Normal3f[]> n;
-    std::unique_ptr<Vector3f[]> s;
+    std::unique_ptr<Vector3f[]> s; // 只记录切向量 tangent, 另一个切向量 bitangent 可以由 tangent 和 normal 叉乘得到
     std::unique_ptr<Point2f[]> uv;
+
     std::shared_ptr<Texture<Float>> alphaMask, shadowAlphaMask;
-    std::vector<int> faceIndices;
+    std::vector<int> faceIndices; // 面数的索引
 };
 
+// The Triangleclass actually implements the Shapeinterface. **It represents a single triangle**
 class Triangle : public Shape {
   public:
     // Triangle Public Methods
     Triangle(const Transform *ObjectToWorld, const Transform *WorldToObject,
              bool reverseOrientation, const std::shared_ptr<TriangleMesh> &mesh,
-             int triNumber)
+             int triNumber) // triNumber 改为 triIndex 更好理解些
         : Shape(ObjectToWorld, WorldToObject, reverseOrientation), mesh(mesh) {
-        v = &mesh->vertexIndices[3 * triNumber];
+        v = &mesh->vertexIndices[3 * triNumber]; // 只存储首个顶点索引的地址, 以节省存储空间
         triMeshBytes += sizeof(*this);
         faceIndex = mesh->faceIndices.size() ? mesh->faceIndices[triNumber] : 0;
     }
+
     Bounds3f ObjectBound() const override;
     Bounds3f WorldBound() const override;
+
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture = true) const;
     bool IntersectP(const Ray &ray, bool testAlphaTexture = true) const;
+
     Float Area() const;
 
     using Shape::Sample;  // Bring in the other Sample() overload.
@@ -95,6 +110,7 @@ class Triangle : public Shape {
 
   private:
     // Triangle Private Methods
+    // 分别获得三个顶点的 UV 坐标
     void GetUVs(Point2f uv[3]) const {
         if (mesh->uv) {
             uv[0] = mesh->uv[v[0]];
