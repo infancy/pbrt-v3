@@ -55,6 +55,7 @@ class Disk : public Shape {
           radius(radius),
           innerRadius(innerRadius),
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
+          
     Bounds3f ObjectBound() const;
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture) const;

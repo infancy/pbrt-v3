@@ -2,7 +2,7 @@
 
 ## Index
 
-现有大局观, 了解整体流程, 后续才不会陷入到细节中
+先有大局观, 了解整体流程, 后续才不会陷入到细节中
 
 ## Code
 
@@ -80,6 +80,16 @@
 - [ ] volpath (Volume Path Tracing，体积路径跟踪)
 - [ ] whitted (Recursive Ray Tracing，递归光线跟踪)
 
+### src/lights
+
+- [ ] diffuse
+- [ ] distant
+- [ ] goniometric
+- [ ] infinite
+- [ ] point
+- [ ] projection
+- [ ] spot
+
 ### src/materials
 
 - [ ] disney
@@ -97,6 +107,11 @@
 - [ ] translucent 
 - [ ] uber
 
+### src/media
+
+- [ ] grid
+- [ ] homogeneous
+
 ### src/samplers
 
 - [ ] halton 
@@ -105,6 +120,39 @@
 - [ ] sobol
 - [ ] stratified
 - [ ] zerotwosequence
+
+### src/shapes
+
+- [ ] cone
+- [ ] curve
+- [x] cylinder
+- [x] disk
+- [ ] heightfield
+- [ ] hyperboloid
+- [ ] hyperboloid
+- [ ] loopsubdiv
+- [ ] nurbs
+- [ ] paraboloid
+- [ ] plymesh
+- [x] sphere
+- [x] triangle
+
+### src/textures
+
+- [ ] bilerp
+- [ ] checkerboard
+- [ ] constant
+- [ ] dots
+- [ ] fbm
+- [ ] imagemap
+- [ ] marble
+- [ ] mix
+- [ ] ptex
+- [ ] scale
+- [ ] uv
+- [ ] windy
+- [ ] wrinkled
+
 
 施工中...
 
@@ -150,11 +198,11 @@
 ### 3 Shapes
 
 - [x] 3.1 Basic Shape Interface
-- [ ] 3.2 Spheres
-- [ ] 3.3 Cylinders
-- [ ] 3.4 Disks
+- [x] 3.2 Spheres
+- [x] 3.3 Cylinders
+- [x] 3.4 Disks
 - [ ] 3.5 Other Quadrics
-- [ ] 3.6 Triangle Meshes
+- [x] 3.6 Triangle Meshes
 - [ ] 3.7 Curves
 - [ ] 3.8 Subdivision Surfaces
 - [ ] 3.9 Managing Rounding Error

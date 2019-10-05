@@ -1147,6 +1147,7 @@ Vector3<T> Max(const Vector3<T> &p1, const Vector3<T> &p2) {
                       std::max(p1.z, p2.z));
 }
 
+// жьееап
 // poor swizzle(e.g. v.xxy, v.zzz)
 // TODO: fay::vec3().(_x, _y, _x)
 template <typename T>

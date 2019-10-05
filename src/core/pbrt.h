@@ -424,7 +424,7 @@ int FindInterval(int size, const Predicate &pred) {
 // 线性插值
 inline Float Lerp(Float t, Float v1, Float v2) { return (1 - t) * v1 + t * v2; }
 
-// 求解一元二次方程 $ a t^{2} + b t + c=0 $
+// 求解一元二次方程 $ at^{2} + bt + c = 0 $
 // 返回值表示是否有解
 // t0 和 t1 传递较小和较大的结果
 inline bool Quadratic(Float a, Float b, Float c, Float *t0, Float *t1) {

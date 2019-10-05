@@ -48,8 +48,10 @@ Bounds3f Cylinder::ObjectBound() const {
 bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                          bool testAlphaTexture) const {
     ProfilePhase p(Prof::ShapeIntersect);
+
     Float phi;
     Point3f pHit;
+
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
@@ -76,12 +78,14 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     }
 
     // Compute cylinder hit point and $\phi$
+    // 计算出 pHit, 自然就有 z 坐标了
     pHit = ray((Float)tShapeHit);
 
     // Refine cylinder intersection point
     Float hitRad = std::sqrt(pHit.x * pHit.x + pHit.y * pHit.y);
     pHit.x *= radius / hitRad;
     pHit.y *= radius / hitRad;
+
     phi = std::atan2(pHit.y, pHit.x);
     if (phi < 0) phi += 2 * Pi;
 
@@ -110,6 +114,8 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Vector3f dpdu(-phiMax * pHit.y, phiMax * pHit.x, 0);
     Vector3f dpdv(0, 0, zMax - zMin);
 
+
+
     // Compute cylinder $\dndu$ and $\dndv$
     Vector3f d2Pduu = -phiMax * phiMax * Vector3f(pHit.x, pHit.y, 0);
     Vector3f d2Pduv(0, 0, 0), d2Pdvv(0, 0, 0);
@@ -129,6 +135,8 @@ bool Cylinder::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
                              (e * F - f * E) * invEGF2 * dpdv);
     Normal3f dndv = Normal3f((g * F - f * G) * invEGF2 * dpdu +
                              (f * F - g * E) * invEGF2 * dpdv);
+
+
 
     // Compute error bounds for cylinder intersection
     Vector3f pError = gamma(3) * Abs(Vector3f(pHit.x, pHit.y, 0));

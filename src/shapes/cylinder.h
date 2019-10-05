@@ -55,6 +55,7 @@ class Cylinder : public Shape {
           zMin(std::min(zMin, zMax)),
           zMax(std::max(zMin, zMax)),
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
+          
     Bounds3f ObjectBound() const;
     bool Intersect(const Ray &ray, Float *tHit, SurfaceInteraction *isect,
                    bool testAlphaTexture) const;
