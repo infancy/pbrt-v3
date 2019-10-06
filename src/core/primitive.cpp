@@ -78,19 +78,26 @@ bool TransformedPrimitive::Intersect(const Ray &r,
     // Compute _ray_ after transformation by _PrimitiveToWorld_
     Transform InterpolatedPrimToWorld;
     PrimitiveToWorld.Interpolate(r.time, &InterpolatedPrimToWorld);
+
     Ray ray = Inverse(InterpolatedPrimToWorld)(r);
-    if (!primitive->Intersect(ray, isect)) return false;
+    if (!primitive->Intersect(ray, isect)) 
+		return false;
+
     r.tMax = ray.tMax;
+
     // Transform instance's intersection data to world space
     if (!InterpolatedPrimToWorld.IsIdentity())
-        *isect = InterpolatedPrimToWorld(*isect);
+        *isect = InterpolatedPrimToWorld(*isect); // 最后还得把 isect 转换到世界空间中
+
     CHECK_GE(Dot(isect->n, isect->shading.n), 0);
     return true;
 }
 
 bool TransformedPrimitive::IntersectP(const Ray &r) const {
+	// C++17 之后保证复制消除, 就可以用等价的 Transform InterpolatedPrimToWorld = PrimitiveToWorld.Interpolate(r.time); 写法了???
     Transform InterpolatedPrimToWorld;
     PrimitiveToWorld.Interpolate(r.time, &InterpolatedPrimToWorld);
+
     Transform InterpolatedWorldToPrim = Inverse(InterpolatedPrimToWorld);
     return primitive->IntersectP(InterpolatedWorldToPrim(r));
 }
@@ -116,16 +123,21 @@ bool GeometricPrimitive::IntersectP(const Ray &r) const {
 bool GeometricPrimitive::Intersect(const Ray &r,
                                    SurfaceInteraction *isect) const {
     Float tHit;
-    if (!shape->Intersect(r, &tHit, isect)) return false;
+    if (!shape->Intersect(r, &tHit, isect)) 
+		return false;
+
     r.tMax = tHit;
     isect->primitive = this;
+
     CHECK_GE(Dot(isect->n, isect->shading.n), 0.);
+
     // Initialize _SurfaceInteraction::mediumInterface_ after _Shape_
     // intersection
     if (mediumInterface.IsMediumTransition())
         isect->mediumInterface = mediumInterface;
     else
         isect->mediumInterface = MediumInterface(r.medium);
+
     return true;
 }
 
@@ -139,11 +151,15 @@ const Material *GeometricPrimitive::GetMaterial() const {
 
 void GeometricPrimitive::ComputeScatteringFunctions(
     SurfaceInteraction *isect, MemoryArena &arena, TransportMode mode,
-    bool allowMultipleLobes) const {
+    bool allowMultipleLobes) const 
+{
     ProfilePhase p(Prof::ComputeScatteringFuncs);
+
+	// 根据图元的材质计算交点 isect 的 bsdf 等
     if (material)
         material->ComputeScatteringFunctions(isect, arena, mode,
                                              allowMultipleLobes);
+
     CHECK_GE(Dot(isect->n, isect->shading.n), 0.);
 }
 

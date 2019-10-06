@@ -738,8 +738,10 @@ bool BVHAccel::IntersectP(const Ray &ray) const {
 }
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(
-    std::vector<std::shared_ptr<Primitive>> prims, const ParamSet &ps) {
+    std::vector<std::shared_ptr<Primitive>> prims, const ParamSet &ps) 
+{
     std::string splitMethodName = ps.FindOneString("splitmethod", "sah");
+
     BVHAccel::SplitMethod splitMethod;
     if (splitMethodName == "sah")
         splitMethod = BVHAccel::SplitMethod::SAH;

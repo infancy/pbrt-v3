@@ -53,8 +53,10 @@ class KdTreeAccel : public Aggregate {
     KdTreeAccel(std::vector<std::shared_ptr<Primitive>> p,
                 int isectCost = 80, int traversalCost = 1,
                 Float emptyBonus = 0.5, int maxPrims = 1, int maxDepth = -1);
+
     Bounds3f WorldBound() const { return bounds; }
     ~KdTreeAccel();
+
     bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
 

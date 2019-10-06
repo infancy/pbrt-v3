@@ -43,7 +43,8 @@
 #include "memory.h"
 
 namespace pbrt {
-
+	
+// indicates whether the ray path that found this intersection point started from the camera or from a light source
 // TransportMode Declarations
 enum class TransportMode { Radiance, Importance };
 

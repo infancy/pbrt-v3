@@ -1246,6 +1246,7 @@ void AnimatedTransform::Decompose(const Matrix4x4 &m, Vector3f *T,
     *S = Matrix4x4::Mul(Inverse(R), M);
 }
 
+// t = (s)lerp(startTransform, endTransform, time)
 void AnimatedTransform::Interpolate(Float time, Transform *t) const {
     // Handle boundary conditions for matrix interpolation
     if (!actuallyAnimated || time <= startTime) {

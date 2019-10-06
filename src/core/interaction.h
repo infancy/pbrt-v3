@@ -178,9 +178,11 @@ class SurfaceInteraction : public Interaction {
         Normal3f dndu, dndv;
     } shading;
 
-    const Primitive *primitive = nullptr;
+    const Primitive *primitive = nullptr; // 交点所处的 primitive, 用来获取交点的材质信息
+
     BSDF *bsdf = nullptr;
     BSSRDF *bssrdf = nullptr;
+
     mutable Vector3f dpdx, dpdy;
     mutable Float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 
