@@ -1,4 +1,4 @@
-
+﻿
 /*
     pbrt source code is Copyright(c) 1998-2016
                         Matt Pharr, Greg Humphreys, and Wenzel Jakob.
@@ -38,6 +38,16 @@
 #ifndef PBRT_ACCELERATORS_BVH_H
 #define PBRT_ACCELERATORS_BVH_H
 
+/*
+
+p258 4.3.1 BVH CONSTRUCTION
+构建 BVH 主要分为三个步骤:
+1. 生成所有 primitive 的包围盒, 存到一个数组里
+2. 对所有包围盒, 构建树状的层次结构
+3. 对层次结构对应的树状内存结构变换为线性的, 加速遍历
+
+*/
+
 // accelerators/bvh.h*
 #include "pbrt.h"
 #include "primitive.h"
@@ -56,6 +66,12 @@ struct LinearBVHNode;
 class BVHAccel : public Aggregate {
   public:
     // BVHAccel Public Types
+    // 构建层次包围盒结构时的不同划分策略
+    // The default, SAH, indicates that an algorithm based on the “surface area heuristic,” discussed in
+    // Section 4.3.2, should be used. An alternative, HLBVH, which is discussed in Section 4.3.3,
+    // can be constructed more efﬁciently (and more easily parallelized), but it doesn’t build
+    // trees that are as effective as SAH. The remaining two approaches use even less computa-
+    // tion to build the tree but create fairly low-quality trees.
     enum class SplitMethod { SAH, HLBVH, Middle, EqualCounts };
 
     // BVHAccel Public Methods
@@ -95,10 +111,10 @@ class BVHAccel : public Aggregate {
     int flattenBVHTree(BVHBuildNode *node, int *offset);
 
     // BVHAccel Private Data
-    const int maxPrimsInNode;
+    const int maxPrimsInNode; // 每个叶子包围盒节点下最大的 primitive 数量
     const SplitMethod splitMethod;
     std::vector<std::shared_ptr<Primitive>> primitives;
-    LinearBVHNode *nodes = nullptr;
+    LinearBVHNode *nodes = nullptr; // 根节点???
 };
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(

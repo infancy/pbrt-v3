@@ -47,36 +47,50 @@ STAT_COUNTER("BVH/Interior nodes", interiorNodes);
 STAT_COUNTER("BVH/Leaf nodes", leafNodes);
 
 // BVHAccel Local Declarations
-struct BVHPrimitiveInfo {
+struct BVHPrimitiveInfo 
+{
     BVHPrimitiveInfo() {}
     BVHPrimitiveInfo(size_t primitiveNumber, const Bounds3f &bounds)
         : primitiveNumber(primitiveNumber),
           bounds(bounds),
           centroid(.5f * bounds.pMin + .5f * bounds.pMax) {}
-    size_t primitiveNumber;
+
+    size_t primitiveNumber; // 这是个索引, 记录在原始输入 primitives 中的下标
     Bounds3f bounds;
-    Point3f centroid;
+    Point3f centroid; // 包围盒的中心, 在步骤二构建层次结构时用到
 };
 
-struct BVHBuildNode {
+// 构建层次结构时用到的 node 结构
+struct BVHBuildNode 
+{
     // BVHBuildNode Public Methods
-    void InitLeaf(int first, int n, const Bounds3f &b) {
+    // 叶子节点记录的不是指向 primitive(s) 的指针, 而是一个到 orderedPrims 的索引 first 和包含的 primitive 数量 n
+    void InitLeaf(int first, int n, const Bounds3f &b) 
+    {
+        // 根据 children 是否为空来区分中间节点和叶节点
+        children[0] = children[1] = nullptr;
+        bounds = b;
+
         firstPrimOffset = first;
         nPrimitives = n;
-        bounds = b;
-        children[0] = children[1] = nullptr;
+
         ++leafNodes;
         ++totalLeafNodes;
         totalPrimitives += n;
     }
-    void InitInterior(int axis, BVHBuildNode *c0, BVHBuildNode *c1) {
+    void InitInterior(int axis, BVHBuildNode *c0, BVHBuildNode *c1) 
+    {
         children[0] = c0;
         children[1] = c1;
         bounds = Union(c0->bounds, c1->bounds);
+
+        // 记录两个子节点是沿着哪条坐标轴划分开的, 用于优化遍历速度
         splitAxis = axis;
         nPrimitives = 0;
+
         ++interiorNodes;
     }
+
     Bounds3f bounds;
     BVHBuildNode *children[2];
     int splitAxis, firstPrimOffset, nPrimitives;
@@ -110,20 +124,20 @@ inline uint32_t LeftShift3(uint32_t x) {
 #ifdef PBRT_HAVE_BINARY_CONSTANTS
     x = (x | (x << 16)) & 0b00000011000000000000000011111111;
     // x = ---- --98 ---- ---- ---- ---- 7654 3210
-    x = (x | (x << 8)) & 0b00000011000000001111000000001111;
+    x = (x | (x <<  8)) & 0b00000011000000001111000000001111;
     // x = ---- --98 ---- ---- 7654 ---- ---- 3210
-    x = (x | (x << 4)) & 0b00000011000011000011000011000011;
+    x = (x | (x <<  4)) & 0b00000011000011000011000011000011;
     // x = ---- --98 ---- 76-- --54 ---- 32-- --10
-    x = (x | (x << 2)) & 0b00001001001001001001001001001001;
+    x = (x | (x <<  2)) & 0b00001001001001001001001001001001;
     // x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
 #else
     x = (x | (x << 16)) & 0x30000ff;
     // x = ---- --98 ---- ---- ---- ---- 7654 3210
-    x = (x | (x << 8)) & 0x300f00f;
+    x = (x | (x <<  8)) & 0x300f00f;
     // x = ---- --98 ---- ---- 7654 ---- ---- 3210
-    x = (x | (x << 4)) & 0x30c30c3;
+    x = (x | (x <<  4)) & 0x30c30c3;
     // x = ---- --98 ---- 76-- --54 ---- 32-- --10
-    x = (x | (x << 2)) & 0x9249249;
+    x = (x | (x <<  2)) & 0x9249249;
     // x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
 #endif // PBRT_HAVE_BINARY_CONSTANTS
     return x;
@@ -184,29 +198,41 @@ BVHAccel::BVHAccel(std::vector<std::shared_ptr<Primitive>> p,
                    int maxPrimsInNode, SplitMethod splitMethod)
     : maxPrimsInNode(std::min(255, maxPrimsInNode)),
       splitMethod(splitMethod),
-      primitives(std::move(p)) {
+      primitives(std::move(p)) 
+{
     ProfilePhase _(Prof::AccelConstruction);
-    if (primitives.empty()) return;
+
+    if (primitives.empty()) 
+        return;
+
     // Build BVH from _primitives_
 
-    // Initialize _primitiveInfo_ array for primitives
+    // 1.Initialize _primitiveInfo_ array for primitives
     std::vector<BVHPrimitiveInfo> primitiveInfo(primitives.size());
     for (size_t i = 0; i < primitives.size(); ++i)
         primitiveInfo[i] = {i, primitives[i]->WorldBound()};
 
-    // Build BVH tree for primitives using _primitiveInfo_
-    MemoryArena arena(1024 * 1024);
-    int totalNodes = 0;
-    std::vector<std::shared_ptr<Primitive>> orderedPrims;
+    // 2.Build BVH tree for primitives using _primitiveInfo_
+    MemoryArena arena(1024 * 1024); // 所有节点从 arena 中分配释放
+    int totalNodes = 0; // 最后总计创建的节点数量
+    std::vector<std::shared_ptr<Primitive>> orderedPrims; // 在建树过程中存储所有叶节点指向的图元
     orderedPrims.reserve(primitives.size());
-    BVHBuildNode *root;
+
+    // If the HLBVH construction algorithm has been selected, HLBVHBuild()is called to build the tree.
+    // The other three construction algorithms are all handled by recursiveBuild(). 
+    BVHBuildNode *root; // 最后返回的树根节点
     if (splitMethod == SplitMethod::HLBVH)
         root = HLBVHBuild(arena, primitiveInfo, &totalNodes, orderedPrims);
     else
+        // recursiveBuild 允许传递一个 primitives 的范围 [start, end) 来构建其 BVH 子集
+
         root = recursiveBuild(arena, primitiveInfo, 0, primitives.size(),
                               &totalNodes, orderedPrims);
+
+    // 建树后的 orderedPrims 是与每个叶子节点有对应关系的, 用它替换掉原始输入的 primitives
     primitives.swap(orderedPrims);
     primitiveInfo.resize(0);
+
     LOG(INFO) << StringPrintf("BVH created with %d nodes for %d "
                               "primitives (%.2f MB), arena allocated %.2f MB",
                               totalNodes, (int)primitives.size(),
@@ -219,6 +245,8 @@ BVHAccel::BVHAccel(std::vector<std::shared_ptr<Primitive>> p,
     treeBytes += totalNodes * sizeof(LinearBVHNode) + sizeof(*this) +
                  primitives.size() * sizeof(primitives[0]);
     nodes = AllocAligned<LinearBVHNode>(totalNodes);
+
+    // 3.flatten tree's memory to linear memory
     int offset = 0;
     flattenBVHTree(root, &offset);
     CHECK_EQ(totalNodes, offset);
@@ -236,26 +264,38 @@ struct BucketInfo {
 BVHBuildNode *BVHAccel::recursiveBuild(
     MemoryArena &arena, std::vector<BVHPrimitiveInfo> &primitiveInfo, int start,
     int end, int *totalNodes,
-    std::vector<std::shared_ptr<Primitive>> &orderedPrims) {
+    std::vector<std::shared_ptr<Primitive>> &orderedPrims) 
+{
     CHECK_NE(start, end);
+
     BVHBuildNode *node = arena.Alloc<BVHBuildNode>();
     (*totalNodes)++;
+
     // Compute bounds of all primitives in BVH node
+    // 建立包围盒是个自顶向下的过程, 岂不是有很多重复计算?
     Bounds3f bounds;
     for (int i = start; i < end; ++i)
         bounds = Union(bounds, primitiveInfo[i].bounds);
+
+    // 建树是一个递归的过程, 先自顶向下创建叶子节点, 再回溯生成中间节点
     int nPrimitives = end - start;
-    if (nPrimitives == 1) {
+
+    if (nPrimitives == 1) 
+    {
         // Create leaf _BVHBuildNode_
         int firstPrimOffset = orderedPrims.size();
-        for (int i = start; i < end; ++i) {
+        for (int i = start; i < end; ++i) // 只有一个元素, 为什么要 for-loop?
+        {
             int primNum = primitiveInfo[i].primitiveNumber;
             orderedPrims.push_back(primitives[primNum]);
         }
         node->InitLeaf(firstPrimOffset, nPrimitives, bounds);
         return node;
-    } else {
+    } 
+    else 
+    {
         // Compute bound of primitive centroids, choose split dimension _dim_
+        // 选择按哪条坐标轴来排序, 进行划分
         Bounds3f centroidBounds;
         for (int i = start; i < end; ++i)
             centroidBounds = Union(centroidBounds, primitiveInfo[i].centroid);
@@ -263,7 +303,8 @@ BVHBuildNode *BVHAccel::recursiveBuild(
 
         // Partition primitives into two sets and build children
         int mid = (start + end) / 2;
-        if (centroidBounds.pMax[dim] == centroidBounds.pMin[dim]) {
+        if (centroidBounds.pMax[dim] == centroidBounds.pMin[dim]) 
+        {
             // Create leaf _BVHBuildNode_
             int firstPrimOffset = orderedPrims.size();
             for (int i = start; i < end; ++i) {
@@ -272,10 +313,15 @@ BVHBuildNode *BVHAccel::recursiveBuild(
             }
             node->InitLeaf(firstPrimOffset, nPrimitives, bounds);
             return node;
-        } else {
+        } 
+        else 
+        {
             // Partition primitives based on _splitMethod_
-            switch (splitMethod) {
-            case SplitMethod::Middle: {
+            // 在向下递归时体现划分策略
+            switch (splitMethod) 
+            {
+            case SplitMethod::Middle: 
+            {
                 // Partition primitives through node's midpoint
                 Float pmid =
                     (centroidBounds.pMin[dim] + centroidBounds.pMax[dim]) / 2;
@@ -291,7 +337,8 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                 // to EqualCounts.
                 if (mid != start && mid != end) break;
             }
-            case SplitMethod::EqualCounts: {
+            case SplitMethod::EqualCounts: 
+            {
                 // Partition primitives into equally-sized subsets
                 mid = (start + end) / 2;
                 std::nth_element(&primitiveInfo[start], &primitiveInfo[mid],
@@ -303,9 +350,11 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                 break;
             }
             case SplitMethod::SAH:
-            default: {
+            default: 
+            {
                 // Partition primitives using approximate SAH
-                if (nPrimitives <= 2) {
+                if (nPrimitives <= 2) 
+                {
                     // Partition primitives into equally-sized subsets
                     mid = (start + end) / 2;
                     std::nth_element(&primitiveInfo[start], &primitiveInfo[mid],
@@ -315,13 +364,16 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                                          return a.centroid[dim] <
                                                 b.centroid[dim];
                                      });
-                } else {
+                } 
+                else 
+                {
                     // Allocate _BucketInfo_ for SAH partition buckets
                     PBRT_CONSTEXPR int nBuckets = 12;
                     BucketInfo buckets[nBuckets];
 
                     // Initialize _BucketInfo_ for SAH partition buckets
-                    for (int i = start; i < end; ++i) {
+                    for (int i = start; i < end; ++i) 
+                    {
                         int b = nBuckets *
                                 centroidBounds.Offset(
                                     primitiveInfo[i].centroid)[dim];
@@ -335,7 +387,8 @@ BVHBuildNode *BVHAccel::recursiveBuild(
 
                     // Compute costs for splitting after each bucket
                     Float cost[nBuckets - 1];
-                    for (int i = 0; i < nBuckets - 1; ++i) {
+                    for (int i = 0; i < nBuckets - 1; ++i) 
+                    {
                         Bounds3f b0, b1;
                         int count0 = 0, count1 = 0;
                         for (int j = 0; j <= i; ++j) {
@@ -355,7 +408,8 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                     // Find bucket to split at that minimizes SAH metric
                     Float minCost = cost[0];
                     int minCostSplitBucket = 0;
-                    for (int i = 1; i < nBuckets - 1; ++i) {
+                    for (int i = 1; i < nBuckets - 1; ++i) 
+                    {
                         if (cost[i] < minCost) {
                             minCost = cost[i];
                             minCostSplitBucket = i;
@@ -365,7 +419,8 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                     // Either create leaf or split primitives at selected SAH
                     // bucket
                     Float leafCost = nPrimitives;
-                    if (nPrimitives > maxPrimsInNode || minCost < leafCost) {
+                    if (nPrimitives > maxPrimsInNode || minCost < leafCost) 
+                    {
                         BVHPrimitiveInfo *pmid = std::partition(
                             &primitiveInfo[start], &primitiveInfo[end - 1] + 1,
                             [=](const BVHPrimitiveInfo &pi) {
@@ -377,7 +432,9 @@ BVHBuildNode *BVHAccel::recursiveBuild(
                                 return b <= minCostSplitBucket;
                             });
                         mid = pmid - &primitiveInfo[0];
-                    } else {
+                    } 
+                    else 
+                    {
                         // Create leaf _BVHBuildNode_
                         int firstPrimOffset = orderedPrims.size();
                         for (int i = start; i < end; ++i) {
@@ -754,10 +811,10 @@ std::shared_ptr<BVHAccel> CreateBVHAccelerator(
     else {
         Warning("BVH split method \"%s\" unknown.  Using \"sah\".",
                 splitMethodName.c_str());
-        splitMethod = BVHAccel::SplitMethod::SAH;
+        splitMethod = BVHAccel::SplitMethod::SAH; // 默认使用 SAH 划分
     }
 
-    int maxPrimsInNode = ps.FindOneInt("maxnodeprims", 4);
+    int maxPrimsInNode = ps.FindOneInt("maxnodeprims", 4); // 默认每个叶子节点中存四个图元
     return std::make_shared<BVHAccel>(std::move(prims), maxPrimsInNode, splitMethod);
 }
 
