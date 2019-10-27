@@ -1608,7 +1608,7 @@ This intersection test is at the heart of traversing the BVHAccel acceleration s
 Because so many ray–bounding box intersection tests are performed while traversing the BVH tree, 
 we found that this optimized method provided approximately a 15% performance improvement in overall rendering time
 compared to using the Bounds3::IntersectP() variant that didn’t take the precomputed direction reciprocals and signs.
-只用在 bvh.cpp 里, Ray–Bounds Intersections 是其核心之一, 通过预先计算 invDir 和 dirIsNeg 带来了 15% 的性能提升 
+只用在 bvh.cpp 里使用, Ray–Bounds Intersections 是其核心之一, 通过预先计算 invDir 和 dirIsNeg 带来了 15% 的性能提升 
 
 */
 template <typename T>

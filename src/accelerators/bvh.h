@@ -92,6 +92,7 @@ class BVHAccel : public Aggregate {
         int start, int end, int *totalNodes,
         std::vector<std::shared_ptr<Primitive>> &orderedPrims);
 
+#pragma region HLBVH
     BVHBuildNode *HLBVHBuild(
         MemoryArena &arena, const std::vector<BVHPrimitiveInfo> &primitiveInfo,
         int *totalNodes,
@@ -107,7 +108,8 @@ class BVHAccel : public Aggregate {
     BVHBuildNode *buildUpperSAH(MemoryArena &arena,
                                 std::vector<BVHBuildNode *> &treeletRoots,
                                 int start, int end, int *totalNodes) const;
-
+#pragma endregion
+  
     int flattenBVHTree(BVHBuildNode *node, int *offset);
 
     // BVHAccel Private Data
