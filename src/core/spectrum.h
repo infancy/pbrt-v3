@@ -1,4 +1,4 @@
-﻿
+
 /*
     pbrt source code is Copyright(c) 1998-2016
                         Matt Pharr, Greg Humphreys, and Wenzel Jakob.
@@ -200,7 +200,6 @@ class CoefficientSpectrum {
     bool operator!=(const CoefficientSpectrum &sp) const {
         return !(*this == sp);
     }
-    // If a surface has zero reﬂectance, the light transport routines can avoid the computational cost of casting reﬂection rays
     bool IsBlack() const {
         for (int i = 0; i < nSpectrumSamples; ++i)
             if (c[i] != 0.) return false;
@@ -208,8 +207,7 @@ class CoefficientSpectrum {
     }
     friend CoefficientSpectrum Sqrt(const CoefficientSpectrum &s) {
         CoefficientSpectrum ret;
-        for (int i = 0; i < nSpectrumSamples; ++i) 
-            ret.c[i] = std::sqrt(s.c[i]);
+        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::sqrt(s.c[i]);
         DCHECK(!ret.HasNaNs());
         return ret;
     }
@@ -218,14 +216,12 @@ class CoefficientSpectrum {
                                              Float e);
     CoefficientSpectrum operator-() const {
         CoefficientSpectrum ret;
-        for (int i = 0; i < nSpectrumSamples; ++i) 
-            ret.c[i] = -c[i];
+        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = -c[i];
         return ret;
     }
     friend CoefficientSpectrum Exp(const CoefficientSpectrum &s) {
         CoefficientSpectrum ret;
-        for (int i = 0; i < nSpectrumSamples; ++i) 
-            ret.c[i] = std::exp(s.c[i]);
+        for (int i = 0; i < nSpectrumSamples; ++i) ret.c[i] = std::exp(s.c[i]);
         DCHECK(!ret.HasNaNs());
         return ret;
     }
