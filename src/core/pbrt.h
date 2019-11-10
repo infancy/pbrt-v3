@@ -126,7 +126,7 @@ class SampledSpectrum;
 #ifdef PBRT_SAMPLED_SPECTRUM
   typedef SampledSpectrum Spectrum;
 #else
-  typedef RGBSpectrum Spectrum;
+  typedef RGBSpectrum Spectrum; // 默认用的是 RGBSpectrum
 #endif
 class Camera;
 struct CameraSample;
@@ -168,13 +168,17 @@ struct Matrix4x4;
 class ParamSet;
 template <typename T>
 struct ParamSetItem;
-struct Options {
-    Options() {
+
+struct Options 
+{
+    Options() 
+    {
         cropWindow[0][0] = 0;
         cropWindow[0][1] = 1;
         cropWindow[1][0] = 0;
         cropWindow[1][1] = 1;
     }
+
     int nThreads = 0;
     bool quickRender = false;
     bool quiet = false;
@@ -411,6 +415,7 @@ int FindInterval(int size, const Predicate &pred) {
     int first = 0, len = size;
     while (len > 0) {
         int half = len >> 1, middle = first + half;
+        // 根据谓词 pred 进行二分搜索
         // Bisect range based on value of _pred_ at _middle_
         if (pred(middle)) {
             first = middle + 1;

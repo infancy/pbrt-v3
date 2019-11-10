@@ -49,24 +49,29 @@ void SortSpectrumSamples(Float *lambda, Float *vals, int n) {
     sortVec.reserve(n);
     for (int i = 0; i < n; ++i)
         sortVec.push_back(std::make_pair(lambda[i], vals[i]));
-    std::sort(sortVec.begin(), sortVec.end());
+    std::sort(sortVec.begin(), sortVec.end()); // 先按波长排, 再按 value 排
     for (int i = 0; i < n; ++i) {
         lambda[i] = sortVec[i].first;
         vals[i] = sortVec[i].second;
     }
 }
 
+// Figure5.2, 从 lambda[n] 里取 [lambdaStart, lambdaEnd] 的均值
 Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
                              Float lambdaStart, Float lambdaEnd) {
     for (int i = 0; i < n - 1; ++i) CHECK_GT(lambda[i + 1], lambda[i]);
     CHECK_LT(lambdaStart, lambdaEnd);
+
     // Handle cases with out-of-bounds range or single sample only
+    // 两端光谱完全不相交
     if (lambdaEnd <= lambda[0]) return vals[0];
     if (lambdaStart >= lambda[n - 1]) return vals[n - 1];
     if (n == 1) return vals[0];
+
     Float sum = 0;
     // Add contributions of constant segments before/after samples
-    if (lambdaStart < lambda[0]) sum += vals[0] * (lambda[0] - lambdaStart);
+    if (lambdaStart < lambda[0]) 
+        sum += vals[0] * (lambda[0] - lambdaStart);
     if (lambdaEnd > lambda[n - 1])
         sum += vals[n - 1] * (lambdaEnd - lambda[n - 1]);
 
@@ -76,17 +81,21 @@ Float AverageSpectrumSamples(const Float *lambda, const Float *vals, int n,
     CHECK_LT(i + 1, n);
 
     // Loop over wavelength sample segments and add contributions
-    auto interp = [lambda, vals](Float w, int i) {
+    auto interp = [lambda, vals](Float w, int i) 
+    {
         return Lerp((w - lambda[i]) / (lambda[i + 1] - lambda[i]), vals[i],
                     vals[i + 1]);
     };
-    for (; i + 1 < n && lambdaEnd >= lambda[i]; ++i) {
+
+    // 为了处理边界情况, 感觉有点麻烦
+    for (; i + 1 < n && lambdaEnd >= lambda[i]; ++i) 
+    {
         Float segLambdaStart = std::max(lambdaStart, lambda[i]);
         Float segLambdaEnd = std::min(lambdaEnd, lambda[i + 1]);
-        sum += 0.5 * (interp(segLambdaStart, i) + interp(segLambdaEnd, i)) *
+        sum += 0.5 * ( interp(segLambdaStart, i) + interp(segLambdaEnd, i) ) *
                (segLambdaEnd - segLambdaStart);
     }
-    return sum / (lambdaEnd - lambdaStart);
+    return sum / (lambdaEnd - lambdaStart); // 最后取均值
 }
 
 RGBSpectrum SampledSpectrum::ToRGBSpectrum() const {
@@ -95,14 +104,18 @@ RGBSpectrum SampledSpectrum::ToRGBSpectrum() const {
     return RGBSpectrum::FromRGB(rgb);
 }
 
+// 想要从 RGB 转换回 SampledSpectrum 是件麻烦事
 SampledSpectrum SampledSpectrum::FromRGB(const Float rgb[3],
                                          SpectrumType type) {
     SampledSpectrum r;
     if (type == SpectrumType::Reflectance) {
         // Convert reflectance spectrum to RGB
+        // 先找到 RGB 中的最小分量
         if (rgb[0] <= rgb[1] && rgb[0] <= rgb[2]) {
             // Compute reflectance _SampledSpectrum_ with _rgb[0]_ as minimum
             r += rgb[0] * rgbRefl2SpectWhite;
+            // (0, g-r, b-r)???
+            // 也可以想像成, 把最大分量分成了三段来计算
             if (rgb[1] <= rgb[2]) {
                 r += (rgb[1] - rgb[0]) * rgbRefl2SpectCyan;
                 r += (rgb[2] - rgb[1]) * rgbRefl2SpectBlue;
@@ -176,16 +189,23 @@ SampledSpectrum::SampledSpectrum(const RGBSpectrum &r, SpectrumType t) {
     *this = SampledSpectrum::FromRGB(rgb, t);
 }
 
+// sampling value of lambda 'l'
 Float InterpolateSpectrumSamples(const Float *lambda, const Float *vals, int n,
                                  Float l) {
-    for (int i = 0; i < n - 1; ++i) CHECK_GT(lambda[i + 1], lambda[i]);
+    for (int i = 0; i < n - 1; ++i)
+        CHECK_GT(lambda[i + 1], lambda[i]);
+
     if (l <= lambda[0]) return vals[0];
     if (l >= lambda[n - 1]) return vals[n - 1];
+
     int offset = FindInterval(n, [&](int index) { return lambda[index] <= l; });
     CHECK(l >= lambda[offset] && l <= lambda[offset + 1]);
+
     Float t = (l - lambda[offset]) / (lambda[offset + 1] - lambda[offset]);
     return Lerp(t, vals[offset], vals[offset + 1]);
 }
+
+
 
 const Float CIE_X[nCIESamples] = {
     // CIE X function values
@@ -936,6 +956,9 @@ const Float CIE_lambda[nCIESamples] = {
     795, 796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809,
     810, 811, 812, 813, 814, 815, 816, 817, 818, 819, 820, 821, 822, 823, 824,
     825, 826, 827, 828, 829, 830};
+
+
+
 void Blackbody(const Float *lambda, int n, Float T, Float *Le) {
     if (T <= 0) {
         for (int i = 0; i < n; ++i) Le[i] = 0.f;
@@ -963,6 +986,8 @@ void BlackbodyNormalized(const Float *lambda, int n, Float T, Float *Le) {
     for (int i = 0; i < n; ++i) Le[i] /= maxL;
 }
 
+
+
 // Spectral Data Definitions
 SampledSpectrum SampledSpectrum::X;
 SampledSpectrum SampledSpectrum::Y;
@@ -981,6 +1006,7 @@ SampledSpectrum SampledSpectrum::rgbIllum2SpectYellow;
 SampledSpectrum SampledSpectrum::rgbIllum2SpectRed;
 SampledSpectrum SampledSpectrum::rgbIllum2SpectGreen;
 SampledSpectrum SampledSpectrum::rgbIllum2SpectBlue;
+
 const Float RGB2SpectLambda[nRGB2SpectSamples] = {
     380.000000, 390.967743, 401.935486, 412.903229, 423.870972, 434.838715,
     445.806458, 456.774200, 467.741943, 478.709686, 489.677429, 500.645172,
@@ -1079,6 +1105,9 @@ const Float RGBRefl2SpectBlue[nRGB2SpectSamples] = {
     4.9489586408030833e-02,  4.9595992290102905e-02,  4.9814819505812249e-02,
     3.9840911064978023e-02,  3.0501024937233868e-02,  2.1243054765241080e-02,
     6.9596532104356399e-03,  4.1733649330980525e-03};
+
+
+
 const Float RGBIllum2SpectWhite[nRGB2SpectSamples] = {
     1.1565232050369776e+00, 1.1567225000119139e+00, 1.1566203150243823e+00,
     1.1555782088080084e+00, 1.1562175509215700e+00, 1.1567674012207332e+00,

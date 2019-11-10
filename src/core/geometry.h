@@ -1664,11 +1664,15 @@ inline Point3f OffsetRayOrigin(const Point3f &p, const Vector3f &pError,
     return po;
 }
 
+// P345, 球面坐标 -> 方向向量
+// convert θ(theta) and φ(phi) values into (x, y, z) direction vectors
 inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi) {
-    return Vector3f(sinTheta * std::cos(phi), sinTheta * std::sin(phi),
+    return Vector3f(sinTheta * std::cos(phi),
+                    sinTheta * std::sin(phi),
                     cosTheta);
 }
-
+// takes three basis vectors representing the x, y, and z axes and returns
+// the appropriate direction vector with respect to the coordinate frame defined by them:
 inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi,
                                    const Vector3f &x, const Vector3f &y,
                                    const Vector3f &z) {
@@ -1676,6 +1680,8 @@ inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi,
            cosTheta * z;
 }
 
+// 方向向量 -> 球面坐标
+// Note that SphericalTheta()assumes that the vector v has been normalized before being passed in
 inline Float SphericalTheta(const Vector3f &v) {
     return std::acos(Clamp(v.z, -1, 1));
 }
