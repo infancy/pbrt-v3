@@ -53,9 +53,12 @@ class Camera {
     Camera(const AnimatedTransform &CameraToWorld, Float shutterOpen,
            Float shutterClose, Film *film, const Medium *medium);
     virtual ~Camera();
+
     virtual Float GenerateRay(const CameraSample &sample, Ray *ray) const = 0;
     virtual Float GenerateRayDifferential(const CameraSample &sample,
                                           RayDifferential *rd) const;
+
+    // used in Section16, bidirectional light transport algorithms
     virtual Spectrum We(const Ray &ray, Point2f *pRaster2 = nullptr) const;
     virtual void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;
     virtual Spectrum Sample_Wi(const Interaction &ref, const Point2f &u,
@@ -81,6 +84,7 @@ inline std::ostream &operator<<(std::ostream &os, const CameraSample &cs) {
     return os;
 }
 
+// ͶӰ???, ??ͶӰ??ʽ????ͶӰ, ͸?ͶӰ
 class ProjectiveCamera : public Camera {
   public:
     // ProjectiveCamera Public Methods
@@ -90,8 +94,10 @@ class ProjectiveCamera : public Camera {
                      Float shutterClose, Float lensr, Float focald, Film *film,
                      const Medium *medium)
         : Camera(CameraToWorld, shutterOpen, shutterClose, film, medium),
-          CameraToScreen(CameraToScreen) {
+          CameraToScreen(CameraToScreen) 
+    {
         // Initialize depth of field parameters
+        // ??ģ????Ч??
         lensRadius = lensr;
         focalDistance = focald;
 
@@ -103,6 +109,7 @@ class ProjectiveCamera : public Camera {
             Scale(1 / (screenWindow.pMax.x - screenWindow.pMin.x),
                   1 / (screenWindow.pMin.y - screenWindow.pMax.y), 1) *
             Translate(Vector3f(-screenWindow.pMin.x, -screenWindow.pMax.y, 0));
+
         RasterToScreen = Inverse(ScreenToRaster);
         RasterToCamera = Inverse(CameraToScreen) * RasterToScreen;
     }

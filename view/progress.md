@@ -61,7 +61,7 @@
 - [x] scene
 - [x] shape
 - [ ] sobolmatrices
-- [ ] spectrum (光谱类，可简单的视为一个 RGBColor)
+- [x] spectrum (光谱类，可简单的视为一个 RGBColor)
 - [ ] stats
 - [ ] stringprint
 - [ ] texture
@@ -220,12 +220,12 @@
 
 ### 5 Color and Radiometry
 
-- [ ] 5.1 Spectral Representation
-- [ ] 5.2 The SampledSpectrum Class
-- [ ] 5.3 RGBSpectrum Implementation
-- [ ] 5.4 Radiometry
-- [ ] 5.5 Working with Radiometric Integrals
-- [ ] 5.6 Surface Reflection
+- [x] 5.1 Spectral Representation
+- [x] 5.2 The SampledSpectrum Class
+- [x] 5.3 RGBSpectrum Implementation
+- [x] 5.4 Radiometry
+- [x] 5.5 Working with Radiometric Integrals
+- [x] 5.6 Surface Reflection
 - [ ] Further Reading
 - [ ] Exercises
 

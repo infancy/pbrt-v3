@@ -38,6 +38,32 @@
 #ifndef PBRT_CAMERAS_PERSPECTIVE_H
 #define PBRT_CAMERAS_PERSPECTIVE_H
 
+/*
+                                                                 focal
+                                                                *|
+                                                        *   *    |
+                                                 *     *         |
+|                                         *       *              |
+|            lens         |        *         *                   |
+|              |          | *           *                        |
+|              |     *    |        *                             |
+|             *|          |    *                                 |
+|           *  |          |*                                     |
+|         *    |      *   |                                      |
+|       *      |  *       |                                      |
+|     *       *|          |
+|   *     *    |          |
+| *  *         |          |
+|*             |          |
+|                         |
+|                     view(视平面)
+image(像平面)
+
+通过穿过透镜中心的中心光线确定位置，而后生成主光线进行着色
+虽然主光线可能未通过视平面的相应像素的位置，但这并没有关系
+当薄透镜的半径为 0 时，则透镜相机变成了针孔相机
+*/
+
 // cameras/perspective.h*
 #include "pbrt.h"
 #include "camera.h"
