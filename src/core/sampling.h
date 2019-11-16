@@ -51,7 +51,9 @@ void StratifiedSample1D(Float *samples, int nsamples, RNG &rng,
                         bool jitter = true);
 void StratifiedSample2D(Point2f *samples, int nx, int ny, RNG &rng,
                         bool jitter = true);
+
 void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng);
+
 struct Distribution1D {
     // Distribution1D Public Methods
     Distribution1D(const Float *f, int n) : func(f, f + n), cdf(n + 1) {
@@ -109,17 +111,24 @@ struct Distribution1D {
 };
 
 Point2f RejectionSampleDisk(RNG &rng);
+
 Vector3f UniformSampleHemisphere(const Point2f &u);
 Float UniformHemispherePdf();
+
 Vector3f UniformSampleSphere(const Point2f &u);
 Float UniformSpherePdf();
+
 Vector3f UniformSampleCone(const Point2f &u, Float thetamax);
 Vector3f UniformSampleCone(const Point2f &u, Float thetamax, const Vector3f &x,
                            const Vector3f &y, const Vector3f &z);
+
 Float UniformConePdf(Float thetamax);
+
 Point2f UniformSampleDisk(const Point2f &u);
 Point2f ConcentricSampleDisk(const Point2f &u);
+
 Point2f UniformSampleTriangle(const Point2f &u);
+
 class Distribution2D {
   public:
     // Distribution2D Public Methods

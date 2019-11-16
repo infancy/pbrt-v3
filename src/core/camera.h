@@ -54,6 +54,7 @@ class Camera {
            Float shutterClose, Film *film, const Medium *medium);
     virtual ~Camera();
 
+    // 返回的 ray 是经过归一化的, 整个系统依赖于这个行为
     virtual Float GenerateRay(const CameraSample &sample, Ray *ray) const = 0;
     virtual Float GenerateRayDifferential(const CameraSample &sample,
                                           RayDifferential *rd) const;
@@ -66,8 +67,9 @@ class Camera {
                                VisibilityTester *vis) const;
 
     // Camera Public Data
-    AnimatedTransform CameraToWorld;
-    const Float shutterOpen, shutterClose;
+    // P356
+    AnimatedTransform CameraToWorld; // 可以把相机变换到世界空间中
+    const Float shutterOpen, shutterClose; // 快门时间, 用于模拟运动模糊
     Film *film;
     const Medium *medium;
 };
@@ -84,7 +86,7 @@ inline std::ostream &operator<<(std::ostream &os, const CameraSample &cs) {
     return os;
 }
 
-// ͶӰ???, ??ͶӰ??ʽ????ͶӰ, ͸?ͶӰ
+// 投影相机, 按投影方式可有正交投影, 透视投影
 class ProjectiveCamera : public Camera {
   public:
     // ProjectiveCamera Public Methods
@@ -97,7 +99,7 @@ class ProjectiveCamera : public Camera {
           CameraToScreen(CameraToScreen) 
     {
         // Initialize depth of field parameters
-        // ??ģ????Ч??
+        // 用于模拟景深效果
         lensRadius = lensr;
         focalDistance = focald;
 
@@ -106,8 +108,9 @@ class ProjectiveCamera : public Camera {
         // Compute projective camera screen transformations
         ScreenToRaster =
             Scale(film->fullResolution.x, film->fullResolution.y, 1) *
-            Scale(1 / (screenWindow.pMax.x - screenWindow.pMin.x),
-                  1 / (screenWindow.pMin.y - screenWindow.pMax.y), 1) *
+            Scale(
+                1 / (screenWindow.pMax.x - screenWindow.pMin.x), 
+                1 / (screenWindow.pMin.y - screenWindow.pMax.y),  1) *
             Translate(Vector3f(-screenWindow.pMin.x, -screenWindow.pMax.y, 0));
 
         RasterToScreen = Inverse(ScreenToRaster);

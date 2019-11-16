@@ -104,14 +104,21 @@ Vector3f UniformSampleSphere(const Point2f &u) {
 
 Float UniformSpherePdf() { return Inv4Pi; }
 
+// P776
+// Figure13.10, 直接对圆盘采用均匀采样, 实际采样结果是不均匀的(采样点会聚集在圆心附近)
+// Figure13.11, 对 radius 开平方, 可以得到均分分布的结果, 但变换过程存在变形...
 Point2f UniformSampleDisk(const Point2f &u) {
     Float r = std::sqrt(u[0]);
     Float theta = 2 * Pi * u[1];
     return Point2f(r * std::cos(theta), r * std::sin(theta));
 }
 
+// P778, Figure13.12, 单位正方形到单位圆的同心映射, 也是一种均匀分布
+// https://blog.csdn.net/codeboycjy/article/details/6225886
+// https://psgraphics.blogspot.com/2011/01/improved-code-for-concentric-map.html
 Point2f ConcentricSampleDisk(const Point2f &u) {
     // Map uniform random numbers to $[-1,1]^2$
+    // 先映射到单位正方形上
     Point2f uOffset = 2.f * u - Vector2f(1, 1);
 
     // Handle degeneracy at the origin

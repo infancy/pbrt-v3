@@ -39,6 +39,7 @@
 #define PBRT_CAMERAS_PERSPECTIVE_H
 
 /*
+侧视示意图, lens 一般是圆形的
                                                                  focal
                                                                 *|
                                                         *   *    |
@@ -91,7 +92,7 @@ class PerspectiveCamera : public ProjectiveCamera {
   private:
     // PerspectiveCamera Private Data
     Vector3f dxCamera, dyCamera;
-    Float A;
+    Float A; // Area
 };
 
 PerspectiveCamera *CreatePerspectiveCamera(const ParamSet &params,
