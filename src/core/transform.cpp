@@ -376,11 +376,15 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction &si) const {
 }
 
 Transform Orthographic(Float zNear, Float zFar) {
+    // 先让场景往 z 轴移动, 使近平面与 z = 0 对齐, 然后保持 xy 坐标不变, 将 z 坐标从 [zNear - zNear, zFar - zNear] 映射到 [0, 1] 
+    // 正交相机的起点, 在相机空间 z = 0 的平面上
     return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
 }
 
+// 可以对比一下 glm::mat4 glm::perspective(T fovy, T aspect, T zNear, T zFar)
 Transform Perspective(Float fov, Float n, Float f) {
     // Perform projective divide for perspective projection
+    // 透视投影, 将 z 从 [near, far] 映射到 [0, 1], xy 
     Matrix4x4 persp(
         1, 0, 0, 0, 
         0, 1, 0, 0, 

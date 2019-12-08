@@ -40,6 +40,8 @@
 
 namespace pbrt {
 
+#pragma region
+
 // KdTreeAccel Local Declarations
 // P285 4.4.1 TREE REPRESENTATION
 // Our initial implementation used a 16-byte node representation; when we reduced the size to 8 bytes
@@ -97,6 +99,10 @@ struct BoundEdge
     int primNum;
     EdgeType type;
 };
+
+#pragma endregion
+
+#pragma region
 
 // KdTreeAccel Method Definitions
 KdTreeAccel::KdTreeAccel(std::vector<std::shared_ptr<Primitive>> p,
@@ -349,7 +355,9 @@ retrySplit:
               prims0, prims1 + nPrimitives, badRefines);
 }
 
+#pragma endregion
 
+#pragma region
 
 bool KdTreeAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const 
 {
@@ -556,7 +564,7 @@ bool KdTreeAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 
-
+#pragma endregion
 
 std::shared_ptr<KdTreeAccel> CreateKdTreeAccelerator(
     std::vector<std::shared_ptr<Primitive>> prims, const ParamSet &ps) 

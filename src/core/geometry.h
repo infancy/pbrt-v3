@@ -818,7 +818,25 @@ class Bounds2 {
     Point2<T> pMin, pMax;
 };
 
-// Bounds3 主要是用在空间加速结构, 即层次包围盒(bounding volume hierarchy, section4.3)上
+/*
+              y
+              |
+              |
+              |
+              O - - - - z
+             /              Bounds3::pMax
+            /     3------ 2
+           /     /|      /|
+          x     4-------1 |
+                | |     | |
+                | 7-----|-6
+                |/      |/
+                8-------5
+    Bounds3::pMin
+
+    Bounds3 主要是用在空间加速结构上
+*/
+
 template <typename T>
 class Bounds3 {
   public:
@@ -1033,7 +1051,7 @@ class RayDifferential : public Ray {
     bool hasDifferentials;
     // 主光线有两条辅助光线
     // These extra rays represent camera rays offset by one sample in the $x$ and $y$ direction from the main ray on the film plane.
-    // 它们是通过胶片平面上主光线的起点, 向右方和上方分别偏移一个像素单位得到的
+    // 它们是以胶片平面上主光线的起点, 向右方和上方分别偏移一个像素单位得到的
     // By determining the area that these three rays project to on an object being shaded, the Texture can estimate an area to average over for proper antialiasing.
     // 通过确定三条光线所投射到的对象上着色区域的大小, 纹理对象可以估计出用于反走样的区域大小(一般是取这个区域上贴图颜色的均值)
     Point3f rxOrigin, ryOrigin;

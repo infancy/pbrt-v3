@@ -46,6 +46,8 @@ STAT_RATIO("BVH/Primitives per leaf node", totalPrimitives, totalLeafNodes);
 STAT_COUNTER("BVH/Interior nodes", interiorNodes);
 STAT_COUNTER("BVH/Leaf nodes", leafNodes);
 
+#pragma region
+
 // BVHAccel Local Declarations
 struct BVHPrimitiveInfo 
 {
@@ -193,6 +195,10 @@ static void RadixSort(std::vector<MortonPrimitive> *v) {
     // Copy final result from _tempVector_, if needed
     if (nPasses & 1) std::swap(*v, tempVector);
 }
+
+#pragma endregion
+
+#pragma region
 
 // BVHAccel Method Definitions
 BVHAccel::BVHAccel(std::vector<std::shared_ptr<Primitive>> p,
@@ -490,6 +496,8 @@ BVHBuildNode *BVHAccel::recursiveBuild(
     return node;
 }
 
+#pragma endregion
+
 #pragma region HLBVH
 
 BVHBuildNode *BVHAccel::HLBVHBuild(
@@ -769,6 +777,7 @@ int BVHAccel::flattenBVHTree(BVHBuildNode *node, int *offset)
 
 BVHAccel::~BVHAccel() { FreeAligned(nodes); }
 
+#pragma region
 
 // 遍历过程也可以参照 Figure4.13
 bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const 
@@ -872,7 +881,7 @@ bool BVHAccel::IntersectP(const Ray &ray) const {
     return false;
 }
 
-
+#pragma endregion
 
 std::shared_ptr<BVHAccel> CreateBVHAccelerator(
     std::vector<std::shared_ptr<Primitive>> prims, const ParamSet &ps) 

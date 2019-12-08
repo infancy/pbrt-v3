@@ -113,7 +113,7 @@ Point2f UniformSampleDisk(const Point2f &u) {
     return Point2f(r * std::cos(theta), r * std::sin(theta));
 }
 
-// P778, Figure13.12, 单位正方形到单位圆的同心映射, 也是一种均匀分布
+// P778, Figure13.12, 单位正方形到单位圆的同心映射, 是一种更好的均匀分布
 // https://blog.csdn.net/codeboycjy/article/details/6225886
 // https://psgraphics.blogspot.com/2011/01/improved-code-for-concentric-map.html
 Point2f ConcentricSampleDisk(const Point2f &u) {

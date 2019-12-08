@@ -38,33 +38,6 @@
 #ifndef PBRT_CAMERAS_PERSPECTIVE_H
 #define PBRT_CAMERAS_PERSPECTIVE_H
 
-/*
-侧视示意图, lens 一般是圆形的
-                                                                 focal
-                                                                *|
-                                                        *   *    |
-                                                 *     *         |
-|                                         *       *              |
-|            lens         |        *         *                   |
-|              |          | *           *                        |
-|              |     *    |        *                             |
-|             *|          |    *                                 |
-|           *  |          |*                                     |
-|         *    |      *   |                                      |
-|       *      |  *       |                                      |
-|     *       *|          |
-|   *     *    |          |
-| *  *         |          |
-|*             |          |
-|                         |
-|                     view(视平面)
-image(像平面)
-
-通过穿过透镜中心的中心光线确定位置，而后生成主光线进行着色
-虽然主光线可能未通过视平面的相应像素的位置，但这并没有关系
-当薄透镜的半径为 0 时，则透镜相机变成了针孔相机
-*/
-
 // cameras/perspective.h*
 #include "pbrt.h"
 #include "camera.h"
@@ -80,9 +53,11 @@ class PerspectiveCamera : public ProjectiveCamera {
                       const Bounds2f &screenWindow, Float shutterOpen,
                       Float shutterClose, Float lensRadius, Float focalDistance,
                       Float fov, Film *film, const Medium *medium);
+
     Float GenerateRay(const CameraSample &sample, Ray *) const;
     Float GenerateRayDifferential(const CameraSample &sample,
                                   RayDifferential *ray) const;
+
     Spectrum We(const Ray &ray, Point2f *pRaster2 = nullptr) const;
     void Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const;
     Spectrum Sample_Wi(const Interaction &ref, const Point2f &sample,

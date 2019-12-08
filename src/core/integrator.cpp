@@ -328,7 +328,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 camera->film->GetFilmTile(tileBounds);
 
             // Loop over pixels in tile to render them
-            for (Point2i pixel : tileBounds) {	// 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
+            for (Point2i pixel : tileBounds) 
+            {	// 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
                 {
                     ProfilePhase pp(Prof::StartPixel);
 					// 采样一个新的像素前，先对采样器进行一些设置
