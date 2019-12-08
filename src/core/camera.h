@@ -79,8 +79,8 @@ class Camera {
 
 // Camera 生成光线时用到的所有参数
 struct CameraSample {
-    Point2f pFilm; // 在 film 上的采样点
-    Point2f pLens; // lens 上的随机采样点
+    Point2f pFilm; // 图像平面上的采样点
+    Point2f pLens; // 镜头上的随机采样点
     Float time; // 采样这条光线的时间
 };
 
@@ -105,13 +105,12 @@ class ProjectiveCamera : public Camera {
     {
         // Initialize depth of field parameters
         // 用于模拟景深效果
-        lensRadius = lensr;
-        focalDistance = focald;
+        lensRadius = lensr; // 镜头大小
+        focalDistance = focald; // 焦距
 
         // Compute projective camera transformations
 
         // Compute projective camera screen transformations
-
 /*
          screen space -> NDC space -> raster space
 

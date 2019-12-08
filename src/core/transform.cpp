@@ -381,10 +381,10 @@ Transform Orthographic(Float zNear, Float zFar) {
     return Scale(1, 1, 1 / (zFar - zNear)) * Translate(Vector3f(0, 0, -zNear));
 }
 
-// 可以对比一下 glm::mat4 glm::perspective(T fovy, T aspect, T zNear, T zFar)
+// 可以和 glm::mat4 glm::perspective(T fovy, T aspect, T zNear, T zFar) 对比一下
 Transform Perspective(Float fov, Float n, Float f) {
     // Perform projective divide for perspective projection
-    // 透视投影, 将 z 从 [near, far] 映射到 [0, 1], xy 
+    // 透视除法, 通过 x' = x/z, y' = y/z 将 xy 投影到 z=1 的屏幕空间中, 同时将 z 从 [near, far] 映射到 [0, 1], 
     Matrix4x4 persp(
         1, 0, 0, 0, 
         0, 1, 0, 0, 
@@ -392,6 +392,7 @@ Transform Perspective(Float fov, Float n, Float f) {
         0, 0, 1, 0);
 
     // Scale canonical perspective view to specified field of view
+    // 根据 fov 对屏幕空间的 xy 平面进行放缩, 相当于改变了透镜到图像平面的距离
     Float invTanAng = 1 / std::tan(Radians(fov) / 2);
     return Scale(invTanAng, invTanAng, 1) * Transform(persp);
 }

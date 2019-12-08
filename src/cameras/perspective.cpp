@@ -41,29 +41,23 @@
 
 namespace pbrt {
 
-// PerspectiveCamera Method Definitions
-PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
-                                     const Bounds2f &screenWindow,
-                                     Float shutterOpen, Float shutterClose,
-                                     Float lensRadius, Float focalDistance,
-                                     Float fov, Film *film,
-                                     const Medium *medium)
 /*
-相机空间
-                y
+    相机空间
+
+                y(正上方)
                 ^           /
                 |          /                                       *
                 |         /                                   *
                 |        /                               *
                 |       /                           *
                 |      /                     *
-                |     /                 *           *  
+                |     /                 *           *
                 |    /             *
-                |   /         *                     *          
+                |   /         *                     *
                 |  /      *
-                | /   *                             *                       
+                | /   *                             *
                 |/ *
-              z=0 -   -   -   -    -    -    -      -    -    -    -    ->z
+              z=0 -   -   -   -    -    -    -      -    -    -    -    ->z(视见方向)
                /|  *    #
               / |     *       #                     *
              /  |         *            #
@@ -77,11 +71,21 @@ PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
      x          |                                  z=1            *
 
 
-
-这里把 perspective 的 near, far 给写死了
-不过 PerspectiveCamera 构造函数的参数也太多了, 写成 ParamSet 的形式要好一些
 */
+
+// PerspectiveCamera Method Definitions
+PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
+                                     const Bounds2f &screenWindow,
+                                     Float shutterOpen, Float shutterClose,
+                                     Float lensRadius, Float focalDistance,
+                                     Float fov, Film *film,
+                                     const Medium *medium)
+
     : ProjectiveCamera(
+        /*
+            这里把 perspective 的 near, far 给写死了
+            不过 PerspectiveCamera 构造函数的参数也太多了, 写成 ParamSet 的形式要好一些
+        */
         CameraToWorld, Perspective(fov, 1e-2f, 1000.f),
         screenWindow, shutterOpen, shutterClose, 
         lensRadius, focalDistance, 
@@ -95,9 +99,12 @@ PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
 
     // Compute image plane bounds at $z=1$ for _PerspectiveCamera_
     Point2i res = film->fullResolution;
+
+    // pMin 和 pMax 被变换到相机空间的近平面中
     Point3f pMin = RasterToCamera(Point3f(0, 0, 0));
     Point3f pMax = RasterToCamera(Point3f(res.x, res.y, 0));
-    // 计算 z=1 时 Area 的大小
+
+    // 除以 z 值投影到 z=1 的位置, 然后计算 Area 的大小
     pMin /= pMin.z;
     pMax /= pMax.z;
     A = std::abs((pMax.x - pMin.x) * (pMax.y - pMin.y));
@@ -105,51 +112,47 @@ PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld,
 
 /*
 真实世界中, 凸透镜成像的侧视示意图
-                                                                 
-
-                                                                *|<- scene sample
-                                                        *   *    |
-                                                 *     *         |
-|                                         *       *              |
-|                         |        *         *                   |
-|              |          | *           *                        |
-|              |     *    |        *                             |
-|  len sample->|*         |    *                                 |
-|           *  |          |<-pixel sample                        |
-|         *    |      *   |                                      |
-|       *      |  *       |                                      |
-|     *       *|          |                                      focal
-|   *     *    |          |
-| *  *         |          |
-|*             |          |
-|            lens         |
-|                       view(视平面)
-image(像平面)
-
-
-虚拟相机的成像:
-                                                                 focal
                                                                 *|
                                                         *   *    |
                                                  *     *         |
-                                          *       *              |
-                   film   |        *         *                   |
-               |  sample->| *           *                        |
-               |     *    |        *                             |
-   len sample->|*         |    *                                 |
-               |          |<-film sample                         |
-               |      *   |                                      |
-               |  *       |                                      |
-               |          |
-               |          |
-               |          |
-               |          |
-             lens         |
-                          film/near plane
+|                                         *       *              |
+|                                  *         *                   |
+|              |            *           *                        |
+|              |     *             *                             |
+|              |*              *                                 |
+|           *  |           *                                     |
+|         *    |      *                                          |
+|       *      |  *                                              |
+|     *       *|                                                 focal(焦平面)
+|   *     *    |
+| *  *         |
+|*             |
+|            lens
+|
+image(像平面)
 
-通过穿过透镜中心的中心光线确定焦平面的采样位置，而后生成主光线进行采样
-虽然主光线可能未通过视平面的相应像素的位置，但这并没有关系
-当薄透镜的半径为 0 时，则透镜相机变成了针孔相机
+
+
+虚拟相机的成像:
+                                                                *|<- scene sample
+                                                        *   *    |
+                                                 *     *         |
+                       sample ray         *       *              |
+                                   *         *                   |
+               |            *           *                        |
+               |     *             *                             |
+   len sample->|*              *     center ray                  |
+               |          *                                      |
+               |      *                                          |
+               |  *                                              |
+               |                                                 focal
+               |
+               |
+               |
+             lens
+
+先使用穿过透镜中心的主光线(这条光线不会发生折射)确定焦平面的采样位置，
+再根据 len sample 和 scene sample 生成采样光线, 发射到场景中进行采样
 */
 
 Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
@@ -159,9 +162,9 @@ Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
 
     // Compute raster and camera sample positions
     Point3f pFilm = Point3f(sample.pFilm.x, sample.pFilm.y, 0);
-    Point3f pCamera = RasterToCamera(pFilm);
+    Point3f pCamera = RasterToCamera(pFilm); // pFilm 的 z 坐标为 0, 所以会变换到相机空间的近平面上
 
-
+    // 生成主光线(起点是相机原点, 所以就直接把 pCamera 当方向用了)
     *ray = Ray(Point3f(0, 0, 0), Normalize(Vector3f(pCamera)));
 
     // Modify ray for depth of field
@@ -172,7 +175,7 @@ Float PerspectiveCamera::GenerateRay(const CameraSample &sample,
 
         // Compute point on plane of focus
         // 通过主光线找到焦平面上的采样点
-        Float ft = focalDistance / ray->d.z;
+        Float ft = focalDistance / ray->d.z; // 根据相似三角形计算原点到采样点的距离
         Point3f pFocus = (*ray)(ft);
 
         // Update ray for effect of lens
@@ -221,9 +224,11 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample,
 
         // Sample point on lens
         Point2f pLens = lensRadius * ConcentricSampleDisk(sample.pLens);
-        Vector3f dx = Normalize(Vector3f(pCamera + dxCamera));
+        Vector3f dx = Normalize(Vector3f(pCamera + dxCamera)); // dx 的偏移方向
+
         Float ft = focalDistance / dx.z;
-        Point3f pFocus = Point3f(0, 0, 0) + (ft * dx);
+        Point3f pFocus = Point3f(0, 0, 0) + (ft * dx); // 焦平面的采样点
+
         ray->rxOrigin = Point3f(pLens.x, pLens.y, 0);
         ray->rxDirection = Normalize(pFocus - ray->rxOrigin);
 
