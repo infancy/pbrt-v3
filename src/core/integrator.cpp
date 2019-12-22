@@ -54,26 +54,34 @@ Integrator::~Integrator() {}
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 MemoryArena &arena, Sampler &sampler,
                                 const std::vector<int> &nLightSamples,
-                                bool handleMedia) {
+                                bool handleMedia) 
+{
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
+    
 	// 计算所有光源经由交点 it 向 it.wo 方向发射的辐射度
-    for (size_t j = 0; j < scene.lights.size(); ++j) {
+    for (size_t j = 0; j < scene.lights.size(); ++j) 
+    {
         // Accumulate contribution of _j_th light to _L_
         const std::shared_ptr<Light> &light = scene.lights[j];
         int nSamples = nLightSamples[j];
 		
+        // 使用 sampler.Get1D/2DArray 前, 要保证已调用 sampler.Request1D/2DArray 生成了采样点
         const Point2f *uLightArray = sampler.Get2DArray(nSamples);
         const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
-		// 如果 Get2DArray() 方法不可用（如样本数组被用光时），则只进行单次采样
-		// 否则根据 nSamples 的大小，在光源上取 n 个采样点，计算平均辐射度
-        if (!uLightArray || !uScatteringArray) {
+
+		// 如果样本数组被用光时，只进行单次采样
+        if (!uLightArray || !uScatteringArray) 
+        {
             // Use a single sample for illumination from _light_
             Point2f uLight = sampler.Get2D();
             Point2f uScattering = sampler.Get2D();
             L += EstimateDirect(it, uScattering, *light, uLight, scene, sampler,
                                 arena, handleMedia);
-        } else {
+        } 
+		// 否则根据 nSamples 的大小，在光源上取 n 个采样点，计算平均辐射度
+        else 
+        {
             // Estimate direct lighting using sample arrays
             Spectrum Ld(0.f);
             for (int k = 0; k < nSamples; ++k)
@@ -335,6 +343,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
 					// 采样一个新的像素前，先对采样器进行一些设置
                     tileSampler->StartPixel(pixel);		
                 }
+                
 				// 检查该像素是否在 pixelBounds 内（pixelBounds 可能比图像平面小）
 				// 这可以保持（大多数）采样器中所使用的 RNG 值的一致性，方便重现？？？、调试
                 // Do this check after the StartPixel() call; this keeps
@@ -344,7 +353,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
 
-                do {
+                do 
+                {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
                         tileSampler->GetCameraSample(pixel);
@@ -352,10 +362,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Generate camera ray for current sample
 					// 为当前样本生成相机光线
                     RayDifferential ray;
-                    Float rayWeight =
-                        camera->GenerateRayDifferential(cameraSample, &ray);
-                    ray.ScaleDifferentials(
-                        1 / std::sqrt((Float)tileSampler->samplesPerPixel));
+                    Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray);
+                    ray.ScaleDifferentials(1 / std::sqrt((Float)tileSampler->samplesPerPixel));
+
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
@@ -365,30 +374,32 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
                     // Issue warning if unexpected radiance value returned
 					//对得到的辐射度做检查
-					if (L.HasNaNs()) {
-                        LOG(ERROR) << StringPrintf(
-                            "Not-a-number radiance value returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    } else if (L.y() < -1e-5) {
-                        LOG(ERROR) << StringPrintf(
-                            "Negative luminance value, %f, returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            L.y(), pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    } else if (std::isinf(L.y())) {
-                          LOG(ERROR) << StringPrintf(
-                            "Infinite luminance value returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
+                    {
+					    if (L.HasNaNs()) {
+                            LOG(ERROR) << StringPrintf(
+                                "Not-a-number radiance value returned "
+                                "for pixel (%d, %d), sample %d. Setting to black.",
+                                pixel.x, pixel.y,
+                                (int)tileSampler->CurrentSampleNumber());
+                            L = Spectrum(0.f);
+                        } else if (L.y() < -1e-5) {
+                            LOG(ERROR) << StringPrintf(
+                                "Negative luminance value, %f, returned "
+                                "for pixel (%d, %d), sample %d. Setting to black.",
+                                L.y(), pixel.x, pixel.y,
+                                (int)tileSampler->CurrentSampleNumber());
+                            L = Spectrum(0.f);
+                        } else if (std::isinf(L.y())) {
+                              LOG(ERROR) << StringPrintf(
+                                "Infinite luminance value returned "
+                                "for pixel (%d, %d), sample %d. Setting to black.",
+                                pixel.x, pixel.y,
+                                (int)tileSampler->CurrentSampleNumber());
+                            L = Spectrum(0.f);
+                        }
+                        VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
+                            ray << " -> L = " << L;
                     }
-                    VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
-                        ray << " -> L = " << L;
 
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
@@ -396,7 +407,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Free _MemoryArena_ memory from computing image sample
                     // value
                     arena.Reset();
-                } while (tileSampler->StartNextSample());
+                } 
+                while (tileSampler->StartNextSample());
             }
             LOG(INFO) << "Finished image tile " << tileBounds;
 
@@ -405,6 +417,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             camera->film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
         }, nTiles);
+
         reporter.Done();
     }
     LOG(INFO) << "Rendering finished";
@@ -416,7 +429,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
 Spectrum SamplerIntegrator::SpecularReflect(
     const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) const {
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) const 
+{
     // Compute specular reflection direction _wi_ and BSDF value
     Vector3f wo = isect.wo, wi;
     Float pdf;
@@ -427,14 +441,17 @@ Spectrum SamplerIntegrator::SpecularReflect(
     // Return contribution of specular reflection
 	// 计算镜面反射的贡献
     const Normal3f &ns = isect.shading.n;
-    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) 
+    {
         // Compute ray differential _rd_ for specular reflection
         RayDifferential rd = isect.SpawnRay(wi);
 		// 关于光线微分的代码没细看，暂时不做解释
-        if (ray.hasDifferentials) {
+        if (ray.hasDifferentials) 
+        {
             rd.hasDifferentials = true;
             rd.rxOrigin = isect.p + isect.dpdx;
             rd.ryOrigin = isect.p + isect.dpdy;
+
             // Compute differential reflected directions
             Normal3f dndx = isect.shading.dndu * isect.dudx +
                             isect.shading.dndv * isect.dvdx;
@@ -444,14 +461,17 @@ Spectrum SamplerIntegrator::SpecularReflect(
                      dwody = -ray.ryDirection - wo;
             Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
             Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+
             rd.rxDirection =
                 wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
             rd.ryDirection =
                 wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
+
         return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
                pdf;
-    } else
+    } 
+    else
         return Spectrum(0.f);
 }
 

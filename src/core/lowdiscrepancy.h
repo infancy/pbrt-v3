@@ -55,16 +55,25 @@ Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm);
 extern const int PrimeSums[PrimeTableSize];
 inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
                     Point2f *samples, RNG &rng);
+
+
+
 extern uint32_t CMaxMinDist[17][32];
+
+
+
 inline uint64_t SobolIntervalToIndex(const uint32_t log2Resolution,
                                      uint64_t sampleNum, const Point2i &p);
-inline float SobolSampleFloat(int64_t index, int dimension,
-                              uint32_t scramble = 0);
-inline double SobolSampleDouble(int64_t index, int dimension,
-                                uint64_t scramble = 0);
+
+inline float SobolSampleFloat(  int64_t index, int dimension, uint32_t scramble = 0);
+inline double SobolSampleDouble(int64_t index, int dimension, uint64_t scramble = 0);
+
+
 
 // Low Discrepancy Inline Functions
-inline uint32_t ReverseBits32(uint32_t n) {
+// 反转比特位
+inline uint32_t ReverseBits32(uint32_t n) 
+{
     n = (n << 16) | (n >> 16);
     n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8);
     n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4);
@@ -78,6 +87,8 @@ inline uint64_t ReverseBits64(uint64_t n) {
     uint64_t n1 = ReverseBits32((uint32_t)(n >> 32));
     return (n0 << 32) | n1;
 }
+
+
 
 template <int base>
 inline uint64_t InverseRadicalInverse(uint64_t inverse, int nDigits) {

@@ -386,18 +386,29 @@ uint32_t CMaxMinDist[17][32] = {
 };
 
 // Low Discrepancy Static Functions
+/*!
+    倒根函数
+    \tparam base 底数
+    \param a 第 n 个采样值
+    \note 以2为底数, 生成前 n 个采样值: RIS<2>(1) = 1/2, RIS<2>(2) = 1/4, RIS<2>(3) = 3/4...
+*/
 template <int base>
-PBRT_NOINLINE static Float RadicalInverseSpecialized(uint64_t a) {
+PBRT_NOINLINE static Float RadicalInverseSpecialized(uint64_t a) 
+{
     const Float invBase = (Float)1 / (Float)base;
     uint64_t reversedDigits = 0;
     Float invBaseN = 1;
-    while (a) {
+
+    while (a) 
+    {
+        // 4 = 0b100 -> ((0 * 2 + 0) * 2 + 1) * 1/2^3 = 1/8
         uint64_t next = a / base;
-        uint64_t digit = a - next * base;
+        uint64_t digit = a - next * base; // 余数, 为什么不用 a % base 呢
         reversedDigits = reversedDigits * base + digit;
         invBaseN *= invBase;
         a = next;
     }
+
     DCHECK_LT(reversedDigits * invBaseN, 1.00001);
     return std::min(reversedDigits * invBaseN, OneMinusEpsilon);
 }
@@ -424,14 +435,17 @@ ScrambledRadicalInverseSpecialized(const uint16_t *perm, uint64_t a) {
 }
 
 // Low Discrepancy Function Definitions
-Float RadicalInverse(int baseIndex, uint64_t a) {
-    switch (baseIndex) {
+Float RadicalInverse(int baseIndex, uint64_t a) 
+{
+    // 把 baseIndex 依次映射到另一个质数作为基底, 估计使用代码生成器生成的, 为什么不用一个质数数组来做映射呢?
+    switch (baseIndex) 
+    {
     case 0:
     // Compute base-2 radical inverse
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         return ReverseBits64(a) * 5.4210108624275222e-20;
 #else
-        return ReverseBits64(a) * 0x1p-64;
+        return ReverseBits64(a) * 0x1p-64; // 反转比特位以后乘以 1/2^64
 #endif
     case 1:
         return RadicalInverseSpecialized<3>(a);
@@ -2487,16 +2501,23 @@ Float RadicalInverse(int baseIndex, uint64_t a) {
     }
 }
 
-std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng) {
+std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng) 
+{
     std::vector<uint16_t> perms;
+
     // Allocate space in _perms_ for radical inverse permutations
     int permArraySize = 0;
-    for (int i = 0; i < PrimeTableSize; ++i) permArraySize += Primes[i];
+    for (int i = 0; i < PrimeTableSize; ++i) 
+        permArraySize += Primes[i];
     perms.resize(permArraySize);
+
     uint16_t *p = &perms[0];
-    for (int i = 0; i < PrimeTableSize; ++i) {
+    for (int i = 0; i < PrimeTableSize; ++i) 
+    {
         // Generate random permutation for $i$th prime base
-        for (int j = 0; j < Primes[i]; ++j) p[j] = j;
+        for (int j = 0; j < Primes[i]; ++j) 
+            p[j] = j;
+
         Shuffle(p, Primes[i], 1, rng);
         p += Primes[i];
     }

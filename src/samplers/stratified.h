@@ -44,23 +44,27 @@
 
 namespace pbrt {
 
+// 分层采样, 参考 Figure7.18, 在均匀采样的基础上进行扰动
+
 // StratifiedSampler Declarations
 class StratifiedSampler : public PixelSampler {
   public:
     // StratifiedSampler Public Methods
-    StratifiedSampler(int xPixelSamples, int yPixelSamples, bool jitterSamples,
+    StratifiedSampler(
+        int xPixelSamples, int yPixelSamples, bool jitterSamples,
                       int nSampledDimensions)
         : PixelSampler(xPixelSamples * yPixelSamples, nSampledDimensions),
           xPixelSamples(xPixelSamples),
           yPixelSamples(yPixelSamples),
           jitterSamples(jitterSamples) {}
+
     void StartPixel(const Point2i &);
     std::unique_ptr<Sampler> Clone(int seed);
 
   private:
     // StratifiedSampler Private Data
-    const int xPixelSamples, yPixelSamples;
-    const bool jitterSamples;
+    const int xPixelSamples, yPixelSamples; // 单个像素上 x 方向和 y 方向的采样数量, x * y 即 samplesPerPixel
+    const bool jitterSamples; // 是否进行扰动, 不扰动那就是均匀采样了
 };
 
 StratifiedSampler *CreateStratifiedSampler(const ParamSet &params);

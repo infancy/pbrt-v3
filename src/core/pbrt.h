@@ -332,6 +332,8 @@ inline Float Radians(Float deg) { return (Pi / 180) * deg; }
 
 inline Float Degrees(Float rad) { return (180 / Pi) * rad; }
 
+
+
 inline Float Log2(Float x) {
     const Float invLog2 = 1.442695040888963387004650940071;
     return std::log(x) * invLog2;
@@ -348,6 +350,8 @@ inline int Log2Int(uint32_t v) {
 }
 
 inline int Log2Int(int32_t v) { return Log2Int((uint32_t)v); }
+
+
 
 inline int Log2Int(uint64_t v) {
 #if defined(PBRT_IS_MSVC)
@@ -366,7 +370,11 @@ inline int Log2Int(uint64_t v) {
 #endif
 }
 
+
+
 inline int Log2Int(int64_t v) { return Log2Int((uint64_t)v); }
+
+
 
 template <typename T>
 inline PBRT_CONSTEXPR bool IsPowerOf2(T v) {

@@ -47,12 +47,12 @@
 namespace pbrt {
 
 // Sampling Declarations
-void StratifiedSample1D(Float *samples, int nsamples, RNG &rng,
-                        bool jitter = true);
-void StratifiedSample2D(Point2f *samples, int nx, int ny, RNG &rng,
-                        bool jitter = true);
-
+// 这三个函数是 StratifiedSampler 的辅助函数
+void StratifiedSample1D(Float *samples, int nsamples, RNG &rng, bool jitter = true);
+void StratifiedSample2D(Point2f *samples, int nx, int ny, RNG &rng, bool jitter = true);
 void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng);
+
+
 
 struct Distribution1D {
     // Distribution1D Public Methods
@@ -156,10 +156,21 @@ class Distribution2D {
 };
 
 // Sampling Inline Functions
+// https://zh.cppreference.com/w/cpp/algorithm/random_shuffle
+// 这里还考虑了维度, 直观看就是打乱了同一列的数据(同一维度的数据)
+/*!
+    \param samp 可以当成是 samp[count][nDimensions] 形式的二维数组
+    \param count 行数
+    \param nDimensions 维度(列数)
+    \param rng 随机数发生器
+*/
 template <typename T>
-void Shuffle(T *samp, int count, int nDimensions, RNG &rng) {
-    for (int i = 0; i < count; ++i) {
+void Shuffle(T *samp, int count, int nDimensions, RNG &rng) 
+{
+    for (int i = 0; i < count; ++i) 
+    {
         int other = i + rng.UniformUInt32(count - i);
+
         for (int j = 0; j < nDimensions; ++j)
             std::swap(samp[nDimensions * i + j], samp[nDimensions * other + j]);
     }
