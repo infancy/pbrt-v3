@@ -223,6 +223,7 @@ class Sampler {
 class PixelSampler : public Sampler {
   public:
     // PixelSampler Public Methods
+    // 每像素的采样数量, 每个采样点需要采样的维度
     PixelSampler(int64_t samplesPerPixel, int nSampledDimensions);
 
     // 像素采样器的子类会在 StartPixel 中生成 samples1D 和 samples2D 中的采样点(此外还有 sampleArray1D 和 sampleArray2D)
@@ -234,7 +235,7 @@ class PixelSampler : public Sampler {
 
   protected:
     // PixelSampler Protected Data
-    // 根据 nSampledDimensions 预先生成所有供 Get1D/2D 使用的样本
+    // 根据 nSampledDimensions 提前生成所有供 Get1D/2D 使用的样本
     std::vector<std::vector<Float>> samples1D;
     std::vector<std::vector<Point2f>> samples2D;
     int current1DDimension = 0, current2DDimension = 0;

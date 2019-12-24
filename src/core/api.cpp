@@ -817,6 +817,7 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
     return camera;
 }
 
+// 生成采样器, 再场景文件里只需要写个名字, 不需要参数
 std::shared_ptr<Sampler> MakeSampler(const std::string &name,
                                      const ParamSet &paramSet,
                                      const Film *film) {

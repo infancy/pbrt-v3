@@ -121,6 +121,7 @@ const int Primes[PrimeTableSize] = {
     7703, 7717, 7723, 7727, 7741, 7753, 7757, 7759, 7789, 7793, 7817, 7823,
     7829, 7841, 7853, 7867, 7873, 7877, 7879, 7883, 7901, 7907, 7919};
 
+// 预计算的从 0 开始记录前 n 个素数的和, 在 HaltonSampler::PermutationForDimension 中作为 index 使用
 const int PrimeSums[PrimeTableSize] = {
     0, 2, 5, 10, 17,
     // Subsequent prime sums
@@ -238,6 +239,8 @@ const int PrimeSums[PrimeTableSize] = {
     3611954, 3619807, 3627674, 3635547, 3643424, 3651303, 3659186, 3667087,
     3674994,
 };
+
+
 
 // To convert matrices from the "(t, m, s)-Nets and Maximized Minimum
 // Distance" paper:
@@ -385,10 +388,14 @@ uint32_t CMaxMinDist[17][32] = {
     },
 };
 
+
+
+
+
 // Low Discrepancy Static Functions
 /*!
     倒根函数
-    \tparam base 底数
+    \tparam base 底数, 之所以写成模板参数, 是因为整数除法太慢了, 希望编译器能在编译常数除法时给予优化, 例如可以将除以 3 优化为...P448
     \param a 第 n 个采样值
     \note 以2为底数, 生成前 n 个采样值: RIS<2>(1) = 1/2, RIS<2>(2) = 1/4, RIS<2>(3) = 3/4...
 */
@@ -403,7 +410,7 @@ PBRT_NOINLINE static Float RadicalInverseSpecialized(uint64_t a)
     {
         // 4 = 0b100 -> ((0 * 2 + 0) * 2 + 1) * 1/2^3 = 1/8
         uint64_t next = a / base;
-        uint64_t digit = a - next * base; // 余数, 为什么不用 a % base 呢
+        uint64_t digit = a - next * base; // 余数, 反正都做了除法, 为什么不用 std::div 呢
         reversedDigits = reversedDigits * base + digit;
         invBaseN *= invBase;
         a = next;
@@ -413,31 +420,10 @@ PBRT_NOINLINE static Float RadicalInverseSpecialized(uint64_t a)
     return std::min(reversedDigits * invBaseN, OneMinusEpsilon);
 }
 
-template <int base>
-PBRT_NOINLINE static Float
-ScrambledRadicalInverseSpecialized(const uint16_t *perm, uint64_t a) {
-    const Float invBase = (Float)1 / (Float)base;
-    uint64_t reversedDigits = 0;
-    Float invBaseN = 1;
-    while (a) {
-        uint64_t next = a / base;
-        uint64_t digit = a - next * base;
-        CHECK_LT(perm[digit], base);
-        reversedDigits = reversedDigits * base + perm[digit];
-        invBaseN *= invBase;
-        a = next;
-    }
-    DCHECK_LT(invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
-              1.00001);
-    return std::min(
-        invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
-        OneMinusEpsilon);
-}
-
 // Low Discrepancy Function Definitions
 Float RadicalInverse(int baseIndex, uint64_t a) 
 {
-    // 把 baseIndex 依次映射到另一个质数作为基底, 估计使用代码生成器生成的, 为什么不用一个质数数组来做映射呢?
+    // 把 baseIndex 依次映射到另一个质数作为基底, 估计是用代码生成器生成的, 可以让编译器做常数除法的优化
     switch (baseIndex) 
     {
     case 0:
@@ -445,7 +431,7 @@ Float RadicalInverse(int baseIndex, uint64_t a)
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         return ReverseBits64(a) * 5.4210108624275222e-20;
 #else
-        return ReverseBits64(a) * 0x1p-64; // 反转比特位以后乘以 1/2^64
+        return ReverseBits64(a) * 0x1p-64; // 反转比特位以后乘以 1/2^-64(浮点乘法更高效)
 #endif
     case 1:
         return RadicalInverseSpecialized<3>(a);
@@ -2501,6 +2487,11 @@ Float RadicalInverse(int baseIndex, uint64_t a)
     }
 }
 
+
+
+
+
+// 调用 ScrambledRadicalInverse 之前, 用 ComputeRadicalInversePermutations 提前生成乱序的(0, 1, ..., base - 1)数组
 std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng) 
 {
     std::vector<uint16_t> perms;
@@ -2509,19 +2500,51 @@ std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng)
     int permArraySize = 0;
     for (int i = 0; i < PrimeTableSize; ++i) 
         permArraySize += Primes[i];
-    perms.resize(permArraySize);
+    perms.resize(permArraySize); // size = 3682931, sum of Primes[], 可以把 perms 当成不等长的二维数组看待
 
     uint16_t *p = &perms[0];
     for (int i = 0; i < PrimeTableSize; ++i) 
     {
         // Generate random permutation for $i$th prime base
         for (int j = 0; j < Primes[i]; ++j) 
-            p[j] = j;
+            p[j] = j; // 生成从 0 到 Primes[i] 的子数组
 
-        Shuffle(p, Primes[i], 1, rng);
-        p += Primes[i];
+        Shuffle(p, Primes[i], 1, rng); // 打乱这个子数组
+        p += Primes[i]; // 移动指针
     }
     return perms;
+}
+
+/*!
+    用打乱过的(0, 1, ..., base - 1)数组替代余数做计算, 避免 Halton 在高维度的丛聚现象
+    \tparam base 底数 
+    \param perm[], 被打乱过的的数组
+    \param a 第 n 个采样值
+*/
+template <int base>
+PBRT_NOINLINE static Float ScrambledRadicalInverseSpecialized(const uint16_t *perm, uint64_t a) 
+{
+    const Float invBase = (Float)1 / (Float)base;
+    uint64_t reversedDigits = 0;
+    Float invBaseN = 1;
+
+    while (a) 
+    {
+        uint64_t next = a / base;
+        uint64_t digit = a - next * base;
+
+        CHECK_LT(perm[digit], base);
+        reversedDigits = reversedDigits * base + perm[digit];
+        invBaseN *= invBase;
+        a = next;
+    }
+
+    DCHECK_LT(invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
+              1.00001);
+
+    return std::min(
+        invBaseN * (reversedDigits + invBase * perm[0] / (1 - invBase)),
+        OneMinusEpsilon);
 }
 
 Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm) {

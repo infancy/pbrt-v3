@@ -57,6 +57,7 @@ class Camera {
     // 返回世界空间中的 ray, ray 是经过归一化的, 整个系统依赖于这个行为
     // 最后返回的浮点值代表在 film 上的贡献值, 用来模拟真实相机的渐晕效果
     virtual Float GenerateRay(const CameraSample &sample, Ray *ray) const = 0;
+
     // 在 GenerateRay 生成的主光线的基础上, 往胶片平面的x,y方向上各偏移一像素生成辅助光线
     // 生成的 RayDifferential 结构主要用于纹理反走样
     virtual Float GenerateRayDifferential(const CameraSample &sample,

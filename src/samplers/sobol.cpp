@@ -39,17 +39,21 @@
 namespace pbrt {
 
 // SobolSampler Method Definitions
-int64_t SobolSampler::GetIndexForSample(int64_t sampleNum) const {
+int64_t SobolSampler::GetIndexForSample(int64_t sampleNum) const 
+{
     return SobolIntervalToIndex(log2Resolution, sampleNum,
                                 Point2i(currentPixel - sampleBounds.pMin));
 }
 
-Float SobolSampler::SampleDimension(int64_t index, int dim) const {
+Float SobolSampler::SampleDimension(int64_t index, int dim) const 
+{
     if (dim >= NumSobolDimensions)
         LOG(FATAL) << StringPrintf("SobolSampler can only sample up to %d "
                                    "dimensions! Exiting.",
                                    NumSobolDimensions);
+
     Float s = SobolSample(index, dim);
+
     // Remap Sobol$'$ dimensions used for pixel samples
     if (dim == 0 || dim == 1) {
         s = s * resolution + sampleBounds.pMin[dim];
@@ -62,6 +66,7 @@ std::unique_ptr<Sampler> SobolSampler::Clone(int seed) {
     return std::unique_ptr<Sampler>(new SobolSampler(*this));
 }
 
+// api.cpp/832line
 SobolSampler *CreateSobolSampler(const ParamSet &params,
                                  const Bounds2i &sampleBounds) {
     int nsamp = params.FindOneInt("pixelsamples", 16);

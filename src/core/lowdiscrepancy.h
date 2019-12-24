@@ -48,35 +48,33 @@ namespace pbrt {
 
 // Low Discrepancy Declarations
 Float RadicalInverse(int baseIndex, uint64_t a);
-std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng);
-static PBRT_CONSTEXPR int PrimeTableSize = 1000;
+
+static PBRT_CONSTEXPR int PrimeTableSize = 1000; // 重排序表的最大长度
 extern const int Primes[PrimeTableSize];
-Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm);
 extern const int PrimeSums[PrimeTableSize];
-inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
-                    Point2f *samples, RNG &rng);
+std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng);
+Float ScrambledRadicalInverse(int baseIndex, uint64_t a, const uint16_t *perm);
 
-
+inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples, Point2f *samples, RNG &rng);
 
 extern uint32_t CMaxMinDist[17][32];
 
-
-
 inline uint64_t SobolIntervalToIndex(const uint32_t log2Resolution,
                                      uint64_t sampleNum, const Point2i &p);
-
 inline float SobolSampleFloat(  int64_t index, int dimension, uint32_t scramble = 0);
 inline double SobolSampleDouble(int64_t index, int dimension, uint64_t scramble = 0);
 
 
+
+#pragma region used by HaltonSampler
 
 // Low Discrepancy Inline Functions
 // 反转比特位
 inline uint32_t ReverseBits32(uint32_t n) 
 {
     n = (n << 16) | (n >> 16);
-    n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8);
-    n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4);
+    n = ((n & 0x00ff00ff) << 8) | ((n & 0xff00ff00) >> 8); // 交换前面16位的两个8位, 交换后面16位的两个8位
+    n = ((n & 0x0f0f0f0f) << 4) | ((n & 0xf0f0f0f0) >> 4); // 递归这个过程
     n = ((n & 0x33333333) << 2) | ((n & 0xcccccccc) >> 2);
     n = ((n & 0x55555555) << 1) | ((n & 0xaaaaaaaa) >> 1);
     return n;
@@ -88,8 +86,7 @@ inline uint64_t ReverseBits64(uint64_t n) {
     return (n0 << 32) | n1;
 }
 
-
-
+// InverseRadicalInverse<2>(94, 7) => 94=0b1011110, 反转比特位, 0b0111101=61
 template <int base>
 inline uint64_t InverseRadicalInverse(uint64_t inverse, int nDigits) {
     uint64_t index = 0;
@@ -100,6 +97,12 @@ inline uint64_t InverseRadicalInverse(uint64_t inverse, int nDigits) {
     }
     return index;
 }
+
+#pragma endregion used by HaltonSampler
+
+
+
+#pragma region used by ZeroTwoSequenceSampler and MaxMinDistSampler
 
 inline uint32_t MultiplyGenerator(const uint32_t *C, uint32_t a) {
     uint32_t v = 0;
@@ -119,12 +122,17 @@ inline Float SampleGeneratorMatrix(const uint32_t *C, uint32_t a,
 #endif
 }
 
+
+
 inline uint32_t GrayCode(uint32_t v) { return (v >> 1) ^ v; }
 
 inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
-                           Float *p) {
+                           Float *p) 
+{
     uint32_t v = scramble;
-    for (uint32_t i = 0; i < n; ++i) {
+
+    for (uint32_t i = 0; i < n; ++i) 
+    {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         p[i] = std::min(v * Float(2.3283064365386963e-10) /* 1/2^32 */,
                         OneMinusEpsilon);
@@ -137,9 +145,12 @@ inline void GrayCodeSample(const uint32_t *C, uint32_t n, uint32_t scramble,
 }
 
 inline void GrayCodeSample(const uint32_t *C0, const uint32_t *C1, uint32_t n,
-                           const Point2i &scramble, Point2f *p) {
+                           const Point2i &scramble, Point2f *p) 
+{
     uint32_t v[2] = {(uint32_t)scramble.x, (uint32_t)scramble.y};
-    for (uint32_t i = 0; i < n; ++i) {
+
+    for (uint32_t i = 0; i < n; ++i) 
+    {
 #ifndef PBRT_HAVE_HEX_FP_CONSTANTS
         p[i].x = std::min(v[0] * Float(2.3283064365386963e-10), OneMinusEpsilon);
         p[i].y = std::min(v[1] * Float(2.3283064365386963e-10), OneMinusEpsilon);
@@ -202,15 +213,18 @@ inline void VanDerCorput(int nSamplesPerPixelSample, int nPixelSamples,
         0x2,        0x1
 #endif  // PBRT_HAVE_BINARY_CONSTANTS
     };
+
     int totalSamples = nSamplesPerPixelSample * nPixelSamples;
     GrayCodeSample(CVanDerCorput, totalSamples, scramble, samples);
+
     // Randomly shuffle 1D sample points
     for (int i = 0; i < nPixelSamples; ++i)
-        Shuffle(samples + i * nSamplesPerPixelSample, nSamplesPerPixelSample, 1,
-                rng);
+        Shuffle(samples + i * nSamplesPerPixelSample, nSamplesPerPixelSample, 1, rng);
+
     Shuffle(samples, nPixelSamples, nSamplesPerPixelSample, rng);
 }
 
+// 这个采样点上需要的样本数量, 每个像素的采样点数量
 inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
                     Point2f *samples, RNG &rng) {
     Point2i scramble;
@@ -218,24 +232,36 @@ inline void Sobol2D(int nSamplesPerPixelSample, int nPixelSamples,
     scramble[1] = rng.UniformUInt32();
 
     // Define 2D Sobol$'$ generator matrices _CSobol[2]_
-    const uint32_t CSobol[2][32] = {
+    /*static???*/ const uint32_t CSobol[2][32] = 
+    {
         {0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x8000000, 0x4000000,
          0x2000000, 0x1000000, 0x800000, 0x400000, 0x200000, 0x100000, 0x80000,
          0x40000, 0x20000, 0x10000, 0x8000, 0x4000, 0x2000, 0x1000, 0x800,
-         0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1},
+         0x400, 0x200, 0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1
+        },
         {0x80000000, 0xc0000000, 0xa0000000, 0xf0000000, 0x88000000, 0xcc000000,
          0xaa000000, 0xff000000, 0x80800000, 0xc0c00000, 0xa0a00000, 0xf0f00000,
          0x88880000, 0xcccc0000, 0xaaaa0000, 0xffff0000, 0x80008000, 0xc000c000,
          0xa000a000, 0xf000f000, 0x88008800, 0xcc00cc00, 0xaa00aa00, 0xff00ff00,
          0x80808080, 0xc0c0c0c0, 0xa0a0a0a0, 0xf0f0f0f0, 0x88888888, 0xcccccccc,
-         0xaaaaaaaa, 0xffffffff}};
+         0xaaaaaaaa, 0xffffffff
+        }
+    };
+
     GrayCodeSample(CSobol[0], CSobol[1], nSamplesPerPixelSample * nPixelSamples,
                    scramble, samples);
+
     for (int i = 0; i < nPixelSamples; ++i)
-        Shuffle(samples + i * nSamplesPerPixelSample, nSamplesPerPixelSample, 1,
-                rng);
+        Shuffle(samples + i * nSamplesPerPixelSample, nSamplesPerPixelSample, 1, rng);
+
     Shuffle(samples, nPixelSamples, nSamplesPerPixelSample, rng);
 }
+
+#pragma endregion used by ZeroTwoSequenceSampler and MaxMinDistSampler
+
+
+
+#pragma region used by SobolSampler
 
 inline uint64_t SobolIntervalToIndex(const uint32_t m, uint64_t frame,
                                      const Point2i &p) {
@@ -295,6 +321,8 @@ inline double SobolSampleDouble(int64_t a, int dimension, uint64_t scramble) {
     return std::min(result * (1.0 / (1ULL << SobolMatrixSize)),
                     DoubleOneMinusEpsilon);
 }
+
+#pragma endregion used by SobolSampler
 
 }  // namespace pbrt
 

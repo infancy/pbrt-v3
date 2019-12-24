@@ -59,19 +59,20 @@ class HaltonSampler : public GlobalSampler
 
   private:
     // HaltonSampler Private Data
-    static std::vector<uint16_t> radicalInversePermutations;
+    static std::vector<uint16_t> radicalInversePermutations; // lowdiscrepancy.cpp/ComputeRadicalInversePermutations
 
     Point2i baseScales, baseExponents;
-    int sampleStride;
+    int sampleStride; // 采样步长, 超过就重头开始???
     int multInverse[2];
 
+    // 这两个值, 每采样一个新的像素时, 会更新一次
     mutable Point2i pixelForOffset = Point2i(std::numeric_limits<int>::max(),
                                              std::numeric_limits<int>::max());
     mutable int64_t offsetForCurrentPixel;
 
     // Added after book publication: force all image samples to be at the
     // center of the pixel area.
-    bool sampleAtPixelCenter; // 加了好像也没地方用到啊
+    bool sampleAtPixelCenter; // 在生成 xy 坐标的时候允许均匀采样
 
     // HaltonSampler Private Methods
     const uint16_t *PermutationForDimension(int dim) const {

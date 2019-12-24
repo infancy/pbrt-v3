@@ -71,7 +71,7 @@ HaltonSampler::HaltonSampler(int samplesPerPixel, const Bounds2i &sampleBounds,
     : GlobalSampler(samplesPerPixel), sampleAtPixelCenter(sampleAtPixelCenter) 
 {
     // Generate random digit permutations for Halton sampler
-    if (radicalInversePermutations.empty()) 
+    if (radicalInversePermutations.empty()) // 对所有 HaltonSampler 的实例只生成一次
     {
         RNG rng;
         radicalInversePermutations = ComputeRadicalInversePermutations(rng);
@@ -90,24 +90,29 @@ HaltonSampler::HaltonSampler(int samplesPerPixel, const Bounds2i &sampleBounds,
             ++exp;
         }
 
+        // 假如 res 是 (1920, 1080), 则 scales = (128,243), exps = (7,5)
+        // ..., 这样的限制是为了保证浮点数的精度(, 也方便 [0, 1)^2 和像素坐标的映射)
         baseScales[i] = scale;
         baseExponents[i] = exp;
     }
 
     // Compute stride in samples for visiting each pixel area
-    sampleStride = baseScales[0] * baseScales[1];
+    sampleStride = baseScales[0] * baseScales[1]; // 128 * 243
 
     // Compute multiplicative inverses for _baseScales_
-    multInverse[0] = multiplicativeInverse(baseScales[1], baseScales[0]);
-    multInverse[1] = multiplicativeInverse(baseScales[0], baseScales[1]);
+    multInverse[0] = multiplicativeInverse(baseScales[1], baseScales[0]); // (243, 128) => 59
+    multInverse[1] = multiplicativeInverse(baseScales[0], baseScales[1]); // (128, 243) => 131
 }
 
 std::vector<uint16_t> HaltonSampler::radicalInversePermutations;
 int64_t HaltonSampler::GetIndexForSample(int64_t sampleNum) const 
 {
-    if (currentPixel != pixelForOffset) 
+    if (currentPixel != pixelForOffset)
     {
+        pixelForOffset = currentPixel; // 每采样一个像素才更新一次
+
         // Compute Halton sample offset for _currentPixel_
+        // TODO: 这个偏移量是怎么计算出来的呢
         offsetForCurrentPixel = 0;
         if (sampleStride > 1) 
         {
@@ -120,26 +125,28 @@ int64_t HaltonSampler::GetIndexForSample(int64_t sampleNum) const
                     (i == 0)
                         ? InverseRadicalInverse<2>(pm[i], baseExponents[i])
                         : InverseRadicalInverse<3>(pm[i], baseExponents[i]);
+
                 offsetForCurrentPixel +=
-                    dimOffset * (sampleStride / baseScales[i]) * multInverse[i];
+                    dimOffset * baseScales[1 - i] * multInverse[i];
             }
-            offsetForCurrentPixel %= sampleStride;
+            offsetForCurrentPixel %= sampleStride; // offsetForCurrentPixel ∈ [0, sampleStride)
         }
-        pixelForOffset = currentPixel;
     }
-    return offsetForCurrentPixel + sampleNum * sampleStride;
+    return offsetForCurrentPixel + sampleNum * sampleStride; // 在采样一个像素时, 每次变换的是 sampleNum. 所以又是相当于在取一个二维数组的一列数据
 }
 
 Float HaltonSampler::SampleDimension(int64_t index, int dim) const 
 {
-    if (sampleAtPixelCenter && (dim == 0 || dim == 1)) 
+    if (sampleAtPixelCenter && (dim == 0 || dim == 1)) // 在生成 xy 坐标的时候允许均匀采样
         return 0.5f;
 
+    // 前两个维度计算的是 xy, 也就是 Film 平面采样的位置, 对更高维度则...
     if (dim == 0)
         return RadicalInverse(dim, index >> baseExponents[0]);
     else if (dim == 1)
         return RadicalInverse(dim, index / baseScales[1]);
     else
+        // Float ScrambledRadicalInverse(int base, uint64_t a, const uint16_t *perm)
         return ScrambledRadicalInverse(dim, index,
                                        PermutationForDimension(dim));
 }
