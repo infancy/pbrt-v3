@@ -124,6 +124,7 @@ const Point2f *Sampler::Get2DArray(int n) {
 PixelSampler::PixelSampler(int64_t samplesPerPixel, int nSampledDimensions)
     : Sampler(samplesPerPixel) 
 {
+    // 每个采样点的采样序列是 samples1D/2D 中的**一列**数据, 所以在调用 Get1D/2D 的时候需要自增 current1D/2DDimension
     for (int i = 0; i < nSampledDimensions; ++i) 
     {
         samples1D.push_back(std::vector<Float>(samplesPerPixel));

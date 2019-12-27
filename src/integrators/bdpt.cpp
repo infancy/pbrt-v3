@@ -299,7 +299,9 @@ inline int BufferIndex(int s, int t) {
     return s + above * (5 + above) / 2;
 }
 
-void BDPTIntegrator::Render(const Scene &scene) {
+// BDPT 有重载这个方法
+void BDPTIntegrator::Render(const Scene &scene) 
+{
     std::unique_ptr<LightDistribution> lightDistribution =
         CreateLightSampleDistribution(lightSampleStrategy, scene);
 
@@ -323,11 +325,16 @@ void BDPTIntegrator::Render(const Scene &scene) {
     // Allocate buffers for debug visualization
     const int bufferCount = (1 + maxDepth) * (6 + maxDepth) / 2;
     std::vector<std::unique_ptr<Film>> weightFilms(bufferCount);
-    if (visualizeStrategies || visualizeWeights) {
-        for (int depth = 0; depth <= maxDepth; ++depth) {
-            for (int s = 0; s <= depth + 2; ++s) {
+
+    if (visualizeStrategies || visualizeWeights) 
+    {
+        for (int depth = 0; depth <= maxDepth; ++depth) 
+        {
+            for (int s = 0; s <= depth + 2; ++s) 
+            {
                 int t = depth + 2 - s;
-                if (t == 0 || (s == 1 && t == 1)) continue;
+                if (t == 0 || (s == 1 && t == 1)) 
+                    continue;
 
                 std::string filename =
                     StringPrintf("bdpt_d%02i_s%02i_t%02i.exr", depth, s, t);
@@ -342,8 +349,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
     }
 
     // Render and write the output image to disk
-    if (scene.lights.size() > 0) {
-        ParallelFor2D([&](const Point2i tile) {
+    if (scene.lights.size() > 0) 
+    {
+        ParallelFor2D([&](const Point2i tile) 
+        {
             // Render a single tile using BDPT
             MemoryArena arena;
             int seed = tile.y * nXTiles + tile.x;
@@ -357,11 +366,14 @@ void BDPTIntegrator::Render(const Scene &scene) {
 
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
-            for (Point2i pPixel : tileBounds) {
+            for (Point2i pPixel : tileBounds) 
+            {
                 tileSampler->StartPixel(pPixel);
+
                 if (!InsideExclusive(pPixel, pixelBounds))
                     continue;
-                do {
+                do 
+                {
                     // Generate a single sample using BDPT
                     Point2f pFilm = (Point2f)pPixel + tileSampler->Get2D();
 
@@ -388,8 +400,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
 
                     // Execute all BDPT connection strategies
                     Spectrum L(0.f);
-                    for (int t = 1; t <= nCamera; ++t) {
-                        for (int s = 0; s <= nLight; ++s) {
+                    for (int t = 1; t <= nCamera; ++t) 
+                    {
+                        for (int s = 0; s <= nLight; ++s) 
+                        {
                             int depth = t + s - 2;
                             if ((s == 1 && t == 1) || depth < 0 ||
                                 depth > maxDepth)
@@ -402,9 +416,12 @@ void BDPTIntegrator::Render(const Scene &scene) {
                                 scene, lightVertices, cameraVertices, s, t,
                                 *lightDistr, lightToIndex, *camera, *tileSampler,
                                 &pFilmNew, &misWeight);
+
                             VLOG(2) << "Connect bdpt s: " << s <<", t: " << t <<
                                 ", Lpath: " << Lpath << ", misWeight: " << misWeight;
-                            if (visualizeStrategies || visualizeWeights) {
+
+                            if (visualizeStrategies || visualizeWeights) 
+                            {
                                 Spectrum value;
                                 if (visualizeStrategies)
                                     value =
@@ -423,9 +440,12 @@ void BDPTIntegrator::Render(const Scene &scene) {
                         ", (y: " << L.y() << ")";
                     filmTile->AddSample(pFilm, L);
                     arena.Reset();
-                } while (tileSampler->StartNextSample());
+                } 
+                while (tileSampler->StartNextSample());
             }
+
             film->MergeFilmTile(std::move(filmTile));
+
             reporter.Update();
             LOG(INFO) << "Finished image tile " << tileBounds;
         }, Point2i(nXTiles, nYTiles));
@@ -434,8 +454,10 @@ void BDPTIntegrator::Render(const Scene &scene) {
     film->WriteImage(1.0f / sampler->samplesPerPixel);
 
     // Write buffers for debug visualization
-    if (visualizeStrategies || visualizeWeights) {
+    if (visualizeStrategies || visualizeWeights) 
+    {
         const Float invSampleCount = 1.0f / sampler->samplesPerPixel;
+
         for (size_t i = 0; i < weightFilms.size(); ++i)
             if (weightFilms[i]) weightFilms[i]->WriteImage(invSampleCount);
     }

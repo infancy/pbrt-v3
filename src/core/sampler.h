@@ -258,7 +258,7 @@ class GlobalSampler : public Sampler {
     GlobalSampler(int64_t samplesPerPixel) : Sampler(samplesPerPixel) {}
 
     // GlobalSampler 的派生类必须实现这两个接口, GlobalSampler 从这两个接口得到采样数据
-    // 参考 Table7.2 理解
+    // 参考 P429/Table7.2 理解
 
     // 获得 currentPixel 的第 sampleNum 个采样的全局索引(Table7.2 的第一列)
     virtual int64_t GetIndexForSample(int64_t sampleNum) const = 0;

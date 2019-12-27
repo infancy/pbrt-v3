@@ -44,6 +44,7 @@ ZeroTwoSequenceSampler::ZeroTwoSequenceSampler(int64_t samplesPerPixel,
                                                int nSampledDimensions)
     : PixelSampler(RoundUpPow2(samplesPerPixel), nSampledDimensions) 
 {
+    // 对 ZeroTwoSequenceSampler 来说, 非 2 次幂的采样值非常差
     if (!IsPowerOf2(samplesPerPixel))
         Warning(
             "Pixel samples being rounded up to power of 2 "
@@ -57,6 +58,7 @@ void ZeroTwoSequenceSampler::StartPixel(const Point2i &p)
 
     // Generate 1D and 2D pixel sample components using $(0,2)$-sequence
     for (size_t i = 0; i < samples1D.size(); ++i)
+        // 每次生成所有采样点第 i 个维度的采样值
         VanDerCorput(1, samplesPerPixel, &samples1D[i][0], rng);
     for (size_t i = 0; i < samples2D.size(); ++i)
         Sobol2D(     1, samplesPerPixel, &samples2D[i][0], rng);

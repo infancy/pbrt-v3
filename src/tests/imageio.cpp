@@ -9,7 +9,9 @@ using namespace pbrt;
 
 static std::string inTestDir(const std::string &path) { return path; }
 
-static void TestRoundTrip(const char *fn, bool gamma) {
+static void TestRoundTrip(const char *fn, bool gamma) 
+{
+    // 构造一组测试值
     Point2i res(16, 29);
     std::vector<Float> pixels(3 * res[0] * res[1]);
     for (int y = 0; y < res[1]; ++y)
@@ -29,7 +31,8 @@ static void TestRoundTrip(const char *fn, bool gamma) {
     EXPECT_EQ(readRes, res);
 
     for (int y = 0; y < res[1]; ++y)
-        for (int x = 0; x < res[0]; ++x) {
+        for (int x = 0; x < res[0]; ++x) 
+        {
             Float rgb[3];
             readPixels[y * res[0] + x].ToRGB(rgb);
 
@@ -38,14 +41,19 @@ static void TestRoundTrip(const char *fn, bool gamma) {
                     rgb[c] = InverseGammaCorrect(rgb[c]);
 
                 float wrote = pixels[3 * (y * res[0] + x) + c];
-                float delta = wrote - rgb[c];
-                if (HasExtension(filename, "pfm")) {
+
+                float delta = wrote - rgb[c]; // 比较做了 gamma 校正后的差异
+
+                if (HasExtension(filename, "pfm")) 
+                {
                     // Everything should come out exact.
                     EXPECT_EQ(0, delta) << filename << ":(" << x << ", " << y
                                         << ") c = " << c << " wrote " << wrote
                                         << ", read " << rgb[c]
                                         << ", delta = " << delta;
-                } else if (HasExtension(filename, "exr")) {
+                } 
+                else if (HasExtension(filename, "exr")) 
+                {
                     if (c == 2)
                         // -1.5 is exactly representable as a float.
                         EXPECT_EQ(0, delta) << "(" << x << ", " << y
@@ -57,7 +65,9 @@ static void TestRoundTrip(const char *fn, bool gamma) {
                             << filename << ":(" << x << ", " << y << ") c = " << c
                             << " wrote " << wrote << ", read " << rgb[c]
                             << ", delta = " << delta;
-                } else {
+                } 
+                else 
+                {
                     // 8 bit format...
                     if (c == 2)
                         // -1.5 should be clamped to zero.
@@ -66,6 +76,7 @@ static void TestRoundTrip(const char *fn, bool gamma) {
                                              << wrote << ", read " << rgb[c]
                                              << " (expected 0 back)";
                     else
+                        // 对 red, bule 两个通道可以放宽一点
                         // Allow a fair amount of slop, since there's an sRGB
                         // conversion before quantization to 8-bits...
                         EXPECT_LT(std::abs(delta), .02)

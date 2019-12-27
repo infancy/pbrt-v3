@@ -241,7 +241,7 @@ const int PrimeSums[PrimeTableSize] = {
 };
 
 
-
+// 用在 MaxMinDistSampler 中, 参考 lowdiscrepancy.h/VanDerCorput 里的那个矩阵来理解
 // To convert matrices from the "(t, m, s)-Nets and Maximized Minimum
 // Distance" paper:
 // - Recall that each uint32_t represents a column of the matrix, so
@@ -2516,7 +2516,8 @@ std::vector<uint16_t> ComputeRadicalInversePermutations(RNG &rng)
 }
 
 /*!
-    用打乱过的(0, 1, ..., base - 1)数组替代余数做计算, 避免 Halton 在高维度的丛聚现象
+    TODO: 随机化(Scrambled)Halton序列
+    用乱序的(0, 1, ..., base - 1)数组替代余数做计算, 避免 Halton 在高维度的丛聚现象
     \tparam base 底数 
     \param perm[], 被打乱过的的数组
     \param a 第 n 个采样值

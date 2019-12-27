@@ -55,6 +55,7 @@ Float SobolSampler::SampleDimension(int64_t index, int dim) const
     Float s = SobolSample(index, dim);
 
     // Remap Sobol$'$ dimensions used for pixel samples
+    // 从 [0, 1] 映射到 Film 上的像素坐标, 再计算到 currentPixel 的相对坐标
     if (dim == 0 || dim == 1) {
         s = s * resolution + sampleBounds.pMin[dim];
         s = Clamp(s - currentPixel[dim], (Float)0, OneMinusEpsilon);

@@ -108,6 +108,7 @@ inline unsigned int hash(const Point3i &p, int hashSize) {
 }
 
 // SPPM Method Definitions
+// 四百行, 也不拆分一下
 void SPPMIntegrator::Render(const Scene &scene) {
     ProfilePhase p(Prof::IntegratorRender);
     // Initialize _pixelBounds_ and _pixels_ array for SPPM

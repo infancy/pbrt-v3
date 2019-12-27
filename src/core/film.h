@@ -49,23 +49,39 @@
 namespace pbrt {
 
 // FilmTilePixel Declarations
-struct FilmTilePixel {
+struct FilmTilePixel
+{
     Spectrum contribSum = 0.f;
     Float filterWeightSum = 0.f;
 };
 
+/*
+    (0,0)_ _ _ _ _ _ _x 方向
+        |\            |
+        |   \         |
+        |     \       |    film 的坐标系
+        |       \     |
+        |         \   |
+        |_ _ _ _ _ _ \|
+      y 方向          (width, height)
+*/
+
 // Film Declarations
-class Film {
+class Film
+{
   public:
     // Film Public Methods
     Film(const Point2i &resolution, const Bounds2f &cropWindow,
          std::unique_ptr<Filter> filter, Float diagonal,
          const std::string &filename, Float scale,
          Float maxSampleLuminance = Infinity);
+
     Bounds2i GetSampleBounds() const;
     Bounds2f GetPhysicalExtent() const;
+
     std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i &sampleBounds);
     void MergeFilmTile(std::unique_ptr<FilmTile> tile);
+
     void SetImage(const Spectrum *img) const;
     void AddSplat(const Point2f &p, Spectrum v);
     void WriteImage(Float splatScale = 1);
@@ -80,33 +96,46 @@ class Film {
 
   private:
     // Film Private Data
-    struct Pixel {
+    struct Pixel
+    {
         Pixel() { xyz[0] = xyz[1] = xyz[2] = filterWeightSum = 0; }
         Float xyz[3];
         Float filterWeightSum;
-        AtomicFloat splatXYZ[3];
-        Float pad;
+        AtomicFloat splatXYZ[3]; // Atomic
+        Float pad; // 占位
     };
     std::unique_ptr<Pixel[]> pixels;
+
+    // 预计算的滤波器权重, P486
+    // The error introduced by not evaluating the filter at each sample’s precise location isn’t noticeable in practice.
     static PBRT_CONSTEXPR int filterTableWidth = 16;
     Float filterTable[filterTableWidth * filterTableWidth];
+
     std::mutex mutex;
     const Float scale;
     const Float maxSampleLuminance;
 
     // Film Private Methods
-    Pixel &GetPixel(const Point2i &p) {
+    // 获得指定坐标上的像素点
+    Pixel &GetPixel(const Point2i &p)
+    {
         CHECK(InsideExclusive(p, croppedPixelBounds));
+
         int width = croppedPixelBounds.pMax.x - croppedPixelBounds.pMin.x;
         int offset = (p.x - croppedPixelBounds.pMin.x) +
                      (p.y - croppedPixelBounds.pMin.y) * width;
+
         return pixels[offset];
     }
 };
 
-class FilmTile {
+// 每个线程渲染的结果会先存入到一个 FilmTile 中, 在线程渲染结束时将这个 FilmTile 合并到 Film 中
+class FilmTile
+{
   public:
     // FilmTile Public Methods
+    // return std::unique_ptr<FilmTile>(
+    //     new FilmTile(tilePixelBounds, filter->radius, filterTable, filterTableWidth, maxSampleLuminance));
     FilmTile(const Bounds2i &pixelBounds, const Vector2f &filterRadius,
              const Float *filterTable, int filterTableSize,
              Float maxSampleLuminance)
@@ -115,74 +144,102 @@ class FilmTile {
           invFilterRadius(1 / filterRadius.x, 1 / filterRadius.y),
           filterTable(filterTable),
           filterTableSize(filterTableSize),
-          maxSampleLuminance(maxSampleLuminance) {
+          maxSampleLuminance(maxSampleLuminance)
+    {
         pixels = std::vector<FilmTilePixel>(std::max(0, pixelBounds.Area()));
     }
+
+    // filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
     void AddSample(const Point2f &pFilm, Spectrum L,
-                   Float sampleWeight = 1.) {
+                   Float sampleWeight = 1.)
+    {
         ProfilePhase _(Prof::AddFilmSample);
+
         if (L.y() > maxSampleLuminance)
             L *= maxSampleLuminance / L.y();
+
         // Compute sample's raster bounds
+        // 连续坐标转化为离散坐标 pFilmDiscrete, 以其为中心，计算这个采样点贡献的范围
+        // [ceil(x - 2.5), floor(x + 1.5) + 1)
+        // 用 '2 < pFilm.x && pFilm.x <= 2.5 && 2 < pFilm.y && pFilm.y <=2.5' 的条件断点找个例子看看
+        // (2.5, 2.5) -> [0, 0] => (5, 5)
+        // 没有问题, 实际上是将 [2.5, 2.5] 的采样值贡献给 [0.5, 0.5] 到 [4.5, 4.5] 的像素点
         Point2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
         Point2i p0 = (Point2i)Ceil(pFilmDiscrete - filterRadius);
-        Point2i p1 =
-            (Point2i)Floor(pFilmDiscrete + filterRadius) + Point2i(1, 1);
+        Point2i p1 = (Point2i)Floor(pFilmDiscrete + filterRadius) + Point2i(1, 1);
         p0 = Max(p0, pixelBounds.pMin);
         p1 = Min(p1, pixelBounds.pMax);
 
         // Loop over filter support and add sample to pixel arrays
 
         // Precompute $x$ and $y$ filter table offsets
+		// 参考 P492, 这里是个优化, 预先计算所有像素点在权重表中的索引
         int *ifx = ALLOCA(int, p1.x - p0.x);
-        for (int x = p0.x; x < p1.x; ++x) {
-            Float fx = std::abs((x - pFilmDiscrete.x) * invFilterRadius.x *
-                                filterTableSize);
+        for (int x = p0.x; x < p1.x; ++x) 
+        {   
+            // min(floor(abs(0 - 2) * 1/2 * 16), 15) = 15
+            // min(floor(abs(1 - 2.1) * 1/2 * 16), 15) = 8
+            Float fx = std::abs((x - pFilmDiscrete.x) * invFilterRadius.x * filterTableSize);
             ifx[x - p0.x] = std::min((int)std::floor(fx), filterTableSize - 1);
         }
         int *ify = ALLOCA(int, p1.y - p0.y);
-        for (int y = p0.y; y < p1.y; ++y) {
-            Float fy = std::abs((y - pFilmDiscrete.y) * invFilterRadius.y *
-                                filterTableSize);
+        for (int y = p0.y; y < p1.y; ++y) 
+        {
+            Float fy = std::abs((y - pFilmDiscrete.y) * invFilterRadius.y * filterTableSize);
             ify[y - p0.y] = std::min((int)std::floor(fy), filterTableSize - 1);
         }
-        for (int y = p0.y; y < p1.y; ++y) {
-            for (int x = p0.x; x < p1.x; ++x) {
+
+        for (int y = p0.y; y < p1.y; ++y)
+        {
+            for (int x = p0.x; x < p1.x; ++x)
+            {
                 // Evaluate filter value at $(x,y)$ pixel
                 int offset = ify[y - p0.y] * filterTableSize + ifx[x - p0.x];
                 Float filterWeight = filterTable[offset];
 
                 // Update pixel values with filtered sample contribution
+
+                // 参考 P473 式 7.12, 根据像素滤波方程分别计算分子和分母，在最后 Film 保存图像的时候才进行除法操作
                 FilmTilePixel &pixel = GetPixel(Point2i(x, y));
                 pixel.contribSum += L * sampleWeight * filterWeight;
                 pixel.filterWeightSum += filterWeight;
             }
         }
     }
-    FilmTilePixel &GetPixel(const Point2i &p) {
+
+    FilmTilePixel &GetPixel(const Point2i &p)
+    {
         CHECK(InsideExclusive(p, pixelBounds));
         int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
         int offset =
             (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
         return pixels[offset];
     }
-    const FilmTilePixel &GetPixel(const Point2i &p) const {
+
+    const FilmTilePixel &GetPixel(const Point2i &p) const
+    {
         CHECK(InsideExclusive(p, pixelBounds));
         int width = pixelBounds.pMax.x - pixelBounds.pMin.x;
         int offset =
             (p.x - pixelBounds.pMin.x) + (p.y - pixelBounds.pMin.y) * width;
         return pixels[offset];
     }
+
     Bounds2i GetPixelBounds() const { return pixelBounds; }
 
   private:
     // FilmTile Private Data
     const Bounds2i pixelBounds;
+
     const Vector2f filterRadius, invFilterRadius;
+
     const Float *filterTable;
     const int filterTableSize;
+
     std::vector<FilmTilePixel> pixels;
+
     const Float maxSampleLuminance;
+
     friend class Film;
 };
 

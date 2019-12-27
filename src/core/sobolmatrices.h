@@ -44,11 +44,13 @@
 namespace pbrt {
 
 // Sobol Matrix Declarations
-static PBRT_CONSTEXPR int NumSobolDimensions = 1024;
+static PBRT_CONSTEXPR int NumSobolDimensions = 1024; // SobolSampler 允许最大 1024 维度的采样序列
 static PBRT_CONSTEXPR int SobolMatrixSize = 52;
+
 extern const uint32_t SobolMatrices32[NumSobolDimensions * SobolMatrixSize];
 extern const uint64_t SobolMatrices64[NumSobolDimensions * SobolMatrixSize];
-extern const uint64_t VdCSobolMatrices[][SobolMatrixSize];
+
+extern const uint64_t VdCSobolMatrices[][SobolMatrixSize]; // 包含了 25 个压缩过的矩阵
 extern const uint64_t VdCSobolMatricesInv[][SobolMatrixSize];
 
 }  // namespace pbrt

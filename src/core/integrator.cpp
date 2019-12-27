@@ -260,18 +260,24 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 }
 
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
-    const Scene &scene) {
-    if (scene.lights.empty()) return nullptr;
+    const Scene &scene) 
+{
+    if (scene.lights.empty()) 
+        return nullptr;
+
     std::vector<Float> lightPower;
     for (const auto &light : scene.lights)
         lightPower.push_back(light->Power().y());
+
     return std::unique_ptr<Distribution1D>(
         new Distribution1D(&lightPower[0], lightPower.size()));
 }
 
 // SamplerIntegrator Method Definitions
-void SamplerIntegrator::Render(const Scene &scene) {
+void SamplerIntegrator::Render(const Scene &scene) 
+{
     Preprocess(scene, *sampler);
+
     // Render image tiles in parallel
 	// (0,0) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 	//		|		|		|		|		|
@@ -291,9 +297,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
 	// 计算 tile 的数量（为了简单起见，pbrt 总是使用 16*16 像素大小的 tile）
-	Bounds2i sampleBounds = camera->film->GetSampleBounds();	
-    Vector2i sampleExtent = sampleBounds.Diagonal();	// 相当于计算生成图像的分辨率
     const int tileSize = 16;
+
+	Bounds2i sampleBounds = camera->film->GetSampleBounds(); // 考虑默认的三角过滤器时, floatBounds 为 [-2, -2] 到 [1922, 1082]	
+    Vector2i sampleExtent = sampleBounds.Diagonal();	// 相当于计算生成图像的分辨率
 	// 计算 tile_numbers 时向上取整
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
@@ -344,7 +351,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     tileSampler->StartPixel(pixel);		
                 }
                 
-				// 检查该像素是否在 pixelBounds 内（pixelBounds 可能比图像平面小）
+				// 检查该像素是否在 pixelBounds 内（为了照顾过滤器, pixelBounds 可能超出了图像平面）
 				// 这可以保持（大多数）采样器中所使用的 RNG 值的一致性，方便重现？？？、调试
                 // Do this check after the StartPixel() call; this keeps
                 // the usage of RNG values from (most) Samplers that use

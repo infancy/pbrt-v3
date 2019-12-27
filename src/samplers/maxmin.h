@@ -44,6 +44,8 @@
 
 namespace pbrt {
 
+// 在 ZeroTwoSequenceSampler 的基础上, 确保每个样本间保持一定距离
+
 // MaxMinDistSampler Declarations
 class MaxMinDistSampler : public PixelSampler {
   public:
@@ -55,9 +57,11 @@ class MaxMinDistSampler : public PixelSampler {
     MaxMinDistSampler(int64_t samplesPerPixel, int nSampledDimensions)
         : PixelSampler  // 这样子用 lambda 表达式并不方便啊
           (
-              [](int64_t spp) {
+              [](int64_t spp) 
+              {
                   int Cindex = Log2Int(spp);
-                  if (Cindex >= sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])) {
+                  if (Cindex >= sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])) // if(Cindex >= 17), 目前就 17 个符合 MaxMin 分布的矩阵, 多了不支持???
+                  {
                       Warning(
                           "No more than %d samples per pixel are supported "
                           "with "
@@ -69,7 +73,8 @@ class MaxMinDistSampler : public PixelSampler {
                                    sizeof(CMaxMinDist[0]))) -
                             1;
                   }
-                  if (!IsPowerOf2(spp)) {
+                  if (!IsPowerOf2(spp)) 
+                  {
                       spp = RoundUpPow2(spp);
                       Warning(
                           "Non power-of-two sample count rounded up to %" PRId64
@@ -77,11 +82,12 @@ class MaxMinDistSampler : public PixelSampler {
                           spp);
                   }
                   return spp;
-              }(samplesPerPixel),
-              nSampledDimensions
+              }(samplesPerPixel), // param1
+              nSampledDimensions  // param2
           ) 
     {
         int Cindex = Log2Int(samplesPerPixel);
+
         CHECK(Cindex >= 0 &&
               Cindex < (sizeof(CMaxMinDist) / sizeof(CMaxMinDist[0])));
         CPixel = CMaxMinDist[Cindex];
