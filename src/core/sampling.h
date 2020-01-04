@@ -156,9 +156,9 @@ class Distribution2D {
 };
 
 // Sampling Inline Functions
-// https://zh.cppreference.com/w/cpp/algorithm/random_shuffle
-// 这里还考虑了维度, 直观看就是打乱了同一列的数据(同一维度的数据)
-/*!
+/*! https://zh.cppreference.com/w/cpp/algorithm/random_shuffle
+    这里还考虑了维度, 直观看就是打乱了同一列的数据(同一维度的数据)
+
     \param samp 可以当成是 samp[count][nDimensions] 形式的二维数组
     \param count 行数
     \param nDimensions 维度(列数)

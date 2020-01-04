@@ -108,7 +108,16 @@ struct Interaction {
     // pError gives a conservative bound on this error; it’s  for points in participating media. 
     // See Section 3.9 for more on pbrt’s approach to managing floating-point error and in particular Section 3.9.4 for how this bound is computed for various shapes.
     Vector3f pError; // 累积的浮点数绝对误差
-    Vector3f wo;     // 入射光线的反方向(只在 ray–shape intersection 时才会生成这个参数???)
+
+    // prev   light
+    // -----  -----
+    //   ^      ^
+    //    \    /
+    //  wo \  / wi
+    //      \/
+    //    ------
+    //    isect
+    Vector3f wo;     // 出射光线的方向(只在 ray–shape intersection 时才会生成这个参数???)
     Normal3f n;      // 交点处的表面法线
     MediumInterface mediumInterface; // 交点所处于的 medium
 };

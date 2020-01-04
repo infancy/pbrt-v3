@@ -179,6 +179,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Vector3f pError = gamma(5) * Abs((Vector3f)pHit);
 
     // Initialize _SurfaceInteraction_ from parametric information
+    // si.wo = -ray.d, 也就是朝着相机的方向
     *isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
                                                  -ray.d, dpdu, dpdv, dndu, dndv,
                                                  ray.time, this));

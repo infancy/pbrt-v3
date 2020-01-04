@@ -96,12 +96,16 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
 
 Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                MemoryArena &arena, Sampler &sampler,
-                               bool handleMedia, const Distribution1D *lightDistrib) {
+                               bool handleMedia, const Distribution1D *lightDistrib) 
+{
     ProfilePhase p(Prof::DirectLighting);
+
     // Randomly choose a single light to sample, _light_
 	// 从光源中随机选取一个进行采样
     int nLights = int(scene.lights.size());
-    if (nLights == 0) return Spectrum(0.f);
+    if (nLights == 0) 
+        return Spectrum(0.f);
+
     int lightNum;
     Float lightPdf;
 	// 如果光源的功率分布可用，则根据其功率分布（由逆变换算法）选取一个光源，并计算其概率密度
@@ -112,6 +116,7 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
         lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
         lightPdf = Float(1) / nLights;
     }
+
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f uLight = sampler.Get2D();
     Point2f uScattering = sampler.Get2D();
@@ -139,10 +144,12 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                         const Light &light, const Point2f &uLight,
                         const Scene &scene, Sampler &sampler,
-                        MemoryArena &arena, bool handleMedia, bool specular) {
+                        MemoryArena &arena, bool handleMedia, bool specular) 
+{
     BxDFType bsdfFlags =
         specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
     Spectrum Ld(0.f);
+
 	// Sample light source with multiple importance sampling
 	// 从光源部分进行多重重要性采样
     Vector3f wi;
@@ -152,7 +159,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li << ", wi: "
             << wi << ", pdf: " << lightPdf;
-    if (lightPdf > 0 && !Li.IsBlack()) {
+    if (lightPdf > 0 && !Li.IsBlack())
+    {
         // Compute BSDF or phase function's value for light sample
 		// 计算 BSDF（如果交点在 surface 中）或相位函数（如果交点在 medium 中）的值
         Spectrum f;
@@ -202,7 +210,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 
     // Sample BSDF with multiple importance sampling
 	// 从 BSDF 部分进行多重重要性采样
-    if (!IsDeltaLight(light.flags)) {		   
+    if (!IsDeltaLight(light.flags)) 
+    {		   
         Spectrum f;
         bool sampledSpecular = false;
         if (it.IsSurfaceInteraction()) {
@@ -256,6 +265,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             if (!Li.IsBlack()) Ld += f * Li * Tr * weight / scatteringPdf;
         }
     }
+
     return Ld;
 }
 
