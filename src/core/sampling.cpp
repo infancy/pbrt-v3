@@ -39,43 +39,118 @@
 namespace pbrt {
 
 // Sampling Function Definitions
-void StratifiedSample1D(Float *samp, int nSamples, RNG &rng, bool jitter) {
+void StratifiedSample1D(Float *samp, int nSamples, RNG &rng, bool jitter) 
+{
     Float invNSamples = (Float)1 / nSamples;
-    for (int i = 0; i < nSamples; ++i) {
+
+    for (int i = 0; i < nSamples; ++i) 
+    {
         Float delta = jitter ? rng.UniformFloat() : 0.5f;
+        // 假如生成 4 个采样点, 不抖动就是 0.5, 1.5, 2.5, 3.5
         samp[i] = std::min((i + delta) * invNSamples, OneMinusEpsilon);
     }
 }
 
-void StratifiedSample2D(Point2f *samp, int nx, int ny, RNG &rng, bool jitter) {
+void StratifiedSample2D(Point2f *samp, int nx, int ny, RNG &rng, bool jitter) 
+{
     Float dx = (Float)1 / nx, dy = (Float)1 / ny;
-    for (int y = 0; y < ny; ++y)
-        for (int x = 0; x < nx; ++x) {
+
+    for (int y = 0; y < ny; ++y) 
+    {
+        for (int x = 0; x < nx; ++x) 
+        {
             Float jx = jitter ? rng.UniformFloat() : 0.5f;
             Float jy = jitter ? rng.UniformFloat() : 0.5f;
+
             samp->x = std::min((x + jx) * dx, OneMinusEpsilon);
             samp->y = std::min((y + jy) * dy, OneMinusEpsilon);
+
             ++samp;
         }
+    }
 }
 
-void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng) {
+// 或者叫 N-Rooks 算法，假如在 nDim 为 2 时(即在二维平面下), 保证每行且每列只有一个采样点，可以生成更好的一维分布
+// LatinHypercube(&sampleArray2D[i][j * count].x, count, 2, rng); -> 可以当做传入了一个 samples[nSamples][2] 的二维数组
+void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng) 
+{
     // Generate LHS samples along diagonal
     Float invNSamples = (Float)1 / nSamples;
+
+    /*
+        沿对角线生成采样点, 下图共九个采样点, r 是 [0, 1) 间的随机数
+        (0 + r, 0 + r) / 9, (1 + r, 1 + r) / 9, (2 + r, 2 + r) / 9 ...
+
+        Y
+        ^
+        |
+        |                                 *
+        |
+        |                             *
+        |
+        |                        *
+        |
+        |                    *
+        |
+        |                *
+        |
+        |            *
+        |
+        |        *
+        |
+        |    *
+        |
+        |*
+        O------------------------------------------------> X
+        此时每行且每列只有一个采样点
+    */
     for (int i = 0; i < nSamples; ++i)
-        for (int j = 0; j < nDim; ++j) {
+    {
+        for (int j = 0; j < nDim; ++j) 
+        {
             Float sj = (i + (rng.UniformFloat())) * invNSamples;
+
             samples[nDim * i + j] = std::min(sj, OneMinusEpsilon);
         }
+    }
 
     // Permute LHS samples in each dimension
-    for (int i = 0; i < nDim; ++i) {
-        for (int j = 0; j < nSamples; ++j) {
+    /*
+        Y
+        ^
+        |
+        |    *
+        |
+        |*
+        |
+        |                        *
+        |
+        |                *
+        |
+        |                             *
+        |
+        |            *
+        |
+        |        *
+        |
+        |                    *
+        |
+        |                                 *
+        O------------------------------------------------> X
+        先交换不同坐标点的 x 坐标, 再交换 y 坐标
+        这样打乱顺序后, 每行且每列仍然只有一个采样点
+     */
+    for (int i = 0; i < nDim; ++i) 
+    {
+        for (int j = 0; j < nSamples; ++j) 
+        {
             int other = j + rng.UniformUInt32(nSamples - j);
             std::swap(samples[nDim * j + i], samples[nDim * other + i]);
         }
     }
 }
+
+
 
 Point2f RejectionSampleDisk(RNG &rng) {
     Point2f p;
@@ -104,14 +179,21 @@ Vector3f UniformSampleSphere(const Point2f &u) {
 
 Float UniformSpherePdf() { return Inv4Pi; }
 
+// P776
+// Figure13.10, 直接对圆盘采用均匀采样, 实际采样结果是不均匀的(采样点会聚集在圆心附近)
+// Figure13.11, 对 radius 开平方, 可以得到均分分布的结果, 但变换过程存在变形...
 Point2f UniformSampleDisk(const Point2f &u) {
     Float r = std::sqrt(u[0]);
     Float theta = 2 * Pi * u[1];
     return Point2f(r * std::cos(theta), r * std::sin(theta));
 }
 
+// P778, Figure13.12, 单位正方形到单位圆的同心映射, 是一种更好的均匀分布
+// https://blog.csdn.net/codeboycjy/article/details/6225886
+// https://psgraphics.blogspot.com/2011/01/improved-code-for-concentric-map.html
 Point2f ConcentricSampleDisk(const Point2f &u) {
     // Map uniform random numbers to $[-1,1]^2$
+    // 先映射到单位正方形上
     Point2f uOffset = 2.f * u - Vector2f(1, 1);
 
     // Handle degeneracy at the origin

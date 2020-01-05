@@ -54,26 +54,34 @@ Integrator::~Integrator() {}
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 MemoryArena &arena, Sampler &sampler,
                                 const std::vector<int> &nLightSamples,
-                                bool handleMedia) {
+                                bool handleMedia) 
+{
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
+    
 	// 计算所有光源经由交点 it 向 it.wo 方向发射的辐射度
-    for (size_t j = 0; j < scene.lights.size(); ++j) {
+    for (size_t j = 0; j < scene.lights.size(); ++j) 
+    {
         // Accumulate contribution of _j_th light to _L_
         const std::shared_ptr<Light> &light = scene.lights[j];
         int nSamples = nLightSamples[j];
 		
+        // 使用 sampler.Get1D/2DArray 前, 要保证已调用 sampler.Request1D/2DArray 生成了采样点
         const Point2f *uLightArray = sampler.Get2DArray(nSamples);
         const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
-		// 如果 Get2DArray() 方法不可用（如样本数组被用光时），则只进行单次采样
-		// 否则根据 nSamples 的大小，在光源上取 n 个采样点，计算平均辐射度
-        if (!uLightArray || !uScatteringArray) {
+
+		// 如果样本数组被用光时，只进行单次采样
+        if (!uLightArray || !uScatteringArray) 
+        {
             // Use a single sample for illumination from _light_
             Point2f uLight = sampler.Get2D();
             Point2f uScattering = sampler.Get2D();
             L += EstimateDirect(it, uScattering, *light, uLight, scene, sampler,
                                 arena, handleMedia);
-        } else {
+        } 
+		// 否则根据 nSamples 的大小，在光源上取 n 个采样点，计算平均辐射度
+        else 
+        {
             // Estimate direct lighting using sample arrays
             Spectrum Ld(0.f);
             for (int k = 0; k < nSamples; ++k)
@@ -88,12 +96,16 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
 
 Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                MemoryArena &arena, Sampler &sampler,
-                               bool handleMedia, const Distribution1D *lightDistrib) {
+                               bool handleMedia, const Distribution1D *lightDistrib) 
+{
     ProfilePhase p(Prof::DirectLighting);
+
     // Randomly choose a single light to sample, _light_
 	// 从光源中随机选取一个进行采样
     int nLights = int(scene.lights.size());
-    if (nLights == 0) return Spectrum(0.f);
+    if (nLights == 0) 
+        return Spectrum(0.f);
+
     int lightNum;
     Float lightPdf;
 	// 如果光源的功率分布可用，则根据其功率分布（由逆变换算法）选取一个光源，并计算其概率密度
@@ -104,6 +116,7 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
         lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
         lightPdf = Float(1) / nLights;
     }
+
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f uLight = sampler.Get2D();
     Point2f uScattering = sampler.Get2D();
@@ -131,10 +144,12 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                         const Light &light, const Point2f &uLight,
                         const Scene &scene, Sampler &sampler,
-                        MemoryArena &arena, bool handleMedia, bool specular) {
+                        MemoryArena &arena, bool handleMedia, bool specular) 
+{
     BxDFType bsdfFlags =
         specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
     Spectrum Ld(0.f);
+
 	// Sample light source with multiple importance sampling
 	// 从光源部分进行多重重要性采样
     Vector3f wi;
@@ -144,7 +159,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li << ", wi: "
             << wi << ", pdf: " << lightPdf;
-    if (lightPdf > 0 && !Li.IsBlack()) {
+    if (lightPdf > 0 && !Li.IsBlack())
+    {
         // Compute BSDF or phase function's value for light sample
 		// 计算 BSDF（如果交点在 surface 中）或相位函数（如果交点在 medium 中）的值
         Spectrum f;
@@ -194,7 +210,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 
     // Sample BSDF with multiple importance sampling
 	// 从 BSDF 部分进行多重重要性采样
-    if (!IsDeltaLight(light.flags)) {		   
+    if (!IsDeltaLight(light.flags)) 
+    {		   
         Spectrum f;
         bool sampledSpecular = false;
         if (it.IsSurfaceInteraction()) {
@@ -248,22 +265,29 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             if (!Li.IsBlack()) Ld += f * Li * Tr * weight / scatteringPdf;
         }
     }
+
     return Ld;
 }
 
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
-    const Scene &scene) {
-    if (scene.lights.empty()) return nullptr;
+    const Scene &scene) 
+{
+    if (scene.lights.empty()) 
+        return nullptr;
+
     std::vector<Float> lightPower;
     for (const auto &light : scene.lights)
         lightPower.push_back(light->Power().y());
+
     return std::unique_ptr<Distribution1D>(
         new Distribution1D(&lightPower[0], lightPower.size()));
 }
 
 // SamplerIntegrator Method Definitions
-void SamplerIntegrator::Render(const Scene &scene) {
+void SamplerIntegrator::Render(const Scene &scene) 
+{
     Preprocess(scene, *sampler);
+
     // Render image tiles in parallel
 	// (0,0) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 	//		|		|		|		|		|
@@ -283,9 +307,10 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
 	// 计算 tile 的数量（为了简单起见，pbrt 总是使用 16*16 像素大小的 tile）
-	Bounds2i sampleBounds = camera->film->GetSampleBounds();	
-    Vector2i sampleExtent = sampleBounds.Diagonal();	// 相当于计算生成图像的分辨率
     const int tileSize = 16;
+
+	Bounds2i sampleBounds = camera->film->GetSampleBounds(); // 考虑默认的三角过滤器时, floatBounds 为 [-2, -2] 到 [1922, 1082]	
+    Vector2i sampleExtent = sampleBounds.Diagonal();	// 相当于计算生成图像的分辨率
 	// 计算 tile_numbers 时向上取整
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
@@ -328,13 +353,15 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 camera->film->GetFilmTile(tileBounds);
 
             // Loop over pixels in tile to render them
-            for (Point2i pixel : tileBounds) {	// 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
+            for (Point2i pixel : tileBounds) 
+            {	// 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
                 {
                     ProfilePhase pp(Prof::StartPixel);
 					// 采样一个新的像素前，先对采样器进行一些设置
                     tileSampler->StartPixel(pixel);		
                 }
-				// 检查该像素是否在 pixelBounds 内（pixelBounds 可能比图像平面小）
+                
+				// 检查该像素是否在 pixelBounds 内（为了照顾过滤器, pixelBounds 可能超出了图像平面）
 				// 这可以保持（大多数）采样器中所使用的 RNG 值的一致性，方便重现？？？、调试
                 // Do this check after the StartPixel() call; this keeps
                 // the usage of RNG values from (most) Samplers that use
@@ -343,7 +370,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                 if (!InsideExclusive(pixel, pixelBounds))
                     continue;
 
-                do {
+                do 
+                {
                     // Initialize _CameraSample_ for current sample
                     CameraSample cameraSample =
                         tileSampler->GetCameraSample(pixel);
@@ -351,10 +379,9 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Generate camera ray for current sample
 					// 为当前样本生成相机光线
                     RayDifferential ray;
-                    Float rayWeight =
-                        camera->GenerateRayDifferential(cameraSample, &ray);
-                    ray.ScaleDifferentials(
-                        1 / std::sqrt((Float)tileSampler->samplesPerPixel));
+                    Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray);
+                    ray.ScaleDifferentials(1 / std::sqrt((Float)tileSampler->samplesPerPixel));
+
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
@@ -364,30 +391,32 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
                     // Issue warning if unexpected radiance value returned
 					//对得到的辐射度做检查
-					if (L.HasNaNs()) {
-                        LOG(ERROR) << StringPrintf(
-                            "Not-a-number radiance value returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    } else if (L.y() < -1e-5) {
-                        LOG(ERROR) << StringPrintf(
-                            "Negative luminance value, %f, returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            L.y(), pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
-                    } else if (std::isinf(L.y())) {
-                          LOG(ERROR) << StringPrintf(
-                            "Infinite luminance value returned "
-                            "for pixel (%d, %d), sample %d. Setting to black.",
-                            pixel.x, pixel.y,
-                            (int)tileSampler->CurrentSampleNumber());
-                        L = Spectrum(0.f);
+                    {
+					    if (L.HasNaNs()) {
+                            LOG(ERROR) << StringPrintf(
+                                "Not-a-number radiance value returned "
+                                "for pixel (%d, %d), sample %d. Setting to black.",
+                                pixel.x, pixel.y,
+                                (int)tileSampler->CurrentSampleNumber());
+                            L = Spectrum(0.f);
+                        } else if (L.y() < -1e-5) {
+                            LOG(ERROR) << StringPrintf(
+                                "Negative luminance value, %f, returned "
+                                "for pixel (%d, %d), sample %d. Setting to black.",
+                                L.y(), pixel.x, pixel.y,
+                                (int)tileSampler->CurrentSampleNumber());
+                            L = Spectrum(0.f);
+                        } else if (std::isinf(L.y())) {
+                              LOG(ERROR) << StringPrintf(
+                                "Infinite luminance value returned "
+                                "for pixel (%d, %d), sample %d. Setting to black.",
+                                pixel.x, pixel.y,
+                                (int)tileSampler->CurrentSampleNumber());
+                            L = Spectrum(0.f);
+                        }
+                        VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
+                            ray << " -> L = " << L;
                     }
-                    VLOG(1) << "Camera sample: " << cameraSample << " -> ray: " <<
-                        ray << " -> L = " << L;
 
                     // Add camera ray's contribution to image
                     filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
@@ -395,7 +424,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
                     // Free _MemoryArena_ memory from computing image sample
                     // value
                     arena.Reset();
-                } while (tileSampler->StartNextSample());
+                } 
+                while (tileSampler->StartNextSample());
             }
             LOG(INFO) << "Finished image tile " << tileBounds;
 
@@ -404,6 +434,7 @@ void SamplerIntegrator::Render(const Scene &scene) {
             camera->film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
         }, nTiles);
+
         reporter.Done();
     }
     LOG(INFO) << "Rendering finished";
@@ -415,7 +446,8 @@ void SamplerIntegrator::Render(const Scene &scene) {
 
 Spectrum SamplerIntegrator::SpecularReflect(
     const RayDifferential &ray, const SurfaceInteraction &isect,
-    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) const {
+    const Scene &scene, Sampler &sampler, MemoryArena &arena, int depth) const 
+{
     // Compute specular reflection direction _wi_ and BSDF value
     Vector3f wo = isect.wo, wi;
     Float pdf;
@@ -426,14 +458,17 @@ Spectrum SamplerIntegrator::SpecularReflect(
     // Return contribution of specular reflection
 	// 计算镜面反射的贡献
     const Normal3f &ns = isect.shading.n;
-    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) 
+    {
         // Compute ray differential _rd_ for specular reflection
         RayDifferential rd = isect.SpawnRay(wi);
 		// 关于光线微分的代码没细看，暂时不做解释
-        if (ray.hasDifferentials) {
+        if (ray.hasDifferentials) 
+        {
             rd.hasDifferentials = true;
             rd.rxOrigin = isect.p + isect.dpdx;
             rd.ryOrigin = isect.p + isect.dpdy;
+
             // Compute differential reflected directions
             Normal3f dndx = isect.shading.dndu * isect.dudx +
                             isect.shading.dndv * isect.dvdx;
@@ -443,14 +478,17 @@ Spectrum SamplerIntegrator::SpecularReflect(
                      dwody = -ray.ryDirection - wo;
             Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
             Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
+
             rd.rxDirection =
                 wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
             rd.ryDirection =
                 wi - dwody + 2.f * Vector3f(Dot(wo, ns) * dndy + dDNdy * ns);
         }
+
         return f * Li(rd, scene, sampler, arena, depth + 1) * AbsDot(wi, ns) /
                pdf;
-    } else
+    } 
+    else
         return Spectrum(0.f);
 }
 

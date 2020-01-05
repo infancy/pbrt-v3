@@ -44,9 +44,11 @@ namespace pbrt {
 // TranslucentMaterial Method Definitions
 void TranslucentMaterial::ComputeScatteringFunctions(
     SurfaceInteraction *si, MemoryArena &arena, TransportMode mode,
-    bool allowMultipleLobes) const {
+    bool allowMultipleLobes) const 
+{
     // Perform bump mapping with _bumpMap_, if present
     if (bumpMap) Bump(bumpMap, si);
+
     Float eta = 1.5f;
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, eta);
 
@@ -55,24 +57,31 @@ void TranslucentMaterial::ComputeScatteringFunctions(
     if (r.IsBlack() && t.IsBlack()) return;
 
     Spectrum kd = Kd->Evaluate(*si).Clamp();
-    if (!kd.IsBlack()) {
+    if (!kd.IsBlack()) 
+    {
         if (!r.IsBlack())
             si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(r * kd));
         if (!t.IsBlack())
             si->bsdf->Add(ARENA_ALLOC(arena, LambertianTransmission)(t * kd));
     }
+
     Spectrum ks = Ks->Evaluate(*si).Clamp();
-    if (!ks.IsBlack() && (!r.IsBlack() || !t.IsBlack())) {
+    if (!ks.IsBlack() && (!r.IsBlack() || !t.IsBlack())) 
+    {
         Float rough = roughness->Evaluate(*si);
         if (remapRoughness)
             rough = TrowbridgeReitzDistribution::RoughnessToAlpha(rough);
+
         MicrofacetDistribution *distrib =
             ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(rough, rough);
-        if (!r.IsBlack()) {
+
+        if (!r.IsBlack()) 
+        {
             Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, eta);
             si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(
                 r * ks, distrib, fresnel));
         }
+
         if (!t.IsBlack())
             si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetTransmission)(
                 t * ks, distrib, 1.f, eta, mode));

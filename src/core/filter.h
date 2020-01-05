@@ -51,6 +51,10 @@ class Filter {
     virtual ~Filter();
     Filter(const Vector2f &radius)
         : radius(radius), invRadius(Vector2f(1 / radius.x, 1 / radius.y)) {}
+
+    // 参考 P473 式 7.12, 返回采样点在重构时对应的权重
+    // 过滤器以(0, 0)为原点, 系统保证输入的 p 在半径距离 radius 内, 所以不会对 p 做检查
+    // PBRT 使用的过滤器都是径向对称的, 也就是 x 和 y 可以分开算
     virtual Float Evaluate(const Point2f &p) const = 0;
 
     // Filter Public Data

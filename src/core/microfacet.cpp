@@ -140,18 +140,26 @@ static Vector3f BeckmannSample(const Vector3f &wi, Float alpha_x, Float alpha_y,
     return Normalize(Vector3f(-slope_x, -slope_y, 1.f));
 }
 
+
+
 // MicrofacetDistribution Method Definitions
 MicrofacetDistribution::~MicrofacetDistribution() {}
 
-Float BeckmannDistribution::D(const Vector3f &wh) const {
+
+
+Float BeckmannDistribution::D(const Vector3f &wh) const 
+{
+    // P538, 这里用的是各向异性的形式, 形成的法线分布是由 alphaX 和 alphaY 插值形成的椭圆形状(横截面)???
     Float tan2Theta = Tan2Theta(wh);
     if (std::isinf(tan2Theta)) return 0.;
+
     Float cos4Theta = Cos2Theta(wh) * Cos2Theta(wh);
     return std::exp(-tan2Theta * (Cos2Phi(wh) / (alphax * alphax) +
                                   Sin2Phi(wh) / (alphay * alphay))) /
            (Pi * alphax * alphay * cos4Theta);
 }
 
+// P539, TrowbridgeReitz(GGX) 的法线分布具有更长的拖尾, 更接近现实情况
 Float TrowbridgeReitzDistribution::D(const Vector3f &wh) const {
     Float tan2Theta = Tan2Theta(wh);
     if (std::isinf(tan2Theta)) return 0.;
@@ -162,26 +170,38 @@ Float TrowbridgeReitzDistribution::D(const Vector3f &wh) const {
     return 1 / (Pi * alphax * alphay * cos4Theta * (1 + e) * (1 + e));
 }
 
-Float BeckmannDistribution::Lambda(const Vector3f &w) const {
+
+
+// P542, 如果我们假设微面元高度场的邻近点没有相关性, 就可以找到 lambda 的闭合形式(解析形式), 而且假设和现实测量的结果也很接近
+Float BeckmannDistribution::Lambda(const Vector3f &w) const 
+{
+    // 对式 8.15 的有理多项式近似, 更高效
     Float absTanTheta = std::abs(TanTheta(w));
     if (std::isinf(absTanTheta)) return 0.;
+
     // Compute _alpha_ for direction _w_
     Float alpha =
         std::sqrt(Cos2Phi(w) * alphax * alphax + Sin2Phi(w) * alphay * alphay);
+
     Float a = 1 / (alpha * absTanTheta);
     if (a >= 1.6f) return 0;
+
     return (1 - 1.259f * a + 0.396f * a * a) / (3.535f * a + 2.181f * a * a);
 }
 
+// P544, 表面粗糙度越高, 曲线下降的越快, 被遮挡的面元越多 
 Float TrowbridgeReitzDistribution::Lambda(const Vector3f &w) const {
     Float absTanTheta = std::abs(TanTheta(w));
     if (std::isinf(absTanTheta)) return 0.;
+
     // Compute _alpha_ for direction _w_
     Float alpha =
         std::sqrt(Cos2Phi(w) * alphax * alphax + Sin2Phi(w) * alphay * alphay);
     Float alpha2Tan2Theta = (alpha * absTanTheta) * (alpha * absTanTheta);
     return (-1 + std::sqrt(1.f + alpha2Tan2Theta)) / 2;
 }
+
+
 
 std::string BeckmannDistribution::ToString() const {
     return StringPrintf("[ BeckmannDistribution alphax: %f alphay: %f ]",
@@ -192,6 +212,8 @@ std::string TrowbridgeReitzDistribution::ToString() const {
     return StringPrintf("[ TrowbridgeReitzDistribution alphax: %f alphay: %f ]",
                         alphax, alphay);
 }
+
+
 
 Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
                                          const Point2f &u) const {
@@ -234,6 +256,7 @@ Vector3f BeckmannDistribution::Sample_wh(const Vector3f &wo,
         return wh;
     }
 }
+
 
 static void TrowbridgeReitzSample11(Float cosTheta, Float U1, Float U2,
                                     Float *slope_x, Float *slope_y) {
@@ -334,6 +357,8 @@ Vector3f TrowbridgeReitzDistribution::Sample_wh(const Vector3f &wo,
     }
     return wh;
 }
+
+
 
 Float MicrofacetDistribution::Pdf(const Vector3f &wo,
                                   const Vector3f &wh) const {

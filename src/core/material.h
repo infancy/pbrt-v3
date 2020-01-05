@@ -43,18 +43,24 @@
 #include "memory.h"
 
 namespace pbrt {
-
+	
+// indicates whether the ray path that found this intersection point started from the camera or from a light source
 // TransportMode Declarations
 enum class TransportMode { Radiance, Importance };
 
 // Material Declarations
+// P571, by separating these two components and having the Material return a BSDF, pbrt is better able to handle a variety of light transport algorithms.
 class Material {
   public:
     // Material Interface
-    virtual void ComputeScatteringFunctions(SurfaceInteraction *si,
-                                            MemoryArena &arena,
-                                            TransportMode mode,
-                                            bool allowMultipleLobes) const = 0;
+    //  takes a point on a surface and creates a BSDF object (and that represents scattering at the point
+    virtual void ComputeScatteringFunctions(
+        SurfaceInteraction *si, // contains geometric properties at an intersection point on the surface of a shape.
+        MemoryArena &arena,     // allocate memory
+        TransportMode mode,     // path starting from the camera or one starting from a light source
+        bool allowMultipleLobes // aggregate multiple types of scattering into a single BxDF when such BxDFs are available
+    ) const = 0;
+
     virtual ~Material();
     static void Bump(const std::shared_ptr<Texture<Float>> &d,
                      SurfaceInteraction *si);

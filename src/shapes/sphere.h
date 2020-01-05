@@ -54,8 +54,10 @@ class Sphere : public Shape {
           radius(radius),
           zMin(Clamp(std::min(zMin, zMax), -radius, radius)),
           zMax(Clamp(std::max(zMin, zMax), -radius, radius)),
+          // theta 是通过 z 计算出来的   	 	
           thetaMin(std::acos(Clamp(std::min(zMin, zMax) / radius, -1, 1))),
           thetaMax(std::acos(Clamp(std::max(zMin, zMax) / radius, -1, 1))),
+          // 传入角度, 计算弧度    
           phiMax(Radians(Clamp(phiMax, 0, 360))) {}
 
     Bounds3f ObjectBound() const;

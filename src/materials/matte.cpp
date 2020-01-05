@@ -45,15 +45,21 @@ namespace pbrt {
 void MatteMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                                MemoryArena &arena,
                                                TransportMode mode,
-                                               bool allowMultipleLobes) const {
+                                               bool allowMultipleLobes) const 
+{
     // Perform bump mapping with _bumpMap_, if present
     if (bumpMap) Bump(bumpMap, si);
 
     // Evaluate textures for _MatteMaterial_ material and allocate BRDF
+    // 每次成功的 ray-shape 相交计算都会生成新的 BSDF 对象, 使用 new/delete 的动态分配效率太低了
+    // 这里用 MemoryArena 对象来分配内存
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+
     Spectrum r = Kd->Evaluate(*si).Clamp();
     Float sig = Clamp(sigma->Evaluate(*si), 0, 90);
-    if (!r.IsBlack()) {
+
+    if (!r.IsBlack()) 
+    {
         if (sig == 0)
             si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(r));
         else

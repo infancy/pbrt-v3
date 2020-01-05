@@ -64,14 +64,15 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
 
     // Find camera ray after shifting a fraction of a pixel in the $x$ direction
     Float wtx;
-    for (Float eps : { .05, -.05 }) {
+    for (Float eps : { .05, -.05 }) 
+    {
         CameraSample sshift = sample;
         sshift.pFilm.x += eps;
         Ray rx;
         wtx = GenerateRay(sshift, &rx);
         rd->rxOrigin = rd->o + (rx.o - rd->o) / eps;
         rd->rxDirection = rd->d + (rx.d - rd->d) / eps;
-        if (wtx != 0)
+        if (wtx != 0) // 在左右两个方向上都进行尝试, 找到一个可用的就跳出
             break;
     }
     if (wtx == 0)
@@ -79,7 +80,8 @@ Float Camera::GenerateRayDifferential(const CameraSample &sample,
 
     // Find camera ray after shifting a fraction of a pixel in the $y$ direction
     Float wty;
-    for (Float eps : { .05, -.05 }) {
+    for (Float eps : { .05, -.05 }) 
+    {
         CameraSample sshift = sample;
         sshift.pFilm.y += eps;
         Ray ry;

@@ -45,11 +45,12 @@
 namespace pbrt {
 
 // MatteMaterial Declarations
+// describes a purely diffuse surface, 哑光材质(黑板, )
 class MatteMaterial : public Material {
   public:
     // MatteMaterial Public Methods
-    MatteMaterial(const std::shared_ptr<Texture<Spectrum>> &Kd,
-                  const std::shared_ptr<Texture<Float>> &sigma,
+    MatteMaterial(const std::shared_ptr<Texture<Spectrum>> &Kd, // 基于不同波长的反射率
+                  const std::shared_ptr<Texture<Float>> &sigma, // 粗糙度
                   const std::shared_ptr<Texture<Float>> &bumpMap)
         : Kd(Kd), sigma(sigma), bumpMap(bumpMap) {}
     void ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena,

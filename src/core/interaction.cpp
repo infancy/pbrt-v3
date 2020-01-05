@@ -53,8 +53,10 @@ SurfaceInteraction::SurfaceInteraction(
       dndu(dndu),
       dndv(dndv),
       shape(shape),
-      faceIndex(faceIndex) {
+      faceIndex(faceIndex) 
+{
     // Initialize shading geometry from true geometry
+    // 如果在着色时没有做 bump mapping, 就用实际几何结构来替换着色法线等做计算
     shading.n = n;
     shading.dpdu = dpdu;
     shading.dpdv = dpdv;
@@ -78,10 +80,7 @@ void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
                                             bool orientationIsAuthoritative) {
     // Compute _shading.n_ for _SurfaceInteraction_
     shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
-
-    if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))
-        shading.n = -shading.n;
-
+    
     // n 和 shading.n 应总是位于同一半球上
     // 根据用户传入参数来决定是翻转 n 还是 shading.n
     if (orientationIsAuthoritative)
@@ -101,6 +100,7 @@ void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,
                                                     bool allowMultipleLobes,
                                                     TransportMode mode) {
     ComputeDifferentials(ray);
+
     // 由交点所处的图元来计算交点上的散射方程
     // 而图元则根据自身的材质特征来计算
     primitive->ComputeScatteringFunctions(this, arena, mode,

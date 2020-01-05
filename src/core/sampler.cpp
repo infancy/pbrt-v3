@@ -39,6 +39,8 @@
 
 namespace pbrt {
 
+#pragma region Sampler
+
 // Sampler Method Definitions
 Sampler::~Sampler() {}
 
@@ -51,55 +53,80 @@ CameraSample Sampler::GetCameraSample(const Point2i &pRaster) {
     return cs;
 }
 
+
+
 void Sampler::StartPixel(const Point2i &p) {
     currentPixel = p;
     currentPixelSampleIndex = 0;
+
     // Reset array offsets for next pixel sample
     array1DOffset = array2DOffset = 0;
 }
 
 bool Sampler::StartNextSample() {
     // Reset array offsets for next pixel sample
+    // Starting at the first dimension of the next sample for the current pixel
     array1DOffset = array2DOffset = 0;
+
+    // 在到达预计的采样数量前, 都返回 true
     return ++currentPixelSampleIndex < samplesPerPixel;
 }
 
 bool Sampler::SetSampleNumber(int64_t sampleNum) {
     // Reset array offsets for next pixel sample
     array1DOffset = array2DOffset = 0;
+
     currentPixelSampleIndex = sampleNum;
+
     return currentPixelSampleIndex < samplesPerPixel;
 }
 
+
+
 void Sampler::Request1DArray(int n) {
-    CHECK_EQ(RoundCount(n), n);
+    CHECK_EQ(RoundCount(n), n); // 每次申请的数量要和最佳数量对应上
+
     samples1DArraySizes.push_back(n);
     sampleArray1D.push_back(std::vector<Float>(n * samplesPerPixel));
 }
 
 void Sampler::Request2DArray(int n) {
     CHECK_EQ(RoundCount(n), n);
+
     samples2DArraySizes.push_back(n);
     sampleArray2D.push_back(std::vector<Point2f>(n * samplesPerPixel));
 }
 
 const Float *Sampler::Get1DArray(int n) {
     if (array1DOffset == sampleArray1D.size()) return nullptr;
-    CHECK_EQ(samples1DArraySizes[array1DOffset], n);
+
+    CHECK_EQ(samples1DArraySizes[array1DOffset], n); // 这个传入的 n 是用来校验的
     CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
+
     return &sampleArray1D[array1DOffset++][currentPixelSampleIndex * n];
 }
 
 const Point2f *Sampler::Get2DArray(int n) {
     if (array2DOffset == sampleArray2D.size()) return nullptr;
+
     CHECK_EQ(samples2DArraySizes[array2DOffset], n);
     CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
+
     return &sampleArray2D[array2DOffset++][currentPixelSampleIndex * n];
 }
 
+#pragma endregion Sampler
+
+
+
+#pragma region PixelSampler
+
 PixelSampler::PixelSampler(int64_t samplesPerPixel, int nSampledDimensions)
-    : Sampler(samplesPerPixel) {
-    for (int i = 0; i < nSampledDimensions; ++i) {
+    : Sampler(samplesPerPixel) 
+{
+    // 每个采样点的采样序列是 samples1D/2D 中的**一列**数据, 所以在调用 Get1D/2D 的时候需要自增 current1D/2DDimension
+    for (int i = 0; i < nSampledDimensions; ++i) 
+    {
         samples1D.push_back(std::vector<Float>(samplesPerPixel));
         samples2D.push_back(std::vector<Point2f>(samplesPerPixel));
     }
@@ -107,17 +134,22 @@ PixelSampler::PixelSampler(int64_t samplesPerPixel, int nSampledDimensions)
 
 bool PixelSampler::StartNextSample() {
     current1DDimension = current2DDimension = 0;
+
     return Sampler::StartNextSample();
 }
 
 bool PixelSampler::SetSampleNumber(int64_t sampleNum) {
     current1DDimension = current2DDimension = 0;
+
     return Sampler::SetSampleNumber(sampleNum);
 }
+
+
 
 Float PixelSampler::Get1D() {
     ProfilePhase _(Prof::GetSample);
     CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
+
     if (current1DDimension < samples1D.size())
         return samples1D[current1DDimension++][currentPixelSampleIndex];
     else
@@ -127,15 +159,24 @@ Float PixelSampler::Get1D() {
 Point2f PixelSampler::Get2D() {
     ProfilePhase _(Prof::GetSample);
     CHECK_LT(currentPixelSampleIndex, samplesPerPixel);
+
     if (current2DDimension < samples2D.size())
         return samples2D[current2DDimension++][currentPixelSampleIndex];
     else
         return Point2f(rng.UniformFloat(), rng.UniformFloat());
 }
 
-void GlobalSampler::StartPixel(const Point2i &p) {
+#pragma endregion PixelSampler
+
+
+
+#pragma region GlobalSampler
+
+void GlobalSampler::StartPixel(const Point2i &p) 
+{
     ProfilePhase _(Prof::StartPixel);
     Sampler::StartPixel(p);
+
     dimension = 0;
     intervalSampleIndex = GetIndexForSample(0);
     // Compute _arrayEndDim_ for dimensions used for array samples
@@ -143,9 +184,11 @@ void GlobalSampler::StartPixel(const Point2i &p) {
         arrayStartDim + sampleArray1D.size() + 2 * sampleArray2D.size();
 
     // Compute 1D array samples for _GlobalSampler_
-    for (size_t i = 0; i < samples1DArraySizes.size(); ++i) {
+    for (size_t i = 0; i < samples1DArraySizes.size(); ++i) 
+    {
         int nSamples = samples1DArraySizes[i] * samplesPerPixel;
-        for (int j = 0; j < nSamples; ++j) {
+        for (int j = 0; j < nSamples; ++j) 
+        {
             int64_t index = GetIndexForSample(j);
             sampleArray1D[i][j] = SampleDimension(index, arrayStartDim + i);
         }
@@ -153,9 +196,11 @@ void GlobalSampler::StartPixel(const Point2i &p) {
 
     // Compute 2D array samples for _GlobalSampler_
     int dim = arrayStartDim + samples1DArraySizes.size();
-    for (size_t i = 0; i < samples2DArraySizes.size(); ++i) {
+    for (size_t i = 0; i < samples2DArraySizes.size(); ++i) 
+    {
         int nSamples = samples2DArraySizes[i] * samplesPerPixel;
-        for (int j = 0; j < nSamples; ++j) {
+        for (int j = 0; j < nSamples; ++j) 
+        {
             int64_t idx = GetIndexForSample(j);
             sampleArray2D[i][j].x = SampleDimension(idx, dim);
             sampleArray2D[i][j].y = SampleDimension(idx, dim + 1);
@@ -167,6 +212,8 @@ void GlobalSampler::StartPixel(const Point2i &p) {
 
 bool GlobalSampler::StartNextSample() {
     dimension = 0;
+
+    // 保存这个全局索引, 在 Get1D/2D 的时候会用到
     intervalSampleIndex = GetIndexForSample(currentPixelSampleIndex + 1);
     return Sampler::StartNextSample();
 }
@@ -179,19 +226,26 @@ bool GlobalSampler::SetSampleNumber(int64_t sampleNum) {
 
 Float GlobalSampler::Get1D() {
     ProfilePhase _(Prof::GetSample);
+
     if (dimension >= arrayStartDim && dimension < arrayEndDim)
-        dimension = arrayEndDim;
+        dimension = arrayEndDim; // 一开始取 0~arrayStartDim 预留的采样点用, 然后取 arrayEndDim 之后的用
+
     return SampleDimension(intervalSampleIndex, dimension++);
 }
 
 Point2f GlobalSampler::Get2D() {
     ProfilePhase _(Prof::GetSample);
+
     if (dimension + 1 >= arrayStartDim && dimension < arrayEndDim)
         dimension = arrayEndDim;
+
     Point2f p(SampleDimension(intervalSampleIndex, dimension),
               SampleDimension(intervalSampleIndex, dimension + 1));
     dimension += 2;
+
     return p;
 }
+
+#pragma region GlobalSampler
 
 }  // namespace pbrt

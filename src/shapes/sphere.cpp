@@ -47,10 +47,13 @@ Bounds3f Sphere::ObjectBound() const {
 }
 
 bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
-                       bool testAlphaTexture) const {
+                       bool testAlphaTexture) const 
+{
     ProfilePhase p(Prof::ShapeIntersect);
+    // 为什么不在用到的地方才定义 phi 和 pHit
     Float phi;
     Point3f pHit;
+
     // Transform _Ray_ to object space
     Vector3f oErr, dErr;
     Ray ray = (*WorldToObject)(r, &oErr, &dErr);
@@ -58,8 +61,11 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     // Compute quadratic sphere coefficients
 
     // Initialize _EFloat_ ray coordinate values
+    // P135
+    // (ox + tdx)^2 + (oy + tdy)2 + (oz + tdz)2 = r2.
     EFloat ox(ray.o.x, oErr.x), oy(ray.o.y, oErr.y), oz(ray.o.z, oErr.z);
     EFloat dx(ray.d.x, dErr.x), dy(ray.d.y, dErr.y), dz(ray.d.z, dErr.z);
+
     EFloat a = dx * dx + dy * dy + dz * dz;
     EFloat b = 2 * (dx * ox + dy * oy + dz * oz);
     EFloat c = ox * ox + oy * oy + oz * oz - EFloat(radius) * EFloat(radius);
@@ -68,28 +74,45 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     EFloat t0, t1;
     if (!Quadratic(a, b, c, &t0, &t1)) return false;
 
-	// 相交计算中总是去寻找最近的交点
     // Check quadric shape _t0_ and _t1_ for nearest intersection
-    if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) return false;
+    // For an intersection to be valid, its t value must be greater than zero and less than ray.tMax.
+    // The following code uses the error intervals provided by the EFloatclass and only accepts intersections that are unequivocally in the range (0, tMax).
+    // 如果计算出来的交点不合法
+    if (t0.UpperBound() > ray.tMax || t1.LowerBound() <= 0) 
+        return false;
+
+	// 到交点的距离 tShapeHit
     EFloat tShapeHit = t0;
-    if (tShapeHit.LowerBound() <= 0) {
+    if (tShapeHit.LowerBound() <= 0) 
+    {
         tShapeHit = t1;
-        if (tShapeHit.UpperBound() > ray.tMax) return false;
+        if (tShapeHit.UpperBound() > ray.tMax) 
+            return false;
     }
 
     // Compute sphere hit position and $\phi$
+    // ray 的源点向前移动 tShapeHit 个距离, 找到交点 pHit
     pHit = ray((Float)tShapeHit);
 
     // Refine sphere intersection point
+    // 由于精度限制, pHit 可能在球体里面, 这里确保让 pHit 在球体上
+    // 先除后乘更好理解 
     pHit *= radius / Distance(pHit, Point3f(0, 0, 0));
-    if (pHit.x == 0 && pHit.y == 0) pHit.x = 1e-5f * radius;
+    if (pHit.x == 0 && pHit.y == 0) 
+        pHit.x = 1e-5f * radius;
+        
+    // pHit 在对象坐标系里
     phi = std::atan2(pHit.y, pHit.x);
-    if (phi < 0) phi += 2 * Pi;
+    if (phi < 0) 
+        phi += 2 * Pi;
 
+    // 通过设置 zMin, zMax, phiMax 等参数是可以创建不完整球体
+    // 当球体不完整时(zMin > -radius, zMax < radius), 测试 pHit 是否在球体上
     // Test sphere intersection against clipping parameters
     if ((zMin > -radius && pHit.z < zMin) || (zMax < radius && pHit.z > zMax) ||
         phi > phiMax) {
         if (tShapeHit == t1) return false;
+        // else tShapeHit != t1, 也就是用 t0 测试不通过, 换成 t1 继续试
         if (t1.UpperBound() > ray.tMax) return false;
         tShapeHit = t1;
         // Compute sphere hit position and $\phi$
@@ -105,12 +128,17 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
             return false;
     }
 
+    // At this point in the routine, it is certain that the ray hits the sphere
+
     // Find parametric representation of sphere hit
+    // 计算交点的 UV 参数表示
     Float u = phi / phiMax;
     Float theta = std::acos(Clamp(pHit.z / radius, -1, 1));
     Float v = (theta - thetaMin) / (thetaMax - thetaMin);
 
     // Compute sphere $\dpdu$ and $\dpdv$
+    // 计算交点 pHit 对于 UV 坐标的偏微分, 用于纹理过滤
+    // 推导过程见 P138
     Float zRadius = std::sqrt(pHit.x * pHit.x + pHit.y * pHit.y);
     Float invZRadius = 1 / zRadius;
     Float cosPhi = pHit.x * invZRadius;
@@ -119,6 +147,8 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Vector3f dpdv =
         (thetaMax - thetaMin) *
         Vector3f(pHit.z * cosPhi, pHit.z * sinPhi, -radius * std::sin(theta));
+
+
 
     // Compute sphere $\dndu$ and $\dndv$
     Vector3f d2Pduu = -phiMax * phiMax * Vector3f(pHit.x, pHit.y, 0);
@@ -143,10 +173,13 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect,
     Normal3f dndv = Normal3f((g * F - f * G) * invEGF2 * dpdu +
                              (f * F - g * E) * invEGF2 * dpdv);
 
+
+
     // Compute error bounds for sphere intersection
     Vector3f pError = gamma(5) * Abs((Vector3f)pHit);
 
     // Initialize _SurfaceInteraction_ from parametric information
+    // si.wo = -ray.d, 也就是朝着相机的方向
     *isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
                                                  -ray.d, dpdu, dpdv, dndu, dndv,
                                                  ray.time, this));
@@ -215,18 +248,26 @@ bool Sphere::IntersectP(const Ray &r, bool testAlphaTexture) const {
     return true;
 }
 
+// 推导见P141
 Float Sphere::Area() const { return phiMax * radius * (zMax - zMin); }
 
-Interaction Sphere::Sample(const Point2f &u, Float *pdf) const {
+Interaction Sphere::Sample(const Point2f &u, Float *pdf) const 
+{
+    // 在球上随机选取一点
     Point3f pObj = Point3f(0, 0, 0) + radius * UniformSampleSphere(u);
+
     Interaction it;
     it.n = Normalize((*ObjectToWorld)(Normal3f(pObj.x, pObj.y, pObj.z)));
-    if (reverseOrientation) it.n *= -1;
+    if (reverseOrientation) 
+        it.n *= -1;
+
     // Reproject _pObj_ to sphere surface and compute _pObjError_
     pObj *= radius / Distance(pObj, Point3f(0, 0, 0));
     Vector3f pObjError = gamma(5) * Abs((Vector3f)pObj);
     it.p = (*ObjectToWorld)(pObj, pObjError, &it.pError);
+
     *pdf = 1 / Area();
+    
     return it;
 }
 

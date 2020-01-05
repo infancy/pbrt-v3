@@ -75,6 +75,7 @@ class Shape {
 
 	// 判断 ray 是否与 shape 相交, 若相交则继续计算交点上的微分几何属性
 	// 细节见 Section 3.1.3 Intersection Tests
+  // tHit: 交点 isect.hit 到 ray 的距离, 可用于提前终止相交测试
     virtual bool Intersect(const Ray &ray, Float *tHit,
                            SurfaceInteraction *isect,
                            bool testAlphaTexture = true) const = 0;

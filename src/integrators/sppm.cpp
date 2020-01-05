@@ -108,6 +108,7 @@ inline unsigned int hash(const Point3i &p, int hashSize) {
 }
 
 // SPPM Method Definitions
+// 四百行, 也不拆分一下
 void SPPMIntegrator::Render(const Scene &scene) {
     ProfilePhase p(Prof::IntegratorRender);
     // Initialize _pixelBounds_ and _pixels_ array for SPPM
@@ -130,9 +131,9 @@ void SPPMIntegrator::Render(const Scene &scene) {
     Point2i nTiles((pixelExtent.x + tileSize - 1) / tileSize,
                    (pixelExtent.y + tileSize - 1) / tileSize);
     ProgressReporter progress(2 * nIterations, "Rendering");
+    std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
     for (int iter = 0; iter < nIterations; ++iter) {
         // Generate SPPM visible points
-        std::vector<MemoryArena> perThreadArenas(MaxThreadIndex());
         {
             ProfilePhase _(Prof::SPPMCameraPass);
             ParallelFor2D([&](Point2i tile) {
@@ -495,6 +496,10 @@ void SPPMIntegrator::Render(const Scene &scene) {
                 WriteImage("sppm_radius.png", rimg.get(), pixelBounds, res);
             }
         }
+
+        // Reset memory arenas
+        for (int i = 0; i < perThreadArenas.size(); ++i)
+            perThreadArenas[i].Reset();
     }
     progress.Done();
 }

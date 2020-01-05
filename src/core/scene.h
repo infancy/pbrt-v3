@@ -52,16 +52,21 @@ class Scene {
     // Scene Public Methods
     Scene(std::shared_ptr<Primitive> aggregate,
           const std::vector<std::shared_ptr<Light>> &lights)
-        : lights(lights), aggregate(aggregate) {
+        : lights(lights), aggregate(aggregate) 
+	{
         // Scene Constructor Implementation
         worldBound = aggregate->WorldBound();
-        for (const auto &light : lights) {
+
+        for (const auto &light : lights) 
+		{
             light->Preprocess(*this);
+
             if (light->flags & (int)LightFlags::Infinite)
                 infiniteLights.push_back(light);
         }
     }
     const Bounds3f &WorldBound() const { return worldBound; }
+
     bool Intersect(const Ray &ray, SurfaceInteraction *isect) const;
     bool IntersectP(const Ray &ray) const;
     bool IntersectTr(Ray ray, Sampler &sampler, SurfaceInteraction *isect,
