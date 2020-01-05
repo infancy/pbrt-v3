@@ -80,10 +80,7 @@ void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
                                             bool orientationIsAuthoritative) {
     // Compute _shading.n_ for _SurfaceInteraction_
     shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
-
-    if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))
-        shading.n = -shading.n;
-
+    
     // n 和 shading.n 应总是位于同一半球上
     // 根据用户传入参数来决定是翻转 n 还是 shading.n
     if (orientationIsAuthoritative)
