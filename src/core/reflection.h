@@ -178,8 +178,8 @@ class BSDF {
     // BSDF Public Methods
     BSDF(const SurfaceInteraction &si, Float eta = 1)
         : eta(eta),
-          ns(si.shading.n),
           ng(si.n),
+          ns(si.shading.n),
           ss(Normalize(si.shading.dpdu)),
           ts(Cross(ns, ss)) {}
 
@@ -195,7 +195,7 @@ class BSDF {
     }
     Vector3f LocalToWorld(const Vector3f &v) const 
     {
-        // 因为 stn 是正交矩阵，其逆矩阵即为转置矩阵
+        // P574, 因为 stn 是正交矩阵，其逆矩阵即为转置矩阵
         return Vector3f(ss.x * v.x + ts.x * v.y + ns.x * v.z,
                         ss.y * v.x + ts.y * v.y + ns.y * v.z,
                         ss.z * v.x + ts.z * v.y + ns.z * v.z);
@@ -218,10 +218,11 @@ class BSDF {
     std::string ToString() const;
 
     // BSDF Public Data
-    const Float eta; // 表面相对折射率，用于半透明物体
+    const Float eta; // 表面相对折射率，只用于半透明物体
 
   private:
     // BSDF Private Methods
+    // 析构函数是私有成员, 保证不被意外销毁(实践上这个函数不会在任何地方被调用, 而是在 MemoryArena 对象析构时直接清理掉内存)
     ~BSDF() {}
 
     // BSDF Private Data
@@ -230,10 +231,12 @@ class BSDF {
     const Normal3f ns, ng; // shading-normal/geometry-normal
     const Vector3f ss, ts; 
 
+    // holds a set of BxDFs whose contributions are summed to give the full scattering function
     int nBxDFs = 0;
     static PBRT_CONSTEXPR int MaxBxDFs = 8;
     BxDF *bxdfs[MaxBxDFs];
 
+    // MixMaterial 是为唯一需要直接访问 bxdfs 的对象, 这里没有另外加接口, 而是声明成友元
     friend class MixMaterial;
 };
 

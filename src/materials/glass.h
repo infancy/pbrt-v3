@@ -45,6 +45,7 @@
 namespace pbrt {
 
 // GlassMaterial Declarations
+// Perfect or glossy specular reflection and transmission, weighted by Fresnel terms for accurate angular-dependent variation.
 class GlassMaterial : public Material {
   public:
     // GlassMaterial Public Methods

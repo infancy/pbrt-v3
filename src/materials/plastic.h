@@ -45,14 +45,16 @@
 namespace pbrt {
 
 // PlasticMaterial Declarations
+// mixture of a diffuse and glossy scattering function with
+// parameters controlling the particular colors and specular highlight size
 class PlasticMaterial : public Material {
   public:
     // PlasticMaterial Public Methods
     PlasticMaterial(const std::shared_ptr<Texture<Spectrum>> &Kd,
                     const std::shared_ptr<Texture<Spectrum>> &Ks,
-                    const std::shared_ptr<Texture<Float>> &roughness,
+                    const std::shared_ptr<Texture<Float>> &roughness, // determines the size of the specular highlight
                     const std::shared_ptr<Texture<Float>> &bumpMap,
-                    bool remapRoughness)
+                    bool remapRoughness) // [0, ...] -> [0, 1]
         : Kd(Kd),
           Ks(Ks),
           roughness(roughness),

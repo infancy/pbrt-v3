@@ -46,21 +46,23 @@ namespace pbrt {
 void MixMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                              MemoryArena &arena,
                                              TransportMode mode,
-                                             bool allowMultipleLobes) const {
+                                             bool allowMultipleLobes) const 
+{
     // Compute weights and original _BxDF_s for mix material
     Spectrum s1 = scale->Evaluate(*si).Clamp();
     Spectrum s2 = (Spectrum(1.f) - s1).Clamp();
+
     SurfaceInteraction si2 = *si;
     m1->ComputeScatteringFunctions(si, arena, mode, allowMultipleLobes);
     m2->ComputeScatteringFunctions(&si2, arena, mode, allowMultipleLobes);
 
     // Initialize _si->bsdf_ with weighted mixture of _BxDF_s
     int n1 = si->bsdf->NumComponents(), n2 = si2.bsdf->NumComponents();
+
     for (int i = 0; i < n1; ++i)
-        si->bsdf->bxdfs[i] =
-            ARENA_ALLOC(arena, ScaledBxDF)(si->bsdf->bxdfs[i], s1);
+        si->bsdf->bxdfs[i] = ARENA_ALLOC(arena, ScaledBxDF)(si->bsdf->bxdfs[i], s1); // 对 si 已计算到的 bxdf 进行放缩
     for (int i = 0; i < n2; ++i)
-        si->bsdf->Add(ARENA_ALLOC(arena, ScaledBxDF)(si2.bsdf->bxdfs[i], s2));
+        si->bsdf->Add(       ARENA_ALLOC(arena, ScaledBxDF)(si2.bsdf->bxdfs[i], s2)); // 把 si2 里的 bxdf 放缩后加到 si 里
 }
 
 MixMaterial *CreateMixMaterial(const TextureParams &mp,

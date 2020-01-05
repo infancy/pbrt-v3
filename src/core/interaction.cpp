@@ -53,8 +53,10 @@ SurfaceInteraction::SurfaceInteraction(
       dndu(dndu),
       dndv(dndv),
       shape(shape),
-      faceIndex(faceIndex) {
+      faceIndex(faceIndex) 
+{
     // Initialize shading geometry from true geometry
+    // 如果在着色时没有做 bump mapping, 就用实际几何结构来替换着色法线等做计算
     shading.n = n;
     shading.dpdu = dpdu;
     shading.dpdv = dpdv;
@@ -101,6 +103,7 @@ void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,
                                                     bool allowMultipleLobes,
                                                     TransportMode mode) {
     ComputeDifferentials(ray);
+
     // 由交点所处的图元来计算交点上的散射方程
     // 而图元则根据自身的材质特征来计算
     primitive->ComputeScatteringFunctions(this, arena, mode,

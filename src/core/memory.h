@@ -46,6 +46,7 @@
 namespace pbrt {
 
 // Memory Declarations
+// placement operator new
 #define ARENA_ALLOC(arena, Type) new ((arena).Alloc(sizeof(Type))) Type
 
 void *AllocAligned(size_t size);

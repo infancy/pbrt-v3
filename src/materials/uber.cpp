@@ -45,42 +45,53 @@ namespace pbrt {
 void UberMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                               MemoryArena &arena,
                                               TransportMode mode,
-                                              bool allowMultipleLobes) const {
+                                              bool allowMultipleLobes) const 
+{
     // Perform bump mapping with _bumpMap_, if present
     if (bumpMap) Bump(bumpMap, si);
     Float e = eta->Evaluate(*si);
 
     Spectrum op = opacity->Evaluate(*si).Clamp();
     Spectrum t = (-op + Spectrum(1.f)).Clamp();
-    if (!t.IsBlack()) {
+    if (!t.IsBlack()) 
+    {
         si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, 1.f);
         BxDF *tr = ARENA_ALLOC(arena, SpecularTransmission)(t, 1.f, 1.f, mode);
         si->bsdf->Add(tr);
-    } else
+    } 
+    else
         si->bsdf = ARENA_ALLOC(arena, BSDF)(*si, e);
 
+
     Spectrum kd = op * Kd->Evaluate(*si).Clamp();
-    if (!kd.IsBlack()) {
+    if (!kd.IsBlack()) 
+    {
         BxDF *diff = ARENA_ALLOC(arena, LambertianReflection)(kd);
         si->bsdf->Add(diff);
     }
 
+
     Spectrum ks = op * Ks->Evaluate(*si).Clamp();
-    if (!ks.IsBlack()) {
+    if (!ks.IsBlack()) 
+    {
         Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, e);
+
         Float roughu, roughv;
         if (roughnessu)
             roughu = roughnessu->Evaluate(*si);
         else
             roughu = roughness->Evaluate(*si);
+
         if (roughnessv)
             roughv = roughnessv->Evaluate(*si);
         else
             roughv = roughu;
+
         if (remapRoughness) {
             roughu = TrowbridgeReitzDistribution::RoughnessToAlpha(roughu);
             roughv = TrowbridgeReitzDistribution::RoughnessToAlpha(roughv);
         }
+
         MicrofacetDistribution *distrib =
             ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(roughu, roughv);
         BxDF *spec =
@@ -88,11 +99,14 @@ void UberMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
         si->bsdf->Add(spec);
     }
 
+
     Spectrum kr = op * Kr->Evaluate(*si).Clamp();
-    if (!kr.IsBlack()) {
+    if (!kr.IsBlack()) 
+    {
         Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.f, e);
         si->bsdf->Add(ARENA_ALLOC(arena, SpecularReflection)(kr, fresnel));
     }
+
 
     Spectrum kt = op * Kt->Evaluate(*si).Clamp();
     if (!kt.IsBlack())

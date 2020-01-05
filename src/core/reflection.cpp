@@ -808,12 +808,13 @@ Spectrum BSDF::f(const Vector3f &woW, const Vector3f &wiW,
     if (wo.z == 0) 
         return 0.;
 
-    bool reflect = Dot(wiW, ng) * Dot(woW, ng) > 0;
+    bool reflect = Dot(wiW, ng) * Dot(woW, ng) > 0; // P575, 用几何法线来评估是否计算, 着色法线执行实际计算(无需再次评估, 不满足条件的都剔除掉了)
+
     Spectrum f(0.f);
     for (int i = 0; i < nBxDFs; ++i)
-        if (bxdfs[i]->MatchesFlags(flags) &&
-            ((reflect && (bxdfs[i]->type & BSDF_REFLECTION)) ||
-             (!reflect && (bxdfs[i]->type & BSDF_TRANSMISSION))))
+        if (bxdfs[i]->MatchesFlags(flags) && (
+            ( reflect && (bxdfs[i]->type & BSDF_REFLECTION)) ||
+            (!reflect && (bxdfs[i]->type & BSDF_TRANSMISSION))) )
             f += bxdfs[i]->f(wo, wi);
     return f;
 }

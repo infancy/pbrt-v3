@@ -156,12 +156,14 @@ class SurfaceInteraction : public Interaction {
                             const Normal3f &dndu, const Normal3f &dndv,
                             bool orientationIsAuthoritative);
 
-    // 计算交点上的散射方程, 结果会赋值给 this->bsdf 等, 用于后续的着色计算
+    // 计算交点上的散射方程, 结果会赋值给 this->bsdf, this->bssrdf 等, 用于后续的着色计算
     void ComputeScatteringFunctions(
         const RayDifferential &ray, MemoryArena &arena,
         bool allowMultipleLobes = false,
         TransportMode mode = TransportMode::Radiance);
 
+    // compute information about the projected size of the surface area around the intersection on the image plane 
+    // for use in texture antialiasing
     void ComputeDifferentials(const RayDifferential &r) const;
 
     // 如果交点处于一个自发光的图元上, 出射光 = 自发光 + 反射光, Le(light emit) 函数计算自发光的大小
@@ -192,6 +194,7 @@ class SurfaceInteraction : public Interaction {
     BSDF *bsdf = nullptr;
     BSSRDF *bssrdf = nullptr;
 
+    // ???
     mutable Vector3f dpdx, dpdy;
     mutable Float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 
