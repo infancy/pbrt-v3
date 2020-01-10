@@ -149,26 +149,38 @@ class BlockedArray {
   public:
     // BlockedArray Public Methods
     BlockedArray(int uRes, int vRes, const T *d = nullptr)
-        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize) {
+        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize) 
+    {
         int nAlloc = RoundUp(uRes) * RoundUp(vRes);
         data = AllocAligned<T>(nAlloc);
-        for (int i = 0; i < nAlloc; ++i) new (&data[i]) T();
+
+        for (int i = 0; i < nAlloc; ++i) 
+            new (&data[i]) T();
+
         if (d)
+        {
             for (int v = 0; v < vRes; ++v)
-                for (int u = 0; u < uRes; ++u) (*this)(u, v) = d[v * uRes + u];
+                for (int u = 0; u < uRes; ++u) 
+                    (*this)(u, v) = d[v * uRes + u];
+        }
     }
+
     PBRT_CONSTEXPR int BlockSize() const { return 1 << logBlockSize; }
     int RoundUp(int x) const {
         return (x + BlockSize() - 1) & ~(BlockSize() - 1);
     }
+
     int uSize() const { return uRes; }
     int vSize() const { return vRes; }
+
     ~BlockedArray() {
         for (int i = 0; i < uRes * vRes; ++i) data[i].~T();
         FreeAligned(data);
     }
+
     int Block(int a) const { return a >> logBlockSize; }
     int Offset(int a) const { return (a & (BlockSize() - 1)); }
+
     T &operator()(int u, int v) {
         int bu = Block(u), bv = Block(v);
         int ou = Offset(u), ov = Offset(v);
@@ -183,6 +195,7 @@ class BlockedArray {
         offset += BlockSize() * ov + ou;
         return data[offset];
     }
+
     void GetLinearArray(T *a) const {
         for (int v = 0; v < vRes; ++v)
             for (int u = 0; u < uRes; ++u) *a++ = (*this)(u, v);

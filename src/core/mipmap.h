@@ -65,24 +65,34 @@ class MIPMap {
     // MIPMap Public Methods
     MIPMap(const Point2i &resolution, const T *data, bool doTri = false,
            Float maxAniso = 8.f, ImageWrap wrapMode = ImageWrap::Repeat);
-    int Width() const { return resolution[0]; }
-    int Height() const { return resolution[1]; }
+
+    int Width() const  { return resolution[0]; } // resolution.x
+    int Height() const { return resolution[1]; } // resolution.y
     int Levels() const { return pyramid.size(); }
+
+    // 根据环绕方式获取 st 坐标
     const T &Texel(int level, int s, int t) const;
+
+    // 两种过滤方式: 各向同性/各向异性, 后者效果更好, 但性能开销也更大
     T Lookup(const Point2f &st, Float width = 0.f) const;
     T Lookup(const Point2f &st, Vector2f dstdx, Vector2f dstdy) const;
 
   private:
     // MIPMap Private Methods
-    std::unique_ptr<ResampleWeight[]> resampleWeights(int oldRes, int newRes) {
+    std::unique_ptr<ResampleWeight[]> resampleWeights(int oldRes, int newRes) 
+    {
         CHECK_GE(newRes, oldRes);
+
         std::unique_ptr<ResampleWeight[]> wt(new ResampleWeight[newRes]);
         Float filterwidth = 2.f;
-        for (int i = 0; i < newRes; ++i) {
+        for (int i = 0; i < newRes; ++i) 
+        {
             // Compute image resampling weights for _i_th texel
             Float center = (i + .5f) * oldRes / newRes;
             wt[i].firstTexel = std::floor((center - filterwidth) + 0.5f);
-            for (int j = 0; j < 4; ++j) {
+
+            for (int j = 0; j < 4; ++j) 
+            {
                 Float pos = wt[i].firstTexel + j + .5f;
                 wt[i].weight[j] = Lanczos((pos - center) / filterwidth);
             }
@@ -90,15 +100,16 @@ class MIPMap {
             // Normalize filter weights for texel resampling
             Float invSumWts = 1 / (wt[i].weight[0] + wt[i].weight[1] +
                                    wt[i].weight[2] + wt[i].weight[3]);
-            for (int j = 0; j < 4; ++j) wt[i].weight[j] *= invSumWts;
+            for (int j = 0; j < 4; ++j) 
+                wt[i].weight[j] *= invSumWts;
         }
         return wt;
     }
-    Float clamp(Float v) { return Clamp(v, 0.f, Infinity); }
-    RGBSpectrum clamp(const RGBSpectrum &v) { return v.Clamp(0.f, Infinity); }
-    SampledSpectrum clamp(const SampledSpectrum &v) {
-        return v.Clamp(0.f, Infinity);
-    }
+
+    Float clamp(Float v)                            { return Clamp(v, 0.f, Infinity); }
+    RGBSpectrum clamp(const RGBSpectrum &v)         { return  v.Clamp(0.f, Infinity); }
+    SampledSpectrum clamp(const SampledSpectrum &v) { return  v.Clamp(0.f, Infinity); }
+
     T triangle(int level, const Point2f &st) const;
     T EWA(int level, Point2f st, Vector2f dst0, Vector2f dst1) const;
 
@@ -107,7 +118,8 @@ class MIPMap {
     const Float maxAnisotropy;
     const ImageWrap wrapMode;
     Point2i resolution;
-    std::vector<std::unique_ptr<BlockedArray<T>>> pyramid;
+    std::vector<std::unique_ptr<BlockedArray<T>>> pyramid; // 纹理金字塔
+
     static PBRT_CONSTEXPR int WeightLUTSize = 128;
     static Float weightLut[WeightLUTSize];
 };
@@ -123,7 +135,9 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     ProfilePhase _(Prof::MIPMapCreation);
 
     std::unique_ptr<T[]> resampledImage = nullptr;
-    if (!IsPowerOf2(resolution[0]) || !IsPowerOf2(resolution[1])) {
+    // 如果原始图像不是 PowerOf2, 就先向上采样到 PowerOf2
+    if (!IsPowerOf2(resolution[0]) || !IsPowerOf2(resolution[1])) 
+    {
         // Resample image to power-of-two resolution
         Point2i resPow2(RoundUpPow2(resolution[0]), RoundUpPow2(resolution[1]));
         LOG(INFO) << "Resampling MIPMap from " << resolution << " to " <<
@@ -181,6 +195,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         for (auto ptr : resampleBufs) delete[] ptr;
         resolution = resPow2;
     }
+
     // Initialize levels of MIPMap from image
     int nLevels = 1 + Log2Int(std::max(resolution[0], resolution[1]));
     pyramid.resize(nLevels);
@@ -189,14 +204,17 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     pyramid[0].reset(
         new BlockedArray<T>(resolution[0], resolution[1],
                             resampledImage ? resampledImage.get() : img));
-    for (int i = 1; i < nLevels; ++i) {
+
+    for (int i = 1; i < nLevels; ++i) 
+    {
         // Initialize $i$th MIPMap level from $i-1$st level
         int sRes = std::max(1, pyramid[i - 1]->uSize() / 2);
         int tRes = std::max(1, pyramid[i - 1]->vSize() / 2);
         pyramid[i].reset(new BlockedArray<T>(sRes, tRes));
 
         // Filter four texels from finer level of pyramid
-        ParallelFor([&](int t) {
+        ParallelFor([&](int t) 
+        {
             for (int s = 0; s < sRes; ++s)
                 (*pyramid[i])(s, t) =
                     .25f * (Texel(i - 1, 2 * s, 2 * t) +
@@ -207,6 +225,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     }
 
     // Initialize EWA filter weights if needed
+    // 初始化 EWA 过滤器的权重查找表
     if (weightLut[0] == 0.) {
         for (int i = 0; i < WeightLUTSize; ++i) {
             Float alpha = 2;
@@ -214,15 +233,19 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
             weightLut[i] = std::exp(-alpha * r2) - std::exp(-alpha);
         }
     }
+
     mipMapMemory += (4 * resolution[0] * resolution[1] * sizeof(T)) / 3;
 }
 
 template <typename T>
-const T &MIPMap<T>::Texel(int level, int s, int t) const {
+const T &MIPMap<T>::Texel(int level, int s, int t) const 
+{
     CHECK_LT(level, pyramid.size());
     const BlockedArray<T> &l = *pyramid[level];
+
     // Compute texel $(s,t)$ accounting for boundary conditions
-    switch (wrapMode) {
+    switch (wrapMode) 
+    {
     case ImageWrap::Repeat:
         s = Mod(s, l.uSize());
         t = Mod(t, l.vSize());
@@ -240,6 +263,8 @@ const T &MIPMap<T>::Texel(int level, int s, int t) const {
     }
     return l(s, t);
 }
+
+
 
 template <typename T>
 T MIPMap<T>::Lookup(const Point2f &st, Float width) const {
@@ -272,6 +297,8 @@ T MIPMap<T>::triangle(int level, const Point2f &st) const {
            ds * (1 - dt) * Texel(level, s0 + 1, t0) +
            ds * dt * Texel(level, s0 + 1, t0 + 1);
 }
+
+
 
 template <typename T>
 T MIPMap<T>::Lookup(const Point2f &st, Vector2f dst0, Vector2f dst1) const {

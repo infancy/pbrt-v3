@@ -47,6 +47,9 @@
 
 namespace pbrt {
 
+// SurfaceInteraction 的参数化坐标 uv([0, 1]^2), 通过 TextureMapping2D/3D 映射到 Texture 的坐标 st([0, width] * [0, height])
+// 然后 Texture 根据 st 坐标及其对屏幕空间 xy 坐标的变化率进行采样
+
 // Texture Declarations
 class TextureMapping2D {
   public:
@@ -111,6 +114,8 @@ class PlanarMapping2D : public TextureMapping2D {
     const Float ds, dt;
 };
 
+
+
 class TextureMapping3D {
   public:
     // TextureMapping3D Interface
@@ -128,8 +133,10 @@ class IdentityMapping3D : public TextureMapping3D {
                 Vector3f *dpdy) const;
 
   private:
-    const Transform WorldToTexture;
+    const Transform WorldToTexture; // SurfaceInteraction 是定义在世界空间中的
 };
+
+
 
 template <typename T>
 class Texture {
@@ -138,6 +145,8 @@ class Texture {
     virtual T Evaluate(const SurfaceInteraction &) const = 0;
     virtual ~Texture() {}
 };
+
+
 
 Float Lanczos(Float, Float tau = 2);
 Float Noise(Float x, Float y = .5f, Float z = .5f);

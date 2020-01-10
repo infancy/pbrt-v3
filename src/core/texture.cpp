@@ -161,6 +161,8 @@ Point3f IdentityMapping3D::Map(const SurfaceInteraction &si, Vector3f *dpdx,
     return WorldToTexture(si.p);
 }
 
+
+
 Float Noise(Float x, Float y, Float z) {
     // Compute noise cell coordinates and offsets
     int ix = std::floor(x), iy = std::floor(y), iz = std::floor(z);

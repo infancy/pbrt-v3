@@ -44,7 +44,8 @@ ImageTexture<Tmemory, Treturn>::ImageTexture(
     std::unique_ptr<TextureMapping2D> mapping, const std::string &filename,
     bool doTrilinear, Float maxAniso, ImageWrap wrapMode, Float scale,
     bool gamma)
-    : mapping(std::move(mapping)) {
+    : mapping(std::move(mapping)) 
+{
     mipmap =
         GetTexture(filename, doTrilinear, maxAniso, wrapMode, scale, gamma);
 }
@@ -52,7 +53,8 @@ ImageTexture<Tmemory, Treturn>::ImageTexture(
 template <typename Tmemory, typename Treturn>
 MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
     const std::string &filename, bool doTrilinear, Float maxAniso,
-    ImageWrap wrap, Float scale, bool gamma) {
+    ImageWrap wrap, Float scale, bool gamma) 
+{
     // Return _MIPMap_ from texture cache if present
     TexInfo texInfo(filename, doTrilinear, maxAniso, wrap, scale, gamma);
     if (textures.find(texInfo) != textures.end())
@@ -60,9 +62,11 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
 
     // Create _MIPMap_ for _filename_
     ProfilePhase _(Prof::TextureLoading);
+    // 获得原始的图像
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels = ReadImage(filename, &resolution);
-    if (!texels) {
+    if (!texels) 
+    {
         Warning("Creating a constant grey texture to replace \"%s\".",
                 filename.c_str());
         resolution.x = resolution.y = 1;
@@ -71,32 +75,43 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
         texels.reset(rgb);
     }
 
-    // Flip image in y; texture coordinate space has (0,0) at the lower
-    // left corner.
-    for (int y = 0; y < resolution.y / 2; ++y)
-        for (int x = 0; x < resolution.x; ++x) {
+    // Flip image in y; texture coordinate space has (0,0) at the lower left corner.
+    for (int y = 0; y < resolution.y / 2; ++y) 
+    {
+        // 能否改成逐行, 而不是逐纹素交换
+        for (int x = 0; x < resolution.x; ++x) 
+        {
             int o1 = y * resolution.x + x;
             int o2 = (resolution.y - 1 - y) * resolution.x + x;
             std::swap(texels[o1], texels[o2]);
         }
+    }
 
     MIPMap<Tmemory> *mipmap = nullptr;
-    if (texels) {
+    if (texels) 
+    {
         // Convert texels to type _Tmemory_ and create _MIPMap_
-        std::unique_ptr<Tmemory[]> convertedTexels(
-            new Tmemory[resolution.x * resolution.y]);
+        // 转换到线性空间的纹理 linearTexels
+        std::unique_ptr<Tmemory[]> convertedTexels(new Tmemory[resolution.x * resolution.y]);
+
         for (int i = 0; i < resolution.x * resolution.y; ++i)
             convertIn(texels[i], &convertedTexels[i], scale, gamma);
+
         mipmap = new MIPMap<Tmemory>(resolution, convertedTexels.get(),
                                      doTrilinear, maxAniso, wrap);
-    } else {
+    } 
+    else 
+    {
         // Create one-valued _MIPMap_
         Tmemory oneVal = scale;
         mipmap = new MIPMap<Tmemory>(Point2i(1, 1), &oneVal);
     }
-    textures[texInfo].reset(mipmap);
+
+    textures[texInfo].reset(mipmap); // textures[texInfo] = mipmap;
     return mipmap;
 }
+
+
 
 template <typename Tmemory, typename Treturn>
 std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>>
