@@ -53,11 +53,20 @@ class BilerpTexture : public Texture<T> {
     BilerpTexture(std::unique_ptr<TextureMapping2D> mapping, const T &v00,
                   const T &v01, const T &v10, const T &v11)
         : mapping(std::move(mapping)), v00(v00), v01(v01), v10(v10), v11(v11) {}
+
+    // 双线性插值是对平面上的四个点做三次线性插值
+    // 三线性插值是对空间中的八个点做四次线性插值
+    // 有的文章里因为双线性插值做了三次线性插值, 也把它叫做三线性插值了, 需要注意区分 
     T Evaluate(const SurfaceInteraction &si) const {
         Vector2f dstdx, dstdy;
         Point2f st = mapping->Map(si, &dstdx, &dstdy);
-        return (1 - st[0]) * (1 - st[1]) * v00 + (1 - st[0]) * (st[1]) * v01 +
-               (st[0]) * (1 - st[1]) * v10 + (st[0]) * (st[1]) * v11;
+
+        // 这里是化简后的式子, 从 
+        return 
+            (1 - st[0]) * (1 - st[1]) * v00 + 
+            (1 - st[0]) *     (st[1]) * v01 +
+                (st[0]) * (1 - st[1]) * v10 + 
+                (st[0]) *     (st[1]) * v11;
     }
 
   private:

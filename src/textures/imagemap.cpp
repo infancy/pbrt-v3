@@ -67,6 +67,7 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
     std::unique_ptr<RGBSpectrum[]> texels = ReadImage(filename, &resolution);
     if (!texels) 
     {
+        // 另外创建一个纯色的纹理来代替, 而不是终止程序
         Warning("Creating a constant grey texture to replace \"%s\".",
                 filename.c_str());
         resolution.x = resolution.y = 1;
@@ -87,6 +88,7 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
         }
     }
 
+    // 创建 mipmap
     MIPMap<Tmemory> *mipmap = nullptr;
     if (texels) 
     {
@@ -111,13 +113,15 @@ MIPMap<Tmemory> *ImageTexture<Tmemory, Treturn>::GetTexture(
     return mipmap;
 }
 
-
-
 template <typename Tmemory, typename Treturn>
-std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>>
+/*static*/ std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>>
     ImageTexture<Tmemory, Treturn>::textures;
+
+
+
 ImageTexture<Float, Float> *CreateImageFloatTexture(const Transform &tex2world,
-                                                    const TextureParams &tp) {
+                                                    const TextureParams &tp) 
+{
     // Initialize 2D texture mapping _map_ from _tp_
     std::unique_ptr<TextureMapping2D> map;
     std::string type = tp.FindString("mapping", "uv");
@@ -154,6 +158,8 @@ ImageTexture<Float, Float> *CreateImageFloatTexture(const Transform &tex2world,
     std::string filename = tp.FindFilename("filename");
     bool gamma = tp.FindBool("gamma", HasExtension(filename, ".tga") ||
                                           HasExtension(filename, ".png"));
+
+    // Float -> Float, 好像是用来描述光源的能量分布的???
     return new ImageTexture<Float, Float>(std::move(map), filename, trilerp,
                                           maxAniso, wrapMode, scale, gamma);
 }
@@ -196,6 +202,8 @@ ImageTexture<RGBSpectrum, Spectrum> *CreateImageSpectrumTexture(
     std::string filename = tp.FindFilename("filename");
     bool gamma = tp.FindBool("gamma", HasExtension(filename, ".tga") ||
                                           HasExtension(filename, ".png"));
+
+    // RGBSpectrum -> Spectrum
     return new ImageTexture<RGBSpectrum, Spectrum>(
         std::move(map), filename, trilerp, maxAniso, wrapMode, scale, gamma);
 }

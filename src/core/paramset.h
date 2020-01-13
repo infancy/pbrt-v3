@@ -170,6 +170,7 @@ class TextureParams {
           spectrumTextures(sTex),
           geomParams(geomParams),
           materialParams(materialParams) {}
+
     std::shared_ptr<Texture<Spectrum>> GetSpectrumTexture(
         const std::string &name, const Spectrum &def) const;
     std::shared_ptr<Texture<Spectrum>> GetSpectrumTextureOrNull(

@@ -49,6 +49,7 @@ namespace pbrt {
 
 // SurfaceInteraction 的参数化坐标 uv([0, 1]^2), 通过 TextureMapping2D/3D 映射到 Texture 的坐标 st([0, width] * [0, height])
 // 然后 Texture 根据 st 坐标及其对屏幕空间 xy 坐标的变化率进行采样
+// uv -> st -> value
 
 // Texture Declarations
 class TextureMapping2D {

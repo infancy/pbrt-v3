@@ -53,9 +53,12 @@ STAT_MEMORY_COUNTER("Memory/Texture MIP maps", mipMapMemory);
 
 // MIPMap Helper Declarations
 enum class ImageWrap { Repeat, Black, Clamp };
-struct ResampleWeight {
-    int firstTexel;
-    Float weight[4];
+
+// 向下重采样时用到的权重表
+struct ResampleWeight 
+{
+    int firstTexel; // 只需要记录第一个纹素的下标即可, 其它三个是连续的
+    Float weight[4]; // 四个纹素的权重
 };
 
 // MIPMap Declarations
@@ -118,6 +121,7 @@ class MIPMap {
     const Float maxAnisotropy;
     const ImageWrap wrapMode;
     Point2i resolution;
+    // TODO: texture_pyramid pyramid; 只用一个 vector 来分配连续的纹理是否可行???
     std::vector<std::unique_ptr<BlockedArray<T>>> pyramid; // 纹理金字塔
 
     static PBRT_CONSTEXPR int WeightLUTSize = 128;
@@ -131,7 +135,8 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     : doTrilinear(doTrilinear),
       maxAnisotropy(maxAnisotropy),
       wrapMode(wrapMode),
-      resolution(res) {
+      resolution(res) 
+{
     ProfilePhase _(Prof::MIPMapCreation);
 
     std::unique_ptr<T[]> resampledImage = nullptr;
@@ -143,22 +148,26 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         LOG(INFO) << "Resampling MIPMap from " << resolution << " to " <<
             resPow2 << ". Ratio= " << (Float(resPow2.x * resPow2.y) /
                                        Float(resolution.x * resolution.y));
+
         // Resample image in $s$ direction
-        std::unique_ptr<ResampleWeight[]> sWeights =
-            resampleWeights(resolution[0], resPow2[0]);
+        std::unique_ptr<ResampleWeight[]> sWeights = resampleWeights(resolution[0], resPow2[0]);
         resampledImage.reset(new T[resPow2[0] * resPow2[1]]);
 
         // Apply _sWeights_ to zoom in $s$ direction
-        ParallelFor([&](int t) {
-            for (int s = 0; s < resPow2[0]; ++s) {
+        ParallelFor([&](int t) 
+        {
+            for (int s = 0; s < resPow2[0]; ++s) 
+            {
                 // Compute texel $(s,t)$ in $s$-zoomed image
                 resampledImage[t * resPow2[0] + s] = 0.f;
-                for (int j = 0; j < 4; ++j) {
+                for (int j = 0; j < 4; ++j) 
+                {
                     int origS = sWeights[s].firstTexel + j;
                     if (wrapMode == ImageWrap::Repeat)
                         origS = Mod(origS, resolution[0]);
                     else if (wrapMode == ImageWrap::Clamp)
                         origS = Clamp(origS, 0, resolution[0] - 1);
+
                     if (origS >= 0 && origS < (int)resolution[0])
                         resampledImage[t * resPow2[0] + s] +=
                             sWeights[s].weight[j] *
@@ -174,16 +183,20 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         int nThreads = MaxThreadIndex();
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
-        ParallelFor([&](int s) {
+        ParallelFor([&](int s) 
+        {
             T *workData = resampleBufs[ThreadIndex];
-            for (int t = 0; t < resPow2[1]; ++t) {
+            for (int t = 0; t < resPow2[1]; ++t) 
+            {
                 workData[t] = 0.f;
-                for (int j = 0; j < 4; ++j) {
+                for (int j = 0; j < 4; ++j) 
+                {
                     int offset = tWeights[t].firstTexel + j;
                     if (wrapMode == ImageWrap::Repeat)
                         offset = Mod(offset, resolution[1]);
                     else if (wrapMode == ImageWrap::Clamp)
                         offset = Clamp(offset, 0, (int)resolution[1] - 1);
+
                     if (offset >= 0 && offset < (int)resolution[1])
                         workData[t] += tWeights[t].weight[j] *
                                        resampledImage[offset * resPow2[0] + s];
@@ -192,6 +205,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
             for (int t = 0; t < resPow2[1]; ++t)
                 resampledImage[t * resPow2[0] + s] = clamp(workData[t]);
         }, resPow2[0], 32);
+
         for (auto ptr : resampleBufs) delete[] ptr;
         resolution = resPow2;
     }
@@ -226,8 +240,10 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
 
     // Initialize EWA filter weights if needed
     // 初始化 EWA 过滤器的权重查找表
-    if (weightLut[0] == 0.) {
-        for (int i = 0; i < WeightLUTSize; ++i) {
+    if (weightLut[0] == 0.) 
+    {
+        for (int i = 0; i < WeightLUTSize; ++i) 
+        {
             Float alpha = 2;
             Float r2 = Float(i) / Float(WeightLUTSize - 1);
             weightLut[i] = std::exp(-alpha * r2) - std::exp(-alpha);

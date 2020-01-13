@@ -57,13 +57,17 @@ struct TexInfo {
           wrapMode(wm),
           scale(sc),
           gamma(gamma) {}
+
     std::string filename;
     bool doTrilinear;
     Float maxAniso;
     ImageWrap wrapMode;
     Float scale;
     bool gamma;
-    bool operator<(const TexInfo &t2) const {
+
+    bool operator<(const TexInfo &t2) const 
+    {
+        // operator<=>
         if (filename != t2.filename) return filename < t2.filename;
         if (doTrilinear != t2.doTrilinear) return doTrilinear < t2.doTrilinear;
         if (maxAniso != t2.maxAniso) return maxAniso < t2.maxAniso;
@@ -94,7 +98,7 @@ class ImageTexture : public Texture<Treturn> {
     {
         Vector2f dstdx, dstdy;
         Point2f st = mapping->Map(si, &dstdx, &dstdy);
-        Tmemory mem = mipmap->Lookup(st, dstdx, dstdy);
+        Tmemory mem = mipmap->Lookup(st, dstdx, dstdy); // 由 mipmap 进行采样过滤
 
         Treturn ret; // 把返回值作为参数来重载
         convertOut(mem, &ret); // 从 sRGB/linear 转换到 RGBSpectrum/SampledSpectrum
@@ -107,6 +111,8 @@ class ImageTexture : public Texture<Treturn> {
                                        bool doTrilinear, Float maxAniso,
                                        ImageWrap wm, Float scale, bool gamma);
 
+
+    // disk -> memory
     static void convertIn(const RGBSpectrum &from, RGBSpectrum *to, Float scale,
                           bool gamma) {
         for (int i = 0; i < RGBSpectrum::nSamples; ++i)
@@ -118,6 +124,8 @@ class ImageTexture : public Texture<Treturn> {
         *to = scale * (gamma ? InverseGammaCorrect(from.y()) : from.y());
     }
 
+    // memory -> scene
+    // 使用 SampledSpectrum 进行渲染的时候, 会用得上
     static void convertOut(const RGBSpectrum &from, Spectrum *to) {
         Float rgb[3];
         from.ToRGB(rgb);
@@ -129,6 +137,7 @@ class ImageTexture : public Texture<Treturn> {
     // ImageTexture Private Data
     std::unique_ptr<TextureMapping2D> mapping;
     MIPMap<Tmemory> *mipmap;
+
     static std::map<TexInfo, std::unique_ptr<MIPMap<Tmemory>>> textures; // 静态纹理缓存
 };
 
