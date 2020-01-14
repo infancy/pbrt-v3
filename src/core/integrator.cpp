@@ -462,7 +462,7 @@ Spectrum SamplerIntegrator::SpecularReflect(
     {
         // Compute ray differential _rd_ for specular reflection
         RayDifferential rd = isect.SpawnRay(wi);
-		// 关于光线微分的代码没细看，暂时不做解释
+		// P605, TODO
         if (ray.hasDifferentials) 
         {
             rd.hasDifferentials = true;
@@ -479,6 +479,7 @@ Spectrum SamplerIntegrator::SpecularReflect(
             Float dDNdx = Dot(dwodx, ns) + Dot(wo, dndx);
             Float dDNdy = Dot(dwody, ns) + Dot(wo, dndy);
 
+            // 计算反射后新的辅助光线, 可以提升次级光线反走样的效果
             rd.rxDirection =
                 wi - dwodx + 2.f * Vector3f(Dot(wo, ns) * dndx + dDNdx * ns);
             rd.ryDirection =
@@ -504,10 +505,12 @@ Spectrum SamplerIntegrator::SpecularTransmit(
                                BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
     Spectrum L = Spectrum(0.f);
     Normal3f ns = isect.shading.n;
-    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) {
+    if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) 
+    {
         // Compute ray differential _rd_ for specular transmission
         RayDifferential rd = isect.SpawnRay(wi);
-        if (ray.hasDifferentials) {
+        if (ray.hasDifferentials) 
+        {
             rd.hasDifferentials = true;
             rd.rxOrigin = p + isect.dpdx;
             rd.ryOrigin = p + isect.dpdy;
@@ -521,7 +524,8 @@ Spectrum SamplerIntegrator::SpecularTransmit(
             // intersected.  Compute the relative IOR by first out by
             // assuming that the ray is entering the object.
             Float eta = 1 / bsdf.eta;
-            if (Dot(wo, ns) < 0) {
+            if (Dot(wo, ns) < 0) 
+            {
                 // If the ray isn't entering, then we need to invert the
                 // relative IOR and negate the normal and its derivatives.
                 eta = 1 / eta;

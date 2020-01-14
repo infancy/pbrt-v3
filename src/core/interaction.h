@@ -194,8 +194,9 @@ class SurfaceInteraction : public Interaction {
     BSDF *bsdf = nullptr;
     BSSRDF *bssrdf = nullptr;
 
-    // ???
+
     mutable Vector3f dpdx, dpdy;
+    // 交点表面的 uv 参数坐标相对屏幕空间的 xy 坐标的变化率
     mutable Float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 
     // Added after book publication. Shapes can optionally provide a face

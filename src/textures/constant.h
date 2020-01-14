@@ -51,7 +51,7 @@ class ConstantTexture : public Texture<T> {
   public:
     // ConstantTexture Public Methods
     ConstantTexture(const T &value) : value(value) {}
-    T Evaluate(const SurfaceInteraction &) const { return value; } // 统一了接口
+    T Evaluate(const SurfaceInteraction &) const { return value; } // 把常量也当作纹理, 统一了接口
 
   private:
     T value;

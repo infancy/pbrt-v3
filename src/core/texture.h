@@ -47,7 +47,7 @@
 
 namespace pbrt {
 
-// SurfaceInteraction 的参数化坐标 uv([0, 1]^2), 通过 TextureMapping2D/3D 映射到 Texture 的坐标 st([0, width] * [0, height])
+// TextureMapping2D/3D 通过 SurfaceInteraction 的参数化坐标 uv([0, 1]^2), 生成纹理坐标 st([0, 1] ^ 2)
 // 然后 Texture 根据 st 坐标及其对屏幕空间 xy 坐标的变化率进行采样
 // uv -> st -> value
 
@@ -56,6 +56,12 @@ class TextureMapping2D {
   public:
     // TextureMapping2D Interface
     virtual ~TextureMapping2D();
+    // It also returns estimates for the change in (s, t) with respect
+    // to pixel x and y coordinates in the dstdx and dstdy parameters so that textures that use
+    // the mapping can determine the (s, t) sampling rate and filter accordingly.
+    // 根据表面交点 si 上的信息生成纹理坐标 st 的同时, 
+    // 还需要根据表面参数化 uv 坐标相对屏幕空间 xy 坐标的变化率,
+    // 计算纹理空间相对屏幕空间的变化率
     virtual Point2f Map(const SurfaceInteraction &si, Vector2f *dstdx,
                         Vector2f *dstdy) const = 0;
 };
@@ -68,7 +74,8 @@ class UVMapping2D : public TextureMapping2D {
                 Vector2f *dstdy) const;
 
   private:
-    const Float su, sv, du, dv;
+    const Float su, sv, // scale
+                du, dv; // offset
 };
 
 class SphericalMapping2D : public TextureMapping2D {

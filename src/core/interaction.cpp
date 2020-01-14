@@ -107,21 +107,27 @@ void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,
                                           allowMultipleLobes);
 }
 
+// 计算纹理采样率TODO
 void SurfaceInteraction::ComputeDifferentials(
-    const RayDifferential &ray) const {
-    if (ray.hasDifferentials) {
+    const RayDifferential &ray) const 
+{
+    if (ray.hasDifferentials) 
+    {
         // Estimate screen space change in $\pt{}$ and $(u,v)$
+        // 计算表面交点 p 处的uv参数坐标相对屏幕空间 xy 坐标的变化率, 这个还需要经过纹理映射, 才是纹理变化率
 
         // Compute auxiliary intersection points with plane
+        // P602 TODO
         Float d = Dot(n, Vector3f(p.x, p.y, p.z));
-        Float tx =
-            -(Dot(n, Vector3f(ray.rxOrigin)) - d) / Dot(n, ray.rxDirection);
+
+        Float tx = -(Dot(n, Vector3f(ray.rxOrigin)) - d) / Dot(n, ray.rxDirection);
         if (std::isinf(tx) || std::isnan(tx)) goto fail;
         Point3f px = ray.rxOrigin + tx * ray.rxDirection;
-        Float ty =
-            -(Dot(n, Vector3f(ray.ryOrigin)) - d) / Dot(n, ray.ryDirection);
+
+        Float ty = -(Dot(n, Vector3f(ray.ryOrigin)) - d) / Dot(n, ray.ryDirection);
         if (std::isinf(ty) || std::isnan(ty)) goto fail;
         Point3f py = ray.ryOrigin + ty * ray.ryDirection;
+
         dpdx = px - p;
         dpdy = py - p;
 
@@ -145,9 +151,12 @@ void SurfaceInteraction::ComputeDifferentials(
                          {dpdu[dim[1]], dpdv[dim[1]]}};
         Float Bx[2] = {px[dim[0]] - p[dim[0]], px[dim[1]] - p[dim[1]]};
         Float By[2] = {py[dim[0]] - p[dim[0]], py[dim[1]] - p[dim[1]]};
+
         if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx)) dudx = dvdx = 0;
         if (!SolveLinearSystem2x2(A, By, &dudy, &dvdy)) dudy = dvdy = 0;
-    } else {
+    }
+    else 
+    {
     fail:
         dudx = dvdx = 0;
         dudy = dvdy = 0;

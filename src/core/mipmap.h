@@ -256,17 +256,19 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     }
 
     // Initialize EWA filter weights if needed
-    // 初始化 EWA 过滤器的权重查找表
+    // 初始化高斯过滤器的权重查找表
     if (weightLut[0] == 0.) 
     {
         for (int i = 0; i < WeightLUTSize; ++i) 
         {
             Float alpha = 2;
             Float r2 = Float(i) / Float(WeightLUTSize - 1);
+            // P639, TODO
             weightLut[i] = std::exp(-alpha * r2) - std::exp(-alpha);
         }
     }
 
+    // https://en.wikipedia.org/wiki/1/4_%2B_1/16_%2B_1/64_%2B_1/256_%2B_%E2%8B%AF
     mipMapMemory += (4 * resolution[0] * resolution[1] * sizeof(T)) / 3;
 }
 
@@ -299,11 +301,17 @@ const T &MIPMap<T>::Texel(int level, int s, int t) const
 
 
 
+// P632
 template <typename T>
-T MIPMap<T>::Lookup(const Point2f &st, Float width) const {
+T MIPMap<T>::Lookup(const Point2f &st, Float width) const 
+{
     ++nTrilerpLookups;
     ProfilePhase p(Prof::TexFiltTrilerp);
+
     // Compute MIPMap level for trilinear filtering
+    // Figure10.13, chooses a level such that the filter covers four texels.
+    // 1 / width == 2^(nLevels-1-level)
+    // (如果让 level0 是最小的一级, 则可以求解 1 / width == 2^level)
     Float level = Levels() - 1 + Log2(std::max(width, (Float)1e-8));
 
     // Perform trilinear interpolation at appropriate MIPMap level
@@ -311,69 +319,102 @@ T MIPMap<T>::Lookup(const Point2f &st, Float width) const {
         return triangle(0, st);
     else if (level >= Levels() - 1)
         return Texel(Levels() - 1, 0, 0);
-    else {
+    else 
+    {
         int iLevel = std::floor(level);
         Float delta = level - iLevel;
+        // The implementation here applies the triangle filter at both of
+        // these levels and blends between them according to how close level is to each of them
+        // This helps hide the transitions from one MIP map level to the next at nearby pixels in the final image.
         return Lerp(delta, triangle(iLevel, st), triangle(iLevel + 1, st));
     }
 }
 
+// Filtering techniques like this one that do not support a filter extent that 
+// is non-square or non-axis-aligned are known as isotropic.
+// 这里使用三角形过滤器, BilerpTexture::Evaluate()
 template <typename T>
-T MIPMap<T>::triangle(int level, const Point2f &st) const {
+T MIPMap<T>::triangle(int level, const Point2f &st) const 
+{
     level = Clamp(level, 0, Levels() - 1);
+
+    // mapping the continuous texture coordinates to discrete space.
     Float s = st[0] * pyramid[level]->uSize() - 0.5f;
     Float t = st[1] * pyramid[level]->vSize() - 0.5f;
+
+    // TODO P634, Figure10.14
     int s0 = std::floor(s), t0 = std::floor(t);
     Float ds = s - s0, dt = t - t0;
-    return (1 - ds) * (1 - dt) * Texel(level, s0, t0) +
-           (1 - ds) * dt * Texel(level, s0, t0 + 1) +
-           ds * (1 - dt) * Texel(level, s0 + 1, t0) +
-           ds * dt * Texel(level, s0 + 1, t0 + 1);
+
+    return (1 - ds) * (1 - dt) * Texel(level, s0,     t0    ) +
+           (1 - ds) *      dt  * Texel(level, s0,     t0 + 1) +
+                ds  * (1 - dt) * Texel(level, s0 + 1, t0    ) +
+                ds  *      dt  * Texel(level, s0 + 1, t0 + 1);
 }
 
 
 
 template <typename T>
-T MIPMap<T>::Lookup(const Point2f &st, Vector2f dst0, Vector2f dst1) const {
-    if (doTrilinear) {
+T MIPMap<T>::Lookup(const Point2f &st, Vector2f dst0, Vector2f dst1) const 
+{
+    if (doTrilinear) 
+    {
         Float width = std::max(std::max(std::abs(dst0[0]), std::abs(dst0[1])),
                                std::max(std::abs(dst1[0]), std::abs(dst1[1])));
         return Lookup(st, 2 * width);
     }
+
     ++nEWALookups;
     ProfilePhase p(Prof::TexFiltEWA);
+
     // Compute ellipse minor and major axes
     if (dst0.LengthSquared() < dst1.LengthSquared()) std::swap(dst0, dst1);
     Float majorLength = dst0.Length();
     Float minorLength = dst1.Length();
 
     // Clamp ellipse eccentricity if too large
-    if (minorLength * maxAnisotropy < majorLength && minorLength > 0) {
+    // 根据 maxAnisotropy 限制 majorLength 的采样率
+    // highly eccentric ellipses mean that a large number of texels need to be filtered
+    // To avoid this expense, the length of the minor axis may be increased to limit the eccentricity
+    // The result may be an increase in blurring, although this effect usually isn’t noticeable **in practice**
+    if (minorLength * maxAnisotropy < majorLength && minorLength > 0) 
+    {
         Float scale = majorLength / (minorLength * maxAnisotropy);
         dst1 *= scale;
         minorLength *= scale;
     }
     if (minorLength == 0) return triangle(0, st);
 
-    // Choose level of detail for EWA lookup and perform EWA filtering
+    // Choose level of detail for EWA lookup by minorLength
+    // and perform EWA filtering
     Float lod = std::max((Float)0, Levels() - (Float)1 + Log2(minorLength));
     int ilod = std::floor(lod);
-    return Lerp(lod - ilod, EWA(ilod, st, dst0, dst1),
-                EWA(ilod + 1, st, dst0, dst1));
+
+    // blends between the filtered results at the two levels around the computed level of detail,
+    // again to reduce artifacts from transitions from one level to another
+    return Lerp(lod - ilod, EWA(ilod,     st, dst0, dst1),
+                            EWA(ilod + 1, st, dst0, dst1));
 }
 
+// elliptically weighted average, 基于椭圆加权的高斯滤波
+// it can properly adapt to different sampling rates along the two image axes
 template <typename T>
-T MIPMap<T>::EWA(int level, Point2f st, Vector2f dst0, Vector2f dst1) const {
-    if (level >= Levels()) return Texel(Levels() - 1, 0, 0);
+T MIPMap<T>::EWA(int level, Point2f st, Vector2f dst0, Vector2f dst1) const 
+{
+    if (level >= Levels()) 
+        return Texel(Levels() - 1, 0, 0);
+
     // Convert EWA coordinates to appropriate scale for level
+    // 连续坐标
+    // subtracts 0.5 from the continuous position coordinate to align the sample 
+    // point with the discrete texel coordinates
     st[0] = st[0] * pyramid[level]->uSize() - 0.5f;
     st[1] = st[1] * pyramid[level]->vSize() - 0.5f;
-    dst0[0] *= pyramid[level]->uSize();
-    dst0[1] *= pyramid[level]->vSize();
-    dst1[0] *= pyramid[level]->uSize();
-    dst1[1] *= pyramid[level]->vSize();
+    dst0[0] *= pyramid[level]->uSize(); dst0[1] *= pyramid[level]->vSize();
+    dst1[0] *= pyramid[level]->uSize(); dst1[1] *= pyramid[level]->vSize();
 
     // Compute ellipse coefficients to bound EWA filter region
+    // 假设椭圆位于原点上, 可以简化系数的计算
     Float A = dst0[1] * dst0[1] + dst1[1] * dst1[1] + 1;
     Float B = -2 * (dst0[0] * dst0[1] + dst1[0] * dst1[1]);
     Float C = dst0[0] * dst0[0] + dst1[0] * dst1[0] + 1;
@@ -386,30 +427,36 @@ T MIPMap<T>::EWA(int level, Point2f st, Vector2f dst0, Vector2f dst1) const {
     Float det = -B * B + 4 * A * C;
     Float invDet = 1 / det;
     Float uSqrt = std::sqrt(det * C), vSqrt = std::sqrt(A * det);
+    // 离散坐标
     int s0 = std::ceil(st[0] - 2 * invDet * uSqrt);
     int s1 = std::floor(st[0] + 2 * invDet * uSqrt);
     int t0 = std::ceil(st[1] - 2 * invDet * vSqrt);
     int t1 = std::floor(st[1] + 2 * invDet * vSqrt);
 
+    // 遍历椭圆的包围盒
     // Scan over ellipse bound and compute quadratic equation
     T sum(0.f);
     Float sumWts = 0;
-    for (int it = t0; it <= t1; ++it) {
+    for (int it = t0; it <= t1; ++it) 
+    {
         Float tt = it - st[1];
-        for (int is = s0; is <= s1; ++is) {
-            Float ss = is - st[0];
+        for (int is = s0; is <= s1; ++is) 
+        {
+            Float ss = is - st[0]; // 左下角是起点, [t0-t1, 0] * [0, s1-s0]
+
             // Compute squared radius and filter texel if inside ellipse
             Float r2 = A * ss * ss + B * ss * tt + C * tt * tt;
-            if (r2 < 1) {
-                int index =
-                    std::min((int)(r2 * WeightLUTSize), WeightLUTSize - 1);
+            if (r2 < 1) // Figure10.16, 是否位于椭圆内
+            {
+                int index = std::min((int)(r2 * WeightLUTSize), WeightLUTSize - 1);
                 Float weight = weightLut[index];
+
                 sum += Texel(level, is, it) * weight;
                 sumWts += weight;
             }
         }
     }
-    return sum / sumWts;
+    return sum / sumWts; // P638
 }
 
 template <typename T>
