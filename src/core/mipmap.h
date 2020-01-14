@@ -82,6 +82,8 @@ class MIPMap {
 
   private:
     // MIPMap Private Methods
+    
+    // 在每个方向上预计算过滤器的权重
     std::unique_ptr<ResampleWeight[]> resampleWeights(int oldRes, int newRes) 
     {
         CHECK_GE(newRes, oldRes);
@@ -91,16 +93,19 @@ class MIPMap {
         for (int i = 0; i < newRes; ++i) 
         {
             // Compute image resampling weights for _i_th texel
+            // P628/Figure10.12, 左右各取两个
             Float center = (i + .5f) * oldRes / newRes;
             wt[i].firstTexel = std::floor((center - filterwidth) + 0.5f);
 
             for (int j = 0; j < 4; ++j) 
             {
                 Float pos = wt[i].firstTexel + j + .5f;
+                // LanczosSincFilter::Sinc()
                 wt[i].weight[j] = Lanczos((pos - center) / filterwidth);
             }
 
             // Normalize filter weights for texel resampling
+            // sum to one
             Float invSumWts = 1 / (wt[i].weight[0] + wt[i].weight[1] +
                                    wt[i].weight[2] + wt[i].weight[3]);
             for (int j = 0; j < 4; ++j) 
@@ -149,20 +154,27 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
             resPow2 << ". Ratio= " << (Float(resPow2.x * resPow2.y) /
                                        Float(resolution.x * resolution.y));
 
+        // P627, 使用 separable reconstruction filter, 可以在两个方向独立过滤, (s, t) -> (s', t) -> (s', t')
+
         // Resample image in $s$ direction
+        // 对每行/列来说, 权重表是相同的, 所以预先计算并复用它
         std::unique_ptr<ResampleWeight[]> sWeights = resampleWeights(resolution[0], resPow2[0]);
         resampledImage.reset(new T[resPow2[0] * resPow2[1]]);
 
         // Apply _sWeights_ to zoom in $s$ direction
+        // 并行的对每一行处理
         ParallelFor([&](int t) 
         {
+            // (Orig)t: 原分辨率的当前列, (New)s: 现分辨率的当前行
             for (int s = 0; s < resPow2[0]; ++s) 
             {
                 // Compute texel $(s,t)$ in $s$-zoomed image
+                // auto CurrPixel = resampledImage + t * resPow2[0] + s
                 resampledImage[t * resPow2[0] + s] = 0.f;
                 for (int j = 0; j < 4; ++j) 
                 {
                     int origS = sWeights[s].firstTexel + j;
+
                     if (wrapMode == ImageWrap::Repeat)
                         origS = Mod(origS, resolution[0]);
                     else if (wrapMode == ImageWrap::Clamp)
@@ -177,14 +189,14 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         }, resolution[1], 16);
 
         // Resample image in $t$ direction
-        std::unique_ptr<ResampleWeight[]> tWeights =
-            resampleWeights(resolution[1], resPow2[1]);
+        std::unique_ptr<ResampleWeight[]> tWeights = resampleWeights(resolution[1], resPow2[1]);
         std::vector<T *> resampleBufs;
         int nThreads = MaxThreadIndex();
         for (int i = 0; i < nThreads; ++i)
             resampleBufs.push_back(new T[resPow2[1]]);
         ParallelFor([&](int s) 
         {
+            // 每列数据在内存中不是紧邻的, 这里用单独一行来存, 缓存友好
             T *workData = resampleBufs[ThreadIndex];
             for (int t = 0; t < resPow2[1]; ++t) 
             {
@@ -192,6 +204,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
                 for (int j = 0; j < 4; ++j) 
                 {
                     int offset = tWeights[t].firstTexel + j;
+
                     if (wrapMode == ImageWrap::Repeat)
                         offset = Mod(offset, resolution[1]);
                     else if (wrapMode == ImageWrap::Clamp)
@@ -207,6 +220,7 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         }, resPow2[0], 32);
 
         for (auto ptr : resampleBufs) delete[] ptr;
+
         resolution = resPow2;
     }
 
@@ -215,9 +229,11 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
     pyramid.resize(nLevels);
 
     // Initialize most detailed level of MIPMap
-    pyramid[0].reset(
-        new BlockedArray<T>(resolution[0], resolution[1],
-                            resampledImage ? resampledImage.get() : img));
+    // level0 是分辨率最高的图像, levelMax 是 1*1 的图像???
+    // P630: mimap 的两种过滤方法都是访问一定范围内的纹素, BlockedArray 有更好的缓存连续性(Section A.4.4 in Appendix A.)
+    pyramid[0].reset(new BlockedArray<T>(
+        resolution[0], resolution[1],
+        resampledImage ? resampledImage.get() : img));
 
     for (int i = 1; i < nLevels; ++i) 
     {
@@ -230,12 +246,13 @@ MIPMap<T>::MIPMap(const Point2i &res, const T *img, bool doTrilinear,
         ParallelFor([&](int t) 
         {
             for (int s = 0; s < sRes; ++s)
+                // BlockedArray<T>(s, t) = 
                 (*pyramid[i])(s, t) =
-                    .25f * (Texel(i - 1, 2 * s, 2 * t) +
-                            Texel(i - 1, 2 * s + 1, 2 * t) +
-                            Texel(i - 1, 2 * s, 2 * t + 1) +
+                    .25f * (Texel(i - 1, 2 * s,     2 * t    ) +
+                            Texel(i - 1, 2 * s + 1, 2 * t    ) +
+                            Texel(i - 1, 2 * s,     2 * t + 1) +
                             Texel(i - 1, 2 * s + 1, 2 * t + 1));
-        }, tRes, 16);
+        }, tRes, 16); // 对每一行并行处理
     }
 
     // Initialize EWA filter weights if needed
