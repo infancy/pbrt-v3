@@ -8,3 +8,4 @@ src/objs
 /.vscode
 /travel
 /out
+/CMakeSettings.json

@@ -8,7 +8,7 @@
 
 ### src/accelerators (空间加速结构)
 
-- [ ] bvh (Bounding Volume Hierarchy，基于对象划分的层次包围盒)
+- [x] bvh (Bounding Volume Hierarchy，基于对象划分的层次包围盒)
 - [ ] kdtreeaccel (基于空间划分的 kdtree)
 
 ### src/camera
@@ -32,7 +32,7 @@
 - [x] geometry (包含了 vector、point、normal、bounds、ray 等基础几何对象及其相关操作)
 - [ ] imageio
 - [x] integrator (积分器的基类，包含了核心的渲染算法)
-- [ ] interaction (记录了光线与 surface 或 volume 的交点)
+- [x] interaction (记录了光线与 surface 或 volume 的交点)
 - [ ] interpolation
 - [ ] light
 - [ ] lightdistrib (光源功率的分布)
@@ -45,27 +45,27 @@
 - [ ] parallel
 - [ ] paramset
 - [ ] parser
-- [ ] pbrt.h (公共头文件)
+- [x] pbrt.h (公共头文件)
 - [ ] pbrtlex.cpp
 - [ ] pbrtlex.ll
 - [ ] pbrtparse
 - [ ] pbrtparse.output
 - [ ] pbrtparse.y
-- [ ] primitive
+- [x] primitive
 - [ ] progressreporter (用于报告进度)
-- [ ] quaternion
+- [x] quaternion
 - [ ] reflection (brdf)
 - [ ] rng.h (Random Number Generator，随机数生成器)
 - [x] sampler 
 - [ ] sampling (独立的采样算法)
-- [ ] scene
-- [ ] shape
+- [x] scene
+- [x] shape
 - [ ] sobolmatrices
 - [ ] spectrum (光谱类，可简单的视为一个 RGBColor)
 - [ ] stats
 - [ ] stringprint
 - [ ] texture
-- [ ] transform (矩阵类)
+- [x] transform (矩阵类)
 
 ### src/filter
 
@@ -153,7 +153,6 @@
 - [ ] windy
 - [ ] wrinkled
 
-
 施工中...
 
 ## Book
@@ -211,9 +210,9 @@
 
 ### 4 Primitives and Intersection Acceleration
 
-- [ ] 4.1 Primitive Interface and Geometric Primitives
-- [ ] 4.2 Aggregates
-- [ ] 4.3 Bounding Volume Hierarchies
+- [x] 4.1 Primitive Interface and Geometric Primitives
+- [x] 4.2 Aggregates
+- [x] 4.3 Bounding Volume Hierarchies
 - [ ] 4.4 Kd-Tree Accelerator
 - [ ] Further Reading
 - [ ] Exercises
