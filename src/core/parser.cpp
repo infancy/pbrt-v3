@@ -783,6 +783,7 @@ ParamSet parseParams(Next nextToken, Unget ungetToken, MemoryArena &arena,
 extern int catIndentCount;
 
 // Parsing Global Interface
+// 从之前的 lex/yacc 换成手写解析了
 static void parse(std::unique_ptr<Tokenizer> t) {
     std::vector<std::unique_ptr<Tokenizer>> fileStack;
     fileStack.push_back(std::move(t));

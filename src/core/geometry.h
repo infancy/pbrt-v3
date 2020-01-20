@@ -818,7 +818,25 @@ class Bounds2 {
     Point2<T> pMin, pMax;
 };
 
-// Bounds3 主要是用在空间加速结构, 即层次包围盒(bounding volume hierarchy, section4.3)上
+/*
+              y
+              |
+              |
+              |
+              O - - - - z
+             /              Bounds3::pMax
+            /     3------ 2
+           /     /|      /|
+          x     4-------1 |
+                | |     | |
+                | 7-----|-6
+                |/      |/
+                8-------5
+    Bounds3::pMin
+
+    Bounds3 主要是用在空间加速结构上
+*/
+
 template <typename T>
 class Bounds3 {
   public:
@@ -1033,7 +1051,7 @@ class RayDifferential : public Ray {
     bool hasDifferentials;
     // 主光线有两条辅助光线
     // These extra rays represent camera rays offset by one sample in the $x$ and $y$ direction from the main ray on the film plane.
-    // 它们是通过胶片平面上主光线的起点, 向右方和上方分别偏移一个像素单位得到的
+    // 它们是以胶片平面上主光线的起点, 向右方和上方分别偏移一个像素单位得到的
     // By determining the area that these three rays project to on an object being shaded, the Texture can estimate an area to average over for proper antialiasing.
     // 通过确定三条光线所投射到的对象上着色区域的大小, 纹理对象可以估计出用于反走样的区域大小(一般是取这个区域上贴图颜色的均值)
     Point3f rxOrigin, ryOrigin;
@@ -1608,7 +1626,7 @@ This intersection test is at the heart of traversing the BVHAccel acceleration s
 Because so many ray–bounding box intersection tests are performed while traversing the BVH tree, 
 we found that this optimized method provided approximately a 15% performance improvement in overall rendering time
 compared to using the Bounds3::IntersectP() variant that didn’t take the precomputed direction reciprocals and signs.
-只用在 bvh.cpp 里, Ray–Bounds Intersections 是其核心之一, 通过预先计算 invDir 和 dirIsNeg 带来了 15% 的性能提升 
+只用在 bvh.cpp 里使用, Ray–Bounds Intersections 是其核心之一, 通过预先计算 invDir 和 dirIsNeg 带来了 15% 的性能提升 
 
 */
 template <typename T>
@@ -1645,12 +1663,6 @@ inline bool Bounds3<T>::IntersectP(const Ray &ray, const Vector3f &invDir,
 inline Point3f OffsetRayOrigin(const Point3f &p, const Vector3f &pError,
                                const Normal3f &n, const Vector3f &w) {
     Float d = Dot(Abs(n), pError);
-#ifdef PBRT_FLOAT_AS_DOUBLE
-    // We have tons of precision; for now bump up the offset a bunch just
-    // to be extra sure that we start on the right side of the surface
-    // (In case of any bugs in the epsilons code...)
-    d *= 1024.;
-#endif
     Vector3f offset = d * Vector3f(n);
     if (Dot(w, n) < 0) offset = -offset;
     Point3f po = p + offset;
@@ -1664,11 +1676,15 @@ inline Point3f OffsetRayOrigin(const Point3f &p, const Vector3f &pError,
     return po;
 }
 
+// P345, 球面坐标 -> 方向向量
+// convert θ(theta) and φ(phi) values into (x, y, z) direction vectors
 inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi) {
-    return Vector3f(sinTheta * std::cos(phi), sinTheta * std::sin(phi),
+    return Vector3f(sinTheta * std::cos(phi),
+                    sinTheta * std::sin(phi),
                     cosTheta);
 }
-
+// takes three basis vectors representing the x, y, and z axes and returns
+// the appropriate direction vector with respect to the coordinate frame defined by them:
 inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi,
                                    const Vector3f &x, const Vector3f &y,
                                    const Vector3f &z) {
@@ -1676,6 +1692,8 @@ inline Vector3f SphericalDirection(Float sinTheta, Float cosTheta, Float phi,
            cosTheta * z;
 }
 
+// 方向向量 -> 球面坐标
+// Note that SphericalTheta()assumes that the vector v has been normalized before being passed in
 inline Float SphericalTheta(const Vector3f &v) {
     return std::acos(Clamp(v.z, -1, 1));
 }

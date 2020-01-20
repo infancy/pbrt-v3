@@ -45,6 +45,7 @@
 namespace pbrt {
 
 // MixMaterial Declarations
+// combine two Materials with varying weights
 class MixMaterial : public Material {
   public:
     // MixMaterial Public Methods

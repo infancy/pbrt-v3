@@ -76,7 +76,11 @@ struct TriangleMesh {
     std::unique_ptr<Point2f[]> uv;
 
     std::shared_ptr<Texture<Float>> alphaMask, shadowAlphaMask;
-    std::vector<int> faceIndices; // 面数的索引
+
+	// Added after book publication. Shapes can optionally provide a face
+    // index with an intersection point for use in Ptex texture lookups.
+    // If Ptex isn't being used, then this value is ignored.
+    std::vector<int> faceIndices;
 };
 
 // The Triangleclass actually implements the Shapeinterface. **It represents a single triangle**

@@ -53,8 +53,10 @@ SurfaceInteraction::SurfaceInteraction(
       dndu(dndu),
       dndv(dndv),
       shape(shape),
-      faceIndex(faceIndex) {
+      faceIndex(faceIndex) 
+{
     // Initialize shading geometry from true geometry
+    // 如果在着色时没有做 bump mapping, 就用实际几何结构来替换着色法线等做计算
     shading.n = n;
     shading.dpdu = dpdu;
     shading.dpdv = dpdv;
@@ -78,10 +80,7 @@ void SurfaceInteraction::SetShadingGeometry(const Vector3f &dpdus,
                                             bool orientationIsAuthoritative) {
     // Compute _shading.n_ for _SurfaceInteraction_
     shading.n = Normalize((Normal3f)Cross(dpdus, dpdvs));
-
-    if (shape && (shape->reverseOrientation ^ shape->transformSwapsHandedness))
-        shading.n = -shading.n;
-
+    
     // n 和 shading.n 应总是位于同一半球上
     // 根据用户传入参数来决定是翻转 n 还是 shading.n
     if (orientationIsAuthoritative)
@@ -101,27 +100,34 @@ void SurfaceInteraction::ComputeScatteringFunctions(const RayDifferential &ray,
                                                     bool allowMultipleLobes,
                                                     TransportMode mode) {
     ComputeDifferentials(ray);
+
     // 由交点所处的图元来计算交点上的散射方程
     // 而图元则根据自身的材质特征来计算
     primitive->ComputeScatteringFunctions(this, arena, mode,
                                           allowMultipleLobes);
 }
 
+// 计算纹理采样率TODO
 void SurfaceInteraction::ComputeDifferentials(
-    const RayDifferential &ray) const {
-    if (ray.hasDifferentials) {
+    const RayDifferential &ray) const 
+{
+    if (ray.hasDifferentials) 
+    {
         // Estimate screen space change in $\pt{}$ and $(u,v)$
+        // 计算表面交点 p 处的uv参数坐标相对屏幕空间 xy 坐标的变化率, 这个还需要经过纹理映射, 才是纹理变化率
 
         // Compute auxiliary intersection points with plane
+        // P602 TODO
         Float d = Dot(n, Vector3f(p.x, p.y, p.z));
-        Float tx =
-            -(Dot(n, Vector3f(ray.rxOrigin)) - d) / Dot(n, ray.rxDirection);
+
+        Float tx = -(Dot(n, Vector3f(ray.rxOrigin)) - d) / Dot(n, ray.rxDirection);
         if (std::isinf(tx) || std::isnan(tx)) goto fail;
         Point3f px = ray.rxOrigin + tx * ray.rxDirection;
-        Float ty =
-            -(Dot(n, Vector3f(ray.ryOrigin)) - d) / Dot(n, ray.ryDirection);
+
+        Float ty = -(Dot(n, Vector3f(ray.ryOrigin)) - d) / Dot(n, ray.ryDirection);
         if (std::isinf(ty) || std::isnan(ty)) goto fail;
         Point3f py = ray.ryOrigin + ty * ray.ryDirection;
+
         dpdx = px - p;
         dpdy = py - p;
 
@@ -145,9 +151,12 @@ void SurfaceInteraction::ComputeDifferentials(
                          {dpdu[dim[1]], dpdv[dim[1]]}};
         Float Bx[2] = {px[dim[0]] - p[dim[0]], px[dim[1]] - p[dim[1]]};
         Float By[2] = {py[dim[0]] - p[dim[0]], py[dim[1]] - p[dim[1]]};
+
         if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx)) dudx = dvdx = 0;
         if (!SolveLinearSystem2x2(A, By, &dudy, &dvdy)) dudy = dvdy = 0;
-    } else {
+    }
+    else 
+    {
     fail:
         dudx = dvdx = 0;
         dudy = dvdy = 0;

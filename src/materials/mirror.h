@@ -45,6 +45,7 @@
 namespace pbrt {
 
 // MirrorMaterial Declarations
+// modeled with perfect specular reflection.
 class MirrorMaterial : public Material {
   public:
     // MirrorMaterial Public Methods

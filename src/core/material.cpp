@@ -43,10 +43,16 @@ namespace pbrt {
 // Material Method Definitions
 Material::~Material() {}
 
+// 各个线程对于 bumpMap 是只读的
 void Material::Bump(const std::shared_ptr<Texture<Float>> &d,
-                    SurfaceInteraction *si) {
+                    SurfaceInteraction *si) 
+{
     // Compute offset positions and evaluate displacement texture
-    SurfaceInteraction siEval = *si;
+    SurfaceInteraction siEval = *si; // siEval 作用如名字所显示的, 只用于纹理采样
+
+    // SurfaceInteraction::ComputeScatteringFunctions(...) {
+    // ComputeDifferentials(ray); // 计算 dudx, dudy 等
+    // primitive->ComputeScatteringFunctions(...) }
 
     // Shift _siEval_ _du_ in the $u$ direction
     Float du = .5f * (std::abs(si->dudx) + std::abs(si->dudy));
@@ -57,8 +63,7 @@ void Material::Bump(const std::shared_ptr<Texture<Float>> &d,
     if (du == 0) du = .0005f;
     siEval.p = si->p + du * si->shading.dpdu;
     siEval.uv = si->uv + Vector2f(du, 0.f);
-    siEval.n = Normalize((Normal3f)Cross(si->shading.dpdu, si->shading.dpdv) +
-                         du * si->dndu);
+    siEval.n = Normalize( (Normal3f)Cross(si->shading.dpdu, si->shading.dpdv) + du * si->dndu);
     Float uDisplace = d->Evaluate(siEval);
 
     // Shift _siEval_ _dv_ in the $v$ direction
@@ -66,18 +71,21 @@ void Material::Bump(const std::shared_ptr<Texture<Float>> &d,
     if (dv == 0) dv = .0005f;
     siEval.p = si->p + dv * si->shading.dpdv;
     siEval.uv = si->uv + Vector2f(0.f, dv);
-    siEval.n = Normalize((Normal3f)Cross(si->shading.dpdu, si->shading.dpdv) +
-                         dv * si->dndv);
+    siEval.n = Normalize((Normal3f)Cross(si->shading.dpdu, si->shading.dpdv) + dv * si->dndv);
     Float vDisplace = d->Evaluate(siEval);
-    Float displace = d->Evaluate(*si);
 
+    Float displace = d->Evaluate(*si);
     // Compute bump-mapped differential geometry
+    // 用差分来近似微分
     Vector3f dpdu = si->shading.dpdu +
                     (uDisplace - displace) / du * Vector3f(si->shading.n) +
                     displace * Vector3f(si->shading.dndu);
     Vector3f dpdv = si->shading.dpdv +
                     (vDisplace - displace) / dv * Vector3f(si->shading.n) +
                     displace * Vector3f(si->shading.dndv);
+
+    // SetShadingGeometry(const Vector3f &dpdus, const Vector3f &dpdvs, const Normal3f &dndus, const Normal3f &dndvs,
+    // bump mapping 后的位置不重要, 毕竟是在着色坐标系里做计算的
     si->SetShadingGeometry(dpdu, dpdv, si->shading.dndu, si->shading.dndv,
                            false);
 }

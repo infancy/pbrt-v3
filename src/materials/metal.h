@@ -46,6 +46,8 @@
 namespace pbrt {
 
 // MetalMaterial Declarations
+// based on the Fresnel equations for conductors and the Torrance¨CSparrow model.
+// Unlike plastic, metal includes no diffuse component.
 class MetalMaterial : public Material {
   public:
     // MetalMaterial Public Methods

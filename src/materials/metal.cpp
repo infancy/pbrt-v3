@@ -59,7 +59,8 @@ MetalMaterial::MetalMaterial(const std::shared_ptr<Texture<Spectrum>> &eta,
 void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
                                                MemoryArena &arena,
                                                TransportMode mode,
-                                               bool allowMultipleLobes) const {
+                                               bool allowMultipleLobes) const 
+{
     // Perform bump mapping with _bumpMap_, if present
     if (bumpMap) Bump(bumpMap, si);
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
@@ -72,13 +73,16 @@ void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
         uRough = TrowbridgeReitzDistribution::RoughnessToAlpha(uRough);
         vRough = TrowbridgeReitzDistribution::RoughnessToAlpha(vRough);
     }
+
     Fresnel *frMf = ARENA_ALLOC(arena, FresnelConductor)(1., eta->Evaluate(*si),
                                                          k->Evaluate(*si));
     MicrofacetDistribution *distrib =
         ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(uRough, vRough);
+
     si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(1., distrib, frMf));
 }
 
+// 无输入参数时的默认值
 const int CopperSamples = 56;
 const Float CopperWavelengths[CopperSamples] = {
     298.7570554, 302.4004341, 306.1337728, 309.960445,  313.8839949,
@@ -112,14 +116,14 @@ const Float CopperK[CopperSamples] = {
     2.678062, 2.809, 3.01075,  3.24,  3.458187, 3.67,  3.863125, 4.05,
     4.239563, 4.43,  4.619563, 4.817, 5.034125, 5.26,  5.485625, 5.717};
 
-MetalMaterial *CreateMetalMaterial(const TextureParams &mp) {
-    static Spectrum copperN =
-        Spectrum::FromSampled(CopperWavelengths, CopperN, CopperSamples);
-    std::shared_ptr<Texture<Spectrum>> eta =
-        mp.GetSpectrumTexture("eta", copperN);
-    static Spectrum copperK =
-        Spectrum::FromSampled(CopperWavelengths, CopperK, CopperSamples);
+MetalMaterial *CreateMetalMaterial(const TextureParams &mp) 
+{
+    static Spectrum copperN = Spectrum::FromSampled(CopperWavelengths, CopperN, CopperSamples);
+    std::shared_ptr<Texture<Spectrum>> eta = mp.GetSpectrumTexture("eta", copperN);
+
+    static Spectrum copperK = Spectrum::FromSampled(CopperWavelengths, CopperK, CopperSamples);
     std::shared_ptr<Texture<Spectrum>> k = mp.GetSpectrumTexture("k", copperK);
+
     std::shared_ptr<Texture<Float>> roughness =
         mp.GetFloatTexture("roughness", .01f);
     std::shared_ptr<Texture<Float>> uRoughness =
@@ -129,6 +133,7 @@ MetalMaterial *CreateMetalMaterial(const TextureParams &mp) {
     std::shared_ptr<Texture<Float>> bumpMap =
         mp.GetFloatTextureOrNull("bumpmap");
     bool remapRoughness = mp.FindBool("remaproughness", true);
+
     return new MetalMaterial(eta, k, roughness, uRoughness, vRoughness, bumpMap,
                              remapRoughness);
 }

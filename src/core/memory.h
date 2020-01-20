@@ -46,7 +46,9 @@
 namespace pbrt {
 
 // Memory Declarations
+// placement operator new
 #define ARENA_ALLOC(arena, Type) new ((arena).Alloc(sizeof(Type))) Type
+
 void *AllocAligned(size_t size);
 template <typename T>
 T *AllocAligned(size_t count) {
@@ -54,11 +56,13 @@ T *AllocAligned(size_t count) {
 }
 
 void FreeAligned(void *);
+
 class
 #ifdef PBRT_HAVE_ALIGNAS
 alignas(PBRT_L1_CACHE_LINE_SIZE)
 #endif // PBRT_HAVE_ALIGNAS
-    MemoryArena {
+MemoryArena 
+{
   public:
     // MemoryArena Public Methods
     MemoryArena(size_t blockSize = 262144) : blockSize(blockSize) {}
@@ -145,26 +149,38 @@ class BlockedArray {
   public:
     // BlockedArray Public Methods
     BlockedArray(int uRes, int vRes, const T *d = nullptr)
-        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize) {
+        : uRes(uRes), vRes(vRes), uBlocks(RoundUp(uRes) >> logBlockSize) 
+    {
         int nAlloc = RoundUp(uRes) * RoundUp(vRes);
         data = AllocAligned<T>(nAlloc);
-        for (int i = 0; i < nAlloc; ++i) new (&data[i]) T();
+
+        for (int i = 0; i < nAlloc; ++i) 
+            new (&data[i]) T();
+
         if (d)
+        {
             for (int v = 0; v < vRes; ++v)
-                for (int u = 0; u < uRes; ++u) (*this)(u, v) = d[v * uRes + u];
+                for (int u = 0; u < uRes; ++u) 
+                    (*this)(u, v) = d[v * uRes + u];
+        }
     }
+
     PBRT_CONSTEXPR int BlockSize() const { return 1 << logBlockSize; }
     int RoundUp(int x) const {
         return (x + BlockSize() - 1) & ~(BlockSize() - 1);
     }
+
     int uSize() const { return uRes; }
     int vSize() const { return vRes; }
+
     ~BlockedArray() {
         for (int i = 0; i < uRes * vRes; ++i) data[i].~T();
         FreeAligned(data);
     }
+
     int Block(int a) const { return a >> logBlockSize; }
     int Offset(int a) const { return (a & (BlockSize() - 1)); }
+
     T &operator()(int u, int v) {
         int bu = Block(u), bv = Block(v);
         int ou = Offset(u), ov = Offset(v);
@@ -179,6 +195,7 @@ class BlockedArray {
         offset += BlockSize() * ov + ou;
         return data[offset];
     }
+
     void GetLinearArray(T *a) const {
         for (int v = 0; v < vRes; ++v)
             for (int u = 0; u < uRes; ++u) *a++ = (*this)(u, v);

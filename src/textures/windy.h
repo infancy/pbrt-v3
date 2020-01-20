@@ -52,11 +52,15 @@ class WindyTexture : public Texture<T> {
     // WindyTexture Public Methods
     WindyTexture(std::unique_ptr<TextureMapping3D> mapping)
         : mapping(std::move(mapping)) {}
-    T Evaluate(const SurfaceInteraction &si) const {
+
+    T Evaluate(const SurfaceInteraction &si) const 
+    {
         Vector3f dpdx, dpdy;
         Point3f P = mapping->Map(si, &dpdx, &dpdy);
+
         Float windStrength = FBm(.1f * P, .1f * dpdx, .1f * dpdy, .5, 3);
         Float waveHeight = FBm(P, dpdx, dpdy, .5, 6);
+
         return std::abs(windStrength) * waveHeight;
     }
 

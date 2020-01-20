@@ -45,6 +45,7 @@
 namespace pbrt {
 
 // TranslucentMaterial Declarations
+// describes diffuse and glossy specular reflection and transmission through the surface.
 class TranslucentMaterial : public Material {
   public:
     // TranslucentMaterial Public Methods

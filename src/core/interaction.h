@@ -108,7 +108,16 @@ struct Interaction {
     // pError gives a conservative bound on this error; it’s  for points in participating media. 
     // See Section 3.9 for more on pbrt’s approach to managing floating-point error and in particular Section 3.9.4 for how this bound is computed for various shapes.
     Vector3f pError; // 累积的浮点数绝对误差
-    Vector3f wo;     // 入射光线的反方向(只在 ray–shape intersection 时才会生成这个参数???)
+
+    // prev   light
+    // -----  -----
+    //   ^      ^
+    //    \    /
+    //  wo \  / wi
+    //      \/
+    //    ------
+    //    isect
+    Vector3f wo;     // 出射光线的方向(只在 ray–shape intersection 时才会生成这个参数???)
     Normal3f n;      // 交点处的表面法线
     MediumInterface mediumInterface; // 交点所处于的 medium
 };
@@ -147,12 +156,14 @@ class SurfaceInteraction : public Interaction {
                             const Normal3f &dndu, const Normal3f &dndv,
                             bool orientationIsAuthoritative);
 
-    // 计算交点上的散射方程, 结果会赋值给 this->bsdf 等, 用于后续的着色计算
+    // 计算交点上的散射方程, 结果会赋值给 this->bsdf, this->bssrdf 等, 用于后续的着色计算
     void ComputeScatteringFunctions(
         const RayDifferential &ray, MemoryArena &arena,
         bool allowMultipleLobes = false,
         TransportMode mode = TransportMode::Radiance);
 
+    // compute information about the projected size of the surface area around the intersection on the image plane 
+    // for use in texture antialiasing
     void ComputeDifferentials(const RayDifferential &r) const;
 
     // 如果交点处于一个自发光的图元上, 出射光 = 自发光 + 反射光, Le(light emit) 函数计算自发光的大小
@@ -178,10 +189,14 @@ class SurfaceInteraction : public Interaction {
         Normal3f dndu, dndv;
     } shading;
 
-    const Primitive *primitive = nullptr;
+    const Primitive *primitive = nullptr; // 交点所处的 primitive, 用来获取交点的材质信息
+
     BSDF *bsdf = nullptr;
     BSSRDF *bssrdf = nullptr;
+
+
     mutable Vector3f dpdx, dpdy;
+    // 交点表面的 uv 参数坐标相对屏幕空间的 xy 坐标的变化率
     mutable Float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 
     // Added after book publication. Shapes can optionally provide a face

@@ -9,7 +9,7 @@
 ### src/accelerators (空间加速结构)
 
 - [x] bvh (Bounding Volume Hierarchy，基于对象划分的层次包围盒)
-- [ ] kdtreeaccel (基于空间划分的 kdtree)
+- [x] kdtreeaccel (基于空间划分的 kdtree)
 
 ### src/camera
 
@@ -32,7 +32,7 @@
 - [x] geometry (包含了 vector、point、normal、bounds、ray 等基础几何对象及其相关操作)
 - [ ] imageio
 - [x] integrator (积分器的基类，包含了核心的渲染算法)
-- [x] interaction (记录了光线与 surface 或 volume 的交点)
+- [ ] interaction (记录了光线与 surface 或 volume 的交点)
 - [ ] interpolation
 - [ ] light
 - [ ] lightdistrib (光源功率的分布)
@@ -45,7 +45,7 @@
 - [ ] parallel
 - [ ] paramset
 - [ ] parser
-- [x] pbrt.h (公共头文件)
+- [ ] pbrt.h (公共头文件)
 - [ ] pbrtlex.cpp
 - [ ] pbrtlex.ll
 - [ ] pbrtparse
@@ -61,11 +61,11 @@
 - [x] scene
 - [x] shape
 - [ ] sobolmatrices
-- [ ] spectrum (光谱类，可简单的视为一个 RGBColor)
+- [x] spectrum (光谱类，可简单的视为一个 RGBColor)
 - [ ] stats
 - [ ] stringprint
 - [ ] texture
-- [x] transform (矩阵类)
+- [ ] transform (矩阵类)
 
 ### src/filter
 
@@ -153,6 +153,7 @@
 - [ ] windy
 - [ ] wrinkled
 
+
 施工中...
 
 ## Book
@@ -213,18 +214,18 @@
 - [x] 4.1 Primitive Interface and Geometric Primitives
 - [x] 4.2 Aggregates
 - [x] 4.3 Bounding Volume Hierarchies
-- [ ] 4.4 Kd-Tree Accelerator
-- [ ] Further Reading
+- [x] 4.4 Kd-Tree Accelerator
+- [x] Further Reading
 - [ ] Exercises
 
 ### 5 Color and Radiometry
 
-- [ ] 5.1 Spectral Representation
-- [ ] 5.2 The SampledSpectrum Class
-- [ ] 5.3 RGBSpectrum Implementation
-- [ ] 5.4 Radiometry
-- [ ] 5.5 Working with Radiometric Integrals
-- [ ] 5.6 Surface Reflection
+- [x] 5.1 Spectral Representation
+- [x] 5.2 The SampledSpectrum Class
+- [x] 5.3 RGBSpectrum Implementation
+- [x] 5.4 Radiometry
+- [x] 5.5 Working with Radiometric Integrals
+- [x] 5.6 Surface Reflection
 - [ ] Further Reading
 - [ ] Exercises
 

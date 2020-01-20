@@ -45,27 +45,34 @@
 namespace pbrt {
 
 // HaltonSampler Declarations
-class HaltonSampler : public GlobalSampler {
+class HaltonSampler : public GlobalSampler 
+{
   public:
     // HaltonSampler Public Methods
     HaltonSampler(int nsamp, const Bounds2i &sampleBounds,
                   bool sampleAtCenter = false);
+
     int64_t GetIndexForSample(int64_t sampleNum) const;
     Float SampleDimension(int64_t index, int dimension) const;
+
     std::unique_ptr<Sampler> Clone(int seed);
 
   private:
     // HaltonSampler Private Data
-    static std::vector<uint16_t> radicalInversePermutations;
+    static std::vector<uint16_t> radicalInversePermutations; // lowdiscrepancy.cpp/ComputeRadicalInversePermutations
+
     Point2i baseScales, baseExponents;
-    int sampleStride;
+    int sampleStride; // 采样步长, 超过就重头开始???
     int multInverse[2];
+
+    // 这两个值, 每采样一个新的像素时, 会更新一次
     mutable Point2i pixelForOffset = Point2i(std::numeric_limits<int>::max(),
                                              std::numeric_limits<int>::max());
     mutable int64_t offsetForCurrentPixel;
+
     // Added after book publication: force all image samples to be at the
     // center of the pixel area.
-    bool sampleAtPixelCenter;
+    bool sampleAtPixelCenter; // 在生成 xy 坐标的时候允许均匀采样
 
     // HaltonSampler Private Methods
     const uint16_t *PermutationForDimension(int dim) const {

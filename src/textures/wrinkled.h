@@ -53,9 +53,12 @@ class WrinkledTexture : public Texture<T> {
     WrinkledTexture(std::unique_ptr<TextureMapping3D> mapping, int octaves,
                     Float omega)
         : mapping(std::move(mapping)), octaves(octaves), omega(omega) {}
-    T Evaluate(const SurfaceInteraction &si) const {
+
+    T Evaluate(const SurfaceInteraction &si) const 
+    {
         Vector3f dpdx, dpdy;
         Point3f p = mapping->Map(si, &dpdx, &dpdy);
+
         return Turbulence(p, dpdx, dpdy, omega, octaves);
     }
 

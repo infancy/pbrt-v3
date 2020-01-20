@@ -58,7 +58,8 @@ static RGBSpectrum *ReadImagePFM(const std::string &filename, int *xres,
 
 // ImageIO Function Definitions
 std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
-                                         Point2i *resolution) {
+                                         Point2i *resolution) 
+{
     if (HasExtension(name, ".exr"))
         return std::unique_ptr<RGBSpectrum[]>(
             ReadImageEXR(name, &resolution->x, &resolution->y));
@@ -71,6 +72,7 @@ std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
     else if (HasExtension(name, ".pfm"))
         return std::unique_ptr<RGBSpectrum[]>(
             ReadImagePFM(name, &resolution->x, &resolution->y));
+
     Error("Unable to load image stored in format \"%s\" for filename \"%s\".",
           strrchr(name.c_str(), '.') ? (strrchr(name.c_str(), '.') + 1)
                                      : "(unknown)",
@@ -79,22 +81,34 @@ std::unique_ptr<RGBSpectrum[]> ReadImage(const std::string &name,
 }
 
 void WriteImage(const std::string &name, const Float *rgb,
-                const Bounds2i &outputBounds, const Point2i &totalResolution) {
+                const Bounds2i &outputBounds, const Point2i &totalResolution) 
+{
     Vector2i resolution = outputBounds.Diagonal();
-    if (HasExtension(name, ".exr")) {
+
+    if (HasExtension(name, ".exr")) 
+    {
         WriteImageEXR(name, rgb, resolution.x, resolution.y, totalResolution.x,
                       totalResolution.y, outputBounds.pMin.x,
                       outputBounds.pMin.y);
-    } else if (HasExtension(name, ".pfm")) {
+    } 
+    else if (HasExtension(name, ".pfm")) 
+    {
         WriteImagePFM(name, rgb, resolution.x, resolution.y);
-    } else if (HasExtension(name, ".tga") || HasExtension(name, ".png")) {
+    } 
+    else if (HasExtension(name, ".tga") || HasExtension(name, ".png")) 
+    {
         // 8-bit formats; apply gamma
         Vector2i resolution = outputBounds.Diagonal();
         std::unique_ptr<uint8_t[]> rgb8(
             new uint8_t[3 * resolution.x * resolution.y]);
+
         uint8_t *dst = rgb8.get();
-        for (int y = 0; y < resolution.y; ++y) {
-            for (int x = 0; x < resolution.x; ++x) {
+        for (int y = 0; y < resolution.y; ++y) 
+        {
+            for (int x = 0; x < resolution.x; ++x) 
+            {
+                // 写入 8bit 的 LDR 图像时, 使用 gamma 校正
+                // 在 imagemap.h 中会把这个值变换回来
 #define TO_BYTE(v) (uint8_t) Clamp(255.f * GammaCorrect(v) + 0.5f, 0.f, 255.f)
                 dst[0] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 0]);
                 dst[1] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 1]);
@@ -115,7 +129,9 @@ void WriteImage(const std::string &name, const Float *rgb,
                 Error("Error writing PNG \"%s\": %s", name.c_str(),
                       lodepng_error_text(error));
         }
-    } else {
+    } 
+    else 
+    {
         Error("Can't determine image file type from suffix of filename \"%s\"",
               name.c_str());
     }
