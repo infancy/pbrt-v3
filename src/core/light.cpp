@@ -50,23 +50,30 @@ Light::Light(int flags, const Transform &LightToWorld,
       nSamples(std::max(1, nSamples)),
       mediumInterface(mediumInterface),
       LightToWorld(LightToWorld),
-      WorldToLight(Inverse(LightToWorld)) {
+      WorldToLight(Inverse(LightToWorld)) 
+{
     ++numLights;
 }
 
 Light::~Light() {}
 
-bool VisibilityTester::Unoccluded(const Scene &scene) const {
+bool VisibilityTester::Unoccluded(const Scene &scene) const 
+{
+    // 如果从 p0 到 p1 的光线未与场景物体相交, 则这两个点是可见的???
     return !scene.IntersectP(p0.SpawnRayTo(p1));
 }
 
-Spectrum VisibilityTester::Tr(const Scene &scene, Sampler &sampler) const {
+Spectrum VisibilityTester::Tr(const Scene &scene, Sampler &sampler) const 
+{
     Ray ray(p0.SpawnRayTo(p1));
     Spectrum Tr(1.f);
-    while (true) {
+
+    while (true) 
+    {
         SurfaceInteraction isect;
         bool hitSurface = scene.Intersect(ray, &isect);
         // Handle opaque surface along ray's path
+		// 沿着光线的路径处理不透明的表面
         if (hitSurface && isect.primitive->GetMaterial() != nullptr)
             return Spectrum(0.0f);
 
@@ -74,7 +81,10 @@ Spectrum VisibilityTester::Tr(const Scene &scene, Sampler &sampler) const {
         if (ray.medium) Tr *= ray.medium->Tr(ray, sampler);
 
         // Generate next ray segment or return final transmittance
-        if (!hitSurface) break;
+		// 当从 p1 所处的位置生成的光线与场景物体相交时，退出循环
+        if (!hitSurface) 
+            break;
+
         ray = isect.SpawnRayTo(p1);
     }
     return Tr;
@@ -84,7 +94,8 @@ Spectrum Light::Le(const RayDifferential &ray) const { return Spectrum(0.f); }
 
 AreaLight::AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
                      int nSamples)
-    : Light((int)LightFlags::Area, LightToWorld, medium, nSamples) {
+    : Light((int)LightFlags::Area, LightToWorld, medium, nSamples) 
+{
     ++numAreaLights;
 }
 

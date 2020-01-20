@@ -46,6 +46,7 @@
 namespace pbrt {
 
 // DotsTexture Declarations
+// Ëæ»ú°ßµã
 template <typename T>
 class DotsTexture : public Texture<T> {
   public:

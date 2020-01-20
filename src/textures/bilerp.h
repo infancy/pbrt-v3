@@ -56,7 +56,7 @@ class BilerpTexture : public Texture<T> {
         : mapping(std::move(mapping)), v00(v00), v01(v01), v10(v10), v11(v11) {}
 
     // 双线性插值是对平面上的四个点做三次线性插值
-    // 三线性插值是对空间中的八个点做四次线性插值
+    // 三线性插值是对空间中的八个点做七次线性插值
     // 有的文章里因为双线性插值做了三次线性插值, 也把它叫做三线性插值了, 需要注意区分 
     T Evaluate(const SurfaceInteraction &si) const 
     {

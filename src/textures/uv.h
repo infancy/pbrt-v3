@@ -57,7 +57,7 @@ class UVTexture : public Texture<Spectrum> {
         Vector2f dstdx, dstdy;
         Point2f st = mapping->Map(si, &dstdx, &dstdy);
 
-        // 把 uv 坐标映射为颜色
+        // 把 uv 坐标映射为颜色, 方便调试
         Float rgb[3] = { st[0] - std::floor(st[0]), st[1] - std::floor(st[1]), 0 };
         return Spectrum::FromRGB(rgb);
     }

@@ -49,6 +49,7 @@ namespace pbrt {
 enum class AAMethod { None, ClosedForm };
 
 // CheckerboardTexture Declarations
+// 棋盘格纹理可以用来评估反走样的效果
 template <typename T>
 class Checkerboard2DTexture : public Texture<T> {
   public:
@@ -70,7 +71,7 @@ class Checkerboard2DTexture : public Texture<T> {
         if (aaMethod == AAMethod::None) 
         {
             // Point sample _Checkerboard2DTexture_
-            if (((int)std::floor(st[0]) + (int)std::floor(st[1])) % 2 == 0)
+            if (((int)std::floor(st[0]) + (int)std::floor(st[1])) % 2 == 0) // odd or even
                 return tex1->Evaluate(si);
             return tex2->Evaluate(si);
         } 
@@ -81,9 +82,11 @@ class Checkerboard2DTexture : public Texture<T> {
             // Evaluate single check if filter is entirely inside one of them
             Float ds = std::max(std::abs(dstdx[0]), std::abs(dstdy[0]));
             Float dt = std::max(std::abs(dstdx[1]), std::abs(dstdy[1]));
+            // P644, 计算要过滤的包围盒大小
             Float s0 = st[0] - ds, s1 = st[0] + ds;
             Float t0 = st[1] - dt, t1 = st[1] + dt;
 
+            // 在格子内部, 无需过滤
             if (std::floor(s0) == std::floor(s1) && std::floor(t0) == std::floor(t1)) 
             {
                 // Point sample _Checkerboard2DTexture_
@@ -100,12 +103,17 @@ class Checkerboard2DTexture : public Texture<T> {
                                     (Float)0);
             };
 
+            // 计算两个方向上阶梯函数的积分
             Float sint = (bumpInt(s1) - bumpInt(s0)) / (2 * ds);
             Float tint = (bumpInt(t1) - bumpInt(t0)) / (2 * dt);
-            Float area2 = sint + tint - 2 * sint * tint;
-            if (ds > 1 || dt > 1) area2 = .5f;
+            Float area2 = sint + tint - 2 * sint * tint; // ???
+
+            // 变化率覆盖了整张纹理, 不如提前算这个边界条件
+            if (ds > 1 || dt > 1) 
+                area2 = .5f;
+
             return (1 - area2) * tex1->Evaluate(si) +
-                   area2 * tex2->Evaluate(si);
+                        area2  * tex2->Evaluate(si);
         }
     }
 
@@ -129,6 +137,8 @@ class Checkerboard3DTexture : public Texture<T> {
     {
         Vector3f dpdx, dpdy;
         Point3f p = mapping->Map(si, &dpdx, &dpdy);
+
+        // Checkerboard3DTexture 没有进行过滤
         if ( ((int)std::floor(p.x) + (int)std::floor(p.y) + (int)std::floor(p.z)) % 2 == 0 )
             return tex1->Evaluate(si);
         else

@@ -152,12 +152,16 @@ void LatinHypercube(Float *samples, int nSamples, int nDim, RNG &rng)
 
 
 
-Point2f RejectionSampleDisk(RNG &rng) {
+// P760, 接受-拒绝采样
+Point2f RejectionSampleDisk(RNG &rng) 
+{
     Point2f p;
-    do {
+    do 
+    {
         p.x = 1 - 2 * rng.UniformFloat();
         p.y = 1 - 2 * rng.UniformFloat();
     } while (p.x * p.x + p.y * p.y > 1);
+    
     return p;
 }
 

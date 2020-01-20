@@ -47,12 +47,14 @@
 namespace pbrt {
 
 // DistantLight Declarations
+// 平行光源/有向光源(太阳光...)
 class DistantLight : public Light {
   public:
     // DistantLight Public Methods
     DistantLight(const Transform &LightToWorld, const Spectrum &L,
                  const Vector3f &w);
-    void Preprocess(const Scene &scene) {
+    void Preprocess(const Scene &scene) 
+    {
         scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
     }
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
