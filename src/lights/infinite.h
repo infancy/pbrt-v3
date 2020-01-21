@@ -49,6 +49,8 @@
 namespace pbrt {
 
 // InfiniteAreaLight Declarations
+// 无穷远区域光源, 可以用作环境光源
+// One way to visualize this light is as an enormous sphere that casts light into the scene from every direction
 class InfiniteAreaLight : public Light {
   public:
     // InfiniteAreaLight Public Methods
@@ -58,10 +60,14 @@ class InfiniteAreaLight : public Light {
         scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
     }
     Spectrum Power() const;
+    
+    // 因为方向光源是 delta 分布的, 所以没有实现这个方法吗
     Spectrum Le(const RayDifferential &ray) const;
+
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
     Float Pdf_Li(const Interaction &, const Vector3f &) const;
+
     Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
                        Ray *ray, Normal3f *nLight, Float *pdfPos,
                        Float *pdfDir) const;

@@ -44,20 +44,22 @@ DistantLight::DistantLight(const Transform &LightToWorld, const Spectrum &L,
                            const Vector3f &wLight)
     : Light((int)LightFlags::DeltaDirection, LightToWorld, MediumInterface()),
       L(L),
-      wLight(Normalize(LightToWorld(wLight))) {}
+      wLight(Normalize(LightToWorld(wLight))) {} // 这里用变换矩阵感觉有点多余
 
 Spectrum DistantLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                  Vector3f *wi, Float *pdf,
                                  VisibilityTester *vis) const {
     ProfilePhase _(Prof::LightSample);
+
     *wi = wLight;
-    *pdf = 1;
-    Point3f pOutside = ref.p + wLight * (2 * worldRadius);
+    *pdf = 1; // 只要 ref 到光源间没有遮挡, 就一定能照射到
+    Point3f pOutside = ref.p + wLight * (2 * worldRadius); // 保证 pOutside 在世界包围盒外面来做可见性判断
     *vis =
         VisibilityTester(ref, Interaction(pOutside, ref.time, mediumInterface));
     return L;
 }
 
+// P733, Figure12.15
 Spectrum DistantLight::Power() const {
     return L * Pi * worldRadius * worldRadius;
 }

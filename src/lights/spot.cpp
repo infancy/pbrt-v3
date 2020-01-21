@@ -47,7 +47,7 @@ SpotLight::SpotLight(const Transform &LightToWorld,
     : Light((int)LightFlags::DeltaPosition, LightToWorld, mediumInterface),
       pLight(LightToWorld(Point3f(0, 0, 0))),
       I(I),
-      cosTotalWidth(std::cos(Radians(totalWidth))),
+      cosTotalWidth(std::cos(Radians(totalWidth))), // 传入角度, 预计算其弧度的余弦值
       cosFalloffStart(std::cos(Radians(falloffStart))) {}
 
 Spectrum SpotLight::Sample_Li(const Interaction &ref, const Point2f &u,
@@ -58,20 +58,27 @@ Spectrum SpotLight::Sample_Li(const Interaction &ref, const Point2f &u,
     *pdf = 1.f;
     *vis =
         VisibilityTester(ref, Interaction(pLight, ref.time, mediumInterface));
+
     return I * Falloff(-*wi) / DistanceSquared(pLight, ref.p);
 }
 
-Float SpotLight::Falloff(const Vector3f &w) const {
-    Vector3f wl = Normalize(WorldToLight(w));
+Float SpotLight::Falloff(const Vector3f &w) const 
+{
+    Vector3f wl = Normalize(WorldToLight(w)); // 先转换到光源的对象空间中
     Float cosTheta = wl.z;
+
     if (cosTheta < cosTotalWidth) return 0;
     if (cosTheta >= cosFalloffStart) return 1;
+
+    // 光线处于圆锥的衰减区域时
     // Compute falloff inside spotlight cone
+    // the intensity is scaled to smoothly fall off from full illumination to darkness
     Float delta =
         (cosTheta - cosTotalWidth) / (cosFalloffStart - cosTotalWidth);
     return (delta * delta) * (delta * delta);
 }
 
+// 这里计算的是个近似值
 Spectrum SpotLight::Power() const {
     return I * 2 * Pi * (1 - .5f * (cosFalloffStart + cosTotalWidth));
 }

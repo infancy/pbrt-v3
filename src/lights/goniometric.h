@@ -66,15 +66,20 @@ class GonioPhotometricLight : public Light {
         if (texels)
             mipmap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
     }
-    Spectrum Scale(const Vector3f &w) const {
+
+    Spectrum Scale(const Vector3f &w) const 
+    {
         Vector3f wp = Normalize(WorldToLight(w));
+        // Goniophotometric diagrams are usually de?ned in a coordinate space where the
+        // y axis is up, whereas the spherical coordinate utility routines in pbrt assume that z is up
         std::swap(wp.y, wp.z);
         Float theta = SphericalTheta(wp);
         Float phi = SphericalPhi(wp);
-        Point2f st(phi * Inv2Pi, theta * InvPi);
+        Point2f st(phi * Inv2Pi, theta * InvPi); // 方向 -> 球面坐标 -> 纹理坐标
         return !mipmap ? RGBSpectrum(1.f)
                        : Spectrum(mipmap->Lookup(st), SpectrumType::Illuminant);
     }
+
     Spectrum Power() const;
     Float Pdf_Li(const Interaction &, const Vector3f &) const;
     Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,

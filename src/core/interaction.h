@@ -166,7 +166,7 @@ class SurfaceInteraction : public Interaction {
     // for use in texture antialiasing
     void ComputeDifferentials(const RayDifferential &r) const;
 
-    // 如果交点处于一个自发光的图元上, 出射光 = 自发光 + 反射光, Le(light emit) 函数计算自发光的大小
+    // 如果交点处于一个自发光的图元上, 出射光 Li = 自发光 Le + 反射光 Lo, Le(light emit) 函数计算自发光的大小
     Spectrum Le(const Vector3f &w) const;
 
     // all of the shapes that pbrt supports do have at least a local parametric description - that for some range of $(u, v) $ values, points on the surface are given by some function $f$ such that $\mathrm{ p} = f(u, v) $

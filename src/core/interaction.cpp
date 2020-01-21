@@ -166,7 +166,7 @@ void SurfaceInteraction::ComputeDifferentials(
 
 Spectrum SurfaceInteraction::Le(const Vector3f &w) const {
     const AreaLight *area = primitive->GetAreaLight();
-    return area ? area->L(*this, w) : Spectrum(0.f);
+    return area ? area->L(*this, w) : Spectrum(0.f); // 实际是转发给交点图元相关联的区域光源来计算
 }
 
 }  // namespace pbrt

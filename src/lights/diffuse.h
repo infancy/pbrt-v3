@@ -46,6 +46,7 @@
 namespace pbrt {
 
 // DiffuseAreaLight Declarations
+// DiffuseAreaLightimplements a basic area light source with a uniform spatial and directional radiance distribution
 class DiffuseAreaLight : public AreaLight {
   public:
     // DiffuseAreaLight Public Methods
@@ -53,6 +54,7 @@ class DiffuseAreaLight : public AreaLight {
                      const MediumInterface &mediumInterface, const Spectrum &Le,
                      int nSamples, const std::shared_ptr<Shape> &shape,
                      bool twoSided = false);
+                     
     Spectrum L(const Interaction &intr, const Vector3f &w) const {
         return (twoSided || Dot(intr.n, w) > 0) ? Lemit : Spectrum(0.f);
     }
