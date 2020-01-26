@@ -435,14 +435,15 @@ int FindInterval(int size, const Predicate &pred)
 
         // 根据谓词 pred 进行二分搜索
         // Bisect range based on value of _pred_ at _middle_
-        if (pred(middle)) 
+        if (pred(middle)) // 后半段继续搜索
         {
             first = middle + 1;
             len -= half + 1;
         }
-        else
+        else // 前半段
             len = half;
     }
+
     return Clamp(first - 1, 0, size - 2);
 }
 

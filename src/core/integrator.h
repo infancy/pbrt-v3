@@ -50,6 +50,7 @@
 namespace pbrt {
 
 // Integrator Declarations
+// P806, evaluating the integral equation that describes the equilibrium distribution of radiance in an environment
 class Integrator {
   public:
     // Integrator Interface

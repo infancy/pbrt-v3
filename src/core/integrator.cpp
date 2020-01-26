@@ -136,10 +136,11 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
 //    ------
 //    isect
 //
-//	当 bsdf 呈镜面状态而光源分布较广时从 bsdf 采样较为高效
-//	当 bsdf 呈漫反射分布状态而光源较小时从光源采样更高效
-//	因而使用多重重要性采样（MIS）分别对 light 和 bsdf 进行采样
-//	在光源上采样一点 p 计算 Le，在 bsdf 上采样一方向 wi 计算 Li，最后 Ld = MIS(Le, Li)
+// P797
+// 当 bsdf 呈镜面分布而光源分布较广时(环境光源)从 bsdf 采样较为高效
+// 当 bsdf 呈漫反射分布而光源较小时(点光源)从光源采样更高效
+// 因而使用多重重要性采样（MIS）分别对 light 和 bsdf 进行采样
+// 在光源上采样一点 p 计算 Le，在 bsdf 上采样一方向 wi 计算 Li，最后 Ld = MIS(Le, Li)
 
 Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                         const Light &light, const Point2f &uLight,
@@ -159,6 +160,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
     VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li << ", wi: "
             << wi << ", pdf: " << lightPdf;
+
     if (lightPdf > 0 && !Li.IsBlack())
     {
         // Compute BSDF or phase function's value for light sample
