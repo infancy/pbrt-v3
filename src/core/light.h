@@ -70,9 +70,12 @@ class Light {
           const MediumInterface &mediumInterface, int nSamples = 1);
 
 
-    // P716, Figure 12.5
+    // P716, Figure 12.5 / P835
+    // 在多重重要性采样中, 对光源进行采样
+    //
     // 传入(世界空间中的)交点 ref，先假设 ref 到光源间无遮挡, 
-    // 计算光源传递给 ref 的入射辐射度 Li 和交点 ref 指向光源的方向 wi; 如果 Li > 0, 则继续构造可见性测试 vis
+    // 采样光源传递给 ref 的入射辐射度 Li 和交点 ref 指向光源的方向 wi; 如果 Li > 0, 则继续构造可见性测试 vis
+    //
     // 光线跟踪是一类点采样算法, 当光源是面积光源时，
     // 则需要在面积光源上选取一个采样点(通过传入的随机值 u) 及相应的**概率密度值 pdf**, 通过蒙特卡洛积分来计算整个光源到达 ref 的 Li
     virtual Spectrum Sample_Li(const Interaction &ref, const Point2f &u,
@@ -94,6 +97,7 @@ class Light {
     virtual Spectrum Le(const RayDifferential &r) const;
 
 
+    // Section 16.1.2
     // 从 ref->wi->light 的概率
     virtual Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
                                Ray *ray, Normal3f *nLight, Float *pdfPos,
@@ -140,7 +144,7 @@ class AreaLight : public Light {
     AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
               int nSamples);
 
-    // 给定区域光源表面上一点 intr, 计算出射方向 wi 上的发射辐射度 Li
+    // 给定区域光源表面上一点 intr, 计算出射方向 wi 上的发射辐射度 Li(SurfaceInteraction->Le)
     // Spectrum SurfaceInteraction::Le(const Vector3f &w) const {
     //     const AreaLight *area = primitive->GetAreaLight();
     //     return area ? area->L(*this, w) : Spectrum(0.f); }

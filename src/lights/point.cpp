@@ -57,6 +57,7 @@ Spectrum PointLight::Sample_Li(const Interaction &ref, const Point2f &u,
 // P339, 由辐射强度的定义可以得到
 Spectrum PointLight::Power() const { return 4 * Pi * I; }
 
+// P836
 Float PointLight::Pdf_Li(const Interaction &, const Vector3f &) const {
     return 0;
 }

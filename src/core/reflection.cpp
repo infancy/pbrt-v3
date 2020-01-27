@@ -182,7 +182,7 @@ Spectrum SpecularReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
                                       const Point2f &sample, Float *pdf,
                                       BxDFType *sampledType) const {
     // Compute perfect specular reflection direction
-    // 可以用 Relflect 函数来计算, 不过这里有更简单的方法
+    // 可以用 Reflect 函数来计算, 不过这里有更简单的方法
     *wi = Vector3f(-wo.x, -wo.y, wo.z);
     *pdf = 1;
 
@@ -197,7 +197,8 @@ std::string SpecularReflection::ToString() const {
 
 Spectrum SpecularTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                         const Point2f &sample, Float *pdf,
-                                        BxDFType *sampledType) const {
+                                        BxDFType *sampledType) const 
+{
     // Figure out which $\eta$ is incident and which is transmitted
     bool entering = CosTheta(wo) > 0;
     Float etaI = entering ? etaA : etaB;
@@ -206,6 +207,7 @@ Spectrum SpecularTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
     // Compute ray direction for specular transmission
     if (!Refract(wo, Faceforward(Normal3f(0, 0, 1), wo), etaI / etaT, wi))
         return 0; // 发生全内反射时
+
     *pdf = 1;
 
     // P527, 透射光线的辐射能量为 1 - Fr, 但因为折射后的立体角有改变, 所以其辐射度为式 8.8
@@ -474,6 +476,7 @@ bool FourierBSDFTable::GetWeightsAndOffset(Float cosTheta, int *offset,
 
 #pragma region BxDF
 
+// P806
 Spectrum BxDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                         Float *pdf, BxDFType *sampledType) const 
 {
@@ -485,7 +488,7 @@ Spectrum BxDF::Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
     return f(wo, *wi);
 }
 
-// 默认均等概率
+// P807, 默认使用余弦加权的采样(cosine-weighted sampling method), 适用于漫反射分布的 BSDF(Lambertian BRDFs, Oren–Nayar)
 Float BxDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
     return SameHemisphere(wo, wi) ? AbsCosTheta(wi) * InvPi : 0;
 }
@@ -499,6 +502,7 @@ Spectrum LambertianTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                           BxDFType *sampledType) const {
     *wi = CosineSampleHemisphere(u);
     if (wo.z > 0) wi->z *= -1;
+
     *pdf = Pdf(wo, *wi);
     return f(wo, *wi);
 }
@@ -514,40 +518,52 @@ Float LambertianTransmission::Pdf(const Vector3f &wo,
 
 Spectrum MicrofacetReflection::Sample_f(const Vector3f &wo, Vector3f *wi,
                                         const Point2f &u, Float *pdf,
-                                        BxDFType *sampledType) const {
+                                        BxDFType *sampledType) const 
+{
     // Sample microfacet orientation $\wh$ and reflected direction $\wi$
     if (wo.z == 0) return 0.;
+
+    // 采样法线
     Vector3f wh = distribution->Sample_wh(wo, u);
     if (Dot(wo, wh) < 0) return 0.;   // Should be rare
+
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
 
     // Compute PDF of _wi_ for microfacet reflection
+    // distribution->Pdf(wo, wh), not MicrofacetReflection->Pdf(wo, wh)
     *pdf = distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
     return f(wo, *wi);
 }
 
-Float MicrofacetReflection::Pdf(const Vector3f &wo, const Vector3f &wi) const {
+Float MicrofacetReflection::Pdf(const Vector3f &wo, const Vector3f &wi) const 
+{
     if (!SameHemisphere(wo, wi)) return 0;
+
     Vector3f wh = Normalize(wo + wi);
+    // P813
     return distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
 }
 
 Spectrum MicrofacetTransmission::Sample_f(const Vector3f &wo, Vector3f *wi,
                                           const Point2f &u, Float *pdf,
-                                          BxDFType *sampledType) const {
+                                          BxDFType *sampledType) const 
+{
     if (wo.z == 0) return 0.;
+
     Vector3f wh = distribution->Sample_wh(wo, u);
     if (Dot(wo, wh) < 0) return 0.;  // Should be rare
 
     Float eta = CosTheta(wo) > 0 ? (etaA / etaB) : (etaB / etaA);
     if (!Refract(wo, (Normal3f)wh, eta, wi)) return 0;
+
     *pdf = Pdf(wo, *wi);
     return f(wo, *wi);
 }
 
 Float MicrofacetTransmission::Pdf(const Vector3f &wo,
-                                  const Vector3f &wi) const {
+                                  const Vector3f &wi) const 
+{
     if (SameHemisphere(wo, wi)) return 0;
     // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
     Float eta = CosTheta(wo) > 0 ? (etaB / etaA) : (etaA / etaB);
@@ -566,30 +582,41 @@ Float MicrofacetTransmission::Pdf(const Vector3f &wo,
 
 Spectrum FresnelBlend::Sample_f(const Vector3f &wo, Vector3f *wi,
                                 const Point2f &uOrig, Float *pdf,
-                                BxDFType *sampledType) const {
+                                BxDFType *sampledType) const 
+{
     Point2f u = uOrig;
+
+    //diffuse term or glossy term...
     if (u[0] < .5) {
-        u[0] = std::min(2 * u[0], OneMinusEpsilon);
+        u[0] = std::min(2 * u[0], OneMinusEpsilon); // remap to [0, 1)
+
         // Cosine-sample the hemisphere, flipping the direction if necessary
         *wi = CosineSampleHemisphere(u);
         if (wo.z < 0) wi->z *= -1;
     } else {
         u[0] = std::min(2 * (u[0] - .5f), OneMinusEpsilon);
+
         // Sample microfacet orientation $\wh$ and reflected direction $\wi$
         Vector3f wh = distribution->Sample_wh(wo, u);
         *wi = Reflect(wo, wh);
         if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
     }
+
     *pdf = Pdf(wo, *wi);
     return f(wo, *wi);
 }
 
-Float FresnelBlend::Pdf(const Vector3f &wo, const Vector3f &wi) const {
+Float FresnelBlend::Pdf(const Vector3f &wo, const Vector3f &wi) const 
+{
     if (!SameHemisphere(wo, wi)) return 0;
+
     Vector3f wh = Normalize(wo + wi);
     Float pdf_wh = distribution->Pdf(wo, wh);
+
     return .5f * (AbsCosTheta(wi) * InvPi + pdf_wh / (4 * Dot(wo, wh)));
 }
+
+
 
 Spectrum FresnelSpecular::Sample_f(const Vector3f &wo, Vector3f *wi,
                                    const Point2f &u, Float *pdf,
@@ -597,7 +624,7 @@ Spectrum FresnelSpecular::Sample_f(const Vector3f &wo, Vector3f *wi,
 {
     Float F = FrDielectric(CosTheta(wo), etaA, etaB);
 
-    // 在本次采样中, 采样反射还是折射由...来控制
+    // 在本次采样中, 采样反射还是折射, 由菲涅尔反射率 Fr 来控制
     if (u[0] < F) 
     {
         // Compute specular reflection for _FresnelSpecular_
@@ -771,6 +798,7 @@ Float FourierBSDF::Pdf(const Vector3f &wo, const Vector3f &wi) const {
 
 #pragma region BxDF/BSDF
 
+// P831
 Spectrum BxDF::rho(const Vector3f &w, int nSamples, const Point2f *u) const 
 {
     Spectrum r(0.);
@@ -781,6 +809,7 @@ Spectrum BxDF::rho(const Vector3f &w, int nSamples, const Point2f *u) const
         Float pdf = 0;
 
         Spectrum f = Sample_f(w, &wi, u[i], &pdf);
+
         if (pdf > 0) 
             r += f * AbsCosTheta(wi) / pdf;
     }
@@ -795,13 +824,18 @@ Spectrum BxDF::rho(int nSamples, const Point2f *u1, const Point2f *u2) const
         // Estimate one term of $\rho_\roman{hh}$
         Vector3f wo, wi;
         wo = UniformSampleHemisphere(u1[i]);
+
         Float pdfo = UniformHemispherePdf(), pdfi = 0;
+
         Spectrum f = Sample_f(wo, &wi, u2[i], &pdfi);
+
         if (pdfi > 0)
             r += f * AbsCosTheta(wi) * AbsCosTheta(wo) / (pdfo * pdfi);
     }
     return r / (Pi * nSamples);
 }
+
+
 
 // BSDF Method Definitions
 Spectrum BSDF::f(const Vector3f &woW, const Vector3f &wiW,
@@ -818,8 +852,8 @@ Spectrum BSDF::f(const Vector3f &woW, const Vector3f &wiW,
     Spectrum f(0.f);
     for (int i = 0; i < nBxDFs; ++i)
         if (bxdfs[i]->MatchesFlags(flags) && (
-            ( reflect && (bxdfs[i]->type & BSDF_REFLECTION)) ||
-            (!reflect && (bxdfs[i]->type & BSDF_TRANSMISSION))) )
+            ( reflect && (bxdfs[i]->type & BSDF_REFLECTION  )) ||
+            (!reflect && (bxdfs[i]->type & BSDF_TRANSMISSION)) ))
             f += bxdfs[i]->f(wo, wi);
     return f;
 }
@@ -843,7 +877,7 @@ Spectrum BSDF::rho(const Vector3f &woWorld, int nSamples, const Point2f *samples
     return ret;
 }
 
-// 根据采样值从bxdf[n]中选取一个bxdf（sampleType即为该bxdf），计算sample_f，得到wi，pdf
+// P832, 根据采样值从bxdf[n]中选取一个bxdf（sampleType即为该bxdf），计算sample_f，得到wi，pdf
 // 然后需对pdf进行均值计算以得到平均值，最后计算f(wo,wi)
 Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
                         const Point2f &u, Float *pdf, BxDFType type,
@@ -858,11 +892,11 @@ Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
         if (sampledType) *sampledType = BxDFType(0);
         return Spectrum(0);
     }
-    int comp =
-        std::min((int)std::floor(u[0] * matchingComps), matchingComps - 1);
 
     // Get _BxDF_ pointer for chosen component
     BxDF *bxdf = nullptr;
+    int comp =
+        std::min((int)std::floor(u[0] * matchingComps), matchingComps - 1);
     int count = comp;
     for (int i = 0; i < nBxDFs; ++i)
         if (bxdfs[i]->MatchesFlags(type) && count-- == 0) {
@@ -897,18 +931,18 @@ Spectrum BSDF::Sample_f(const Vector3f &woWorld, Vector3f *wiWorld,
         for (int i = 0; i < nBxDFs; ++i)
             if (bxdfs[i] != bxdf && bxdfs[i]->MatchesFlags(type))
                 *pdf += bxdfs[i]->Pdf(wo, wi);
-    if (matchingComps > 1) *pdf /= matchingComps;
+    if (matchingComps > 1) *pdf /= matchingComps; // (先避免除零, 然后)计算均值
 
     // Compute value of BSDF for sampled direction
-    if (!(bxdf->type & BSDF_SPECULAR)) 
+    if (!(bxdf->type & BSDF_SPECULAR)) // 如果不包含镜面 BSDF
     {
         bool reflect = Dot(*wiWorld, ng) * Dot(woWorld, ng) > 0;
         f = 0.;
         for (int i = 0; i < nBxDFs; ++i)
             if (bxdfs[i]->MatchesFlags(type) &&
-                ((reflect && (bxdfs[i]->type & BSDF_REFLECTION)) ||
-                 (!reflect && (bxdfs[i]->type & BSDF_TRANSMISSION))))
-                f += bxdfs[i]->f(wo, wi);
+                ( (reflect && (bxdfs[i]->type & BSDF_REFLECTION   )) ||
+                  (!reflect && (bxdfs[i]->type & BSDF_TRANSMISSION)) ))
+                f += bxdfs[i]->f(wo, wi); // 已经采样得到了 wi, 并且排除了 delta 分布, 这里可以直接用 f(wo, wi) 计算
     }
     VLOG(2) << "Overall f = " << f << ", pdf = " << *pdf << ", ratio = "
             << ((*pdf > 0) ? (f / *pdf) : Spectrum(0.));

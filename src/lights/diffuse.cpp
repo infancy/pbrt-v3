@@ -79,14 +79,17 @@ Spectrum DiffuseAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
         *pdf = 0;
         return 0.f;
     }
+
     *wi = Normalize(pShape.p - ref.p);
     *vis = VisibilityTester(ref, pShape);
     return L(pShape, -*wi);
 }
 
 Float DiffuseAreaLight::Pdf_Li(const Interaction &ref,
-                               const Vector3f &wi) const {
+                               const Vector3f &wi) const 
+{
     ProfilePhase _(Prof::LightPdf);
+
     return shape->Pdf(ref, wi);
 }
 

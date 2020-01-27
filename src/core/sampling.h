@@ -212,7 +212,7 @@ void Shuffle(T *samp, int count, int nDimensions, RNG &rng)
 
 
 
-// p779, cosine-weighted distribution, 选择上倾向于余弦值更大的方向
+// p779, cosine-weighted distribution, 倾向于选择余弦值更大的方向
 // p780, Figure13.14, ???
 inline Vector3f CosineSampleHemisphere(const Point2f &u) 
 {

@@ -86,13 +86,18 @@ class Shape {
     }
 
     virtual Float Area() const = 0;
-    // Sample a point on the surface of the shape and return the PDF with
+
+
+
+    // AreaLight 依赖于 Shape, Sample 和 Pdf 主要在采样 AreaLight 时使用
+    // P837, Sample a point on the surface of the shape and return the PDF with
     // respect to area on the surface.
     virtual Interaction Sample(const Point2f &u, Float *pdf) const = 0;
+    // Shapes almost always sample uniformly by area on their surface
     virtual Float Pdf(const Interaction &) const { return 1 / Area(); }
 
-    // Sample a point on the shape given a reference point |ref| and
-    // return the PDF with respect to solid angle from |ref|.
+    // P837, Sample a point on the shape given a reference point ref and
+    // return the PDF with respect to solid angle from ref
     virtual Interaction Sample(const Interaction &ref, const Point2f &u,
                                Float *pdf) const;
     virtual Float Pdf(const Interaction &ref, const Vector3f &wi) const;
@@ -103,6 +108,8 @@ class Shape {
     // integration; the nSamples parameter determines how many samples are
     // used in this case.
     virtual Float SolidAngle(const Point3f &p, int nSamples = 512) const;
+
+
 
     // Shape Public Data
 	// 在 ray-intersection test 时需要将 ray 变换到对象坐标系中, 计算...时需要将 shape 变换到世界坐标系中, shape 同时包含了这两个变换

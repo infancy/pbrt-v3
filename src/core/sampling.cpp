@@ -255,6 +255,7 @@ Vector3f UniformSampleCone(const Point2f &u, Float cosThetaMax,
 
 
 
+// P782
 Point2f UniformSampleTriangle(const Point2f &u) {
     Float su0 = std::sqrt(u[0]);
     return Point2f(1 - su0, u[1] * su0);

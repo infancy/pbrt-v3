@@ -46,7 +46,11 @@ namespace pbrt {
 	
 // indicates whether the ray path that found this intersection point started from the camera or from a light source
 // TransportMode Declarations
-enum class TransportMode { Radiance, Importance };
+enum class TransportMode 
+{ 
+    Radiance,  // 发射量(light -> ... -> camera)
+    Importance // 接收量(camera -> ... -> light)
+};
 
 // Material Declarations
 // P571, by separating these two components and having the Material return a BSDF, pbrt is better able to handle a variety of light transport algorithms.

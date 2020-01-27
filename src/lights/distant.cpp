@@ -64,9 +64,12 @@ Spectrum DistantLight::Power() const {
     return L * Pi * worldRadius * worldRadius;
 }
 
+// 方向光源也是 delta 分布的, 在无穷个方向中采样到对应方向的概率为 0
 Float DistantLight::Pdf_Li(const Interaction &, const Vector3f &) const {
     return 0.f;
 }
+
+
 
 Spectrum DistantLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                  Float time, Ray *ray, Normal3f *nLight,

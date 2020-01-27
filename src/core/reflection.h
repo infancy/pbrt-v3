@@ -57,8 +57,6 @@ Spectrum FrConductor(Float cosThetaI, const Spectrum &etaI,
 
 // P512
 // 传入的 w 都是归一化后的
-// 
-
 // BSDF Inline Functions
 // P510
 inline Float CosTheta(const Vector3f &w) { return w.z; }
@@ -209,6 +207,7 @@ class BSDF {
     Spectrum rho(const Vector3f &wo, int nSamples, const Point2f *samples,
                  BxDFType flags = BSDF_ALL) const;
 
+    // 在多重重要性采样中, 对 BSDF 进行采样
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType type = BSDF_ALL,
                       BxDFType *sampledType = nullptr) const;
@@ -256,7 +255,7 @@ class BxDF {
     // has_reflection, has_transmission, has_specular...
     bool MatchesFlags(BxDFType t) const { return (type & t) == type; }
 
-    // 注意返回的是 Spectrum,  每个分量代表了这个光谱上的
+    // P514, 注意返回的是 Spectrum,  每个分量代表了这个光谱上的...
     virtual Spectrum f(const Vector3f &wo, const Vector3f &wi) const = 0;
 
     // prev   light
@@ -267,22 +266,22 @@ class BxDF {
     //      \/
     //    ------
     //    isect
-    // 并非所有 BxDF 的 f(wo, wi) 函数都可用, 例如镜子, 玻璃, 水面的完美镜面分布(delta 分布, 参考 Chapter7.1 的狄拉克函数)
-    // 这个时候就需要用 Sample_f, 给定出射方向 wo, 计算入射光方向 wi 并返回对应的 f(wo, wi).
+    // P806, 并非所有 BxDF 的 f(wo, wi) 函数都可用, 例如镜子, 玻璃, 水面的完美镜面分布(delta 分布, 参考 Chapter7.1 的狄拉克函数)
+    // 这个时候就需要用 Sample_f, 给定出射方向 wo, 计算入射光方向 wi 并返回对应的 f(wo, wi)
     // sample 用于在光源上随机采样, 对应于概率密度 pdf, 这两者在非 delta 分布时才会用到
     virtual Spectrum Sample_f(const Vector3f &wo, Vector3f *wi,
                               const Point2f &sample, Float *pdf,
                               BxDFType *sampledType = nullptr) const;
 
-    // P514, 针对某些无法通过闭式计算反射率的 BxDF，可用 rho 来估算（使用蒙特卡洛方法）
+    // P514, P815, P830, 针对某些无法通过闭式计算反射率的 BxDF，可用 rho_hd 来估算（samples[] 用于蒙特卡洛积分）
     // hemisphere_direction_reflectance
-    // 通过蒙特卡洛方法来估算 rho, nSamples 和 samples 是其需要的参数
     virtual Spectrum rho(const Vector3f &wo, int nSamples,
                          const Point2f *samples) const;
     // hemisphere_hemisphere_reflectance
     virtual Spectrum rho(int nSamples, const Point2f *samples1,
                          const Point2f *samples2) const;
 
+    // P807, 如果派生类覆盖了 Sample_f, 那么也需要覆盖 Pdf
     virtual Float Pdf(const Vector3f &wo, const Vector3f &wi) const;
 
     virtual std::string ToString() const = 0;
@@ -384,7 +383,7 @@ class SpecularReflection : public BxDF {
 
     Spectrum f(const Vector3f &wo, const Vector3f &wi) const 
     {
-        return Spectrum(0.f); // 因为 PBRT 在渲染阶段对这种 delta 分布的 BxDF 做了特殊处理(使用 Sample_f 来采样???), 所以这里总是让其采样到的概率为 0
+        return Spectrum(0.f); // 因为 PBRT 在渲染阶段对这种 delta 分布的 BxDF 做了特殊处理(使用 Sample_f 来采样), 所以这里总是让其采样到的概率为 0
     }
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &sample,
                       Float *pdf, BxDFType *sampledType) const;
@@ -443,7 +442,7 @@ class FresnelSpecular : public BxDF {
     }
     Spectrum Sample_f(const Vector3f &wo, Vector3f *wi, const Point2f &u,
                       Float *pdf, BxDFType *sampledType) const;
-    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0; }
+    Float Pdf(const Vector3f &wo, const Vector3f &wi) const { return 0; } // 对完美镜面的 delta 分布有特殊处理, 这里干脆设为 0 了
     std::string ToString() const;
 
   private:
@@ -582,7 +581,7 @@ class MicrofacetTransmission : public BxDF {
 
 
 // Fresnel Incidence Effects, models a diffuse underlying surface with a glossy specular surface above it
-// 当入射角度接近表面法线时, 大多数光线被透射并漫反射; 当接近垂直于法线的方向时, 则主要发送光泽反射
+// 当入射角度接近表面法线时, 大多数光线被透射并漫反射; 当接近垂直于法线的方向时, 则主要发生光泽反射
 class FresnelBlend : public BxDF {
   public:
     // FresnelBlend Public Methods

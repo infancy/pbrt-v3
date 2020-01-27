@@ -62,6 +62,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
     }
     Lmap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
 
+
     // Initialize sampling PDFs for infinite area light
 
     // Compute scalar-valued image _img_ from environment map
@@ -84,6 +85,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
         height, 32);
 
     // Compute sampling distributions for rows and columns of image
+    // 通过 distribution2d 使光源的概率分布尽可能匹配其功率分布, 以减少积分时的方差
     distribution.reset(new Distribution2D(img.get(), width, height));
 }
 
