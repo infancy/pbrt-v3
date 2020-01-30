@@ -51,6 +51,7 @@ STAT_COUNTER("Integrator/Camera rays traced", nCameraRays);
 Integrator::~Integrator() {}
 
 // Integrator Utility Functions
+// P854
 Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
                                 MemoryArena &arena, Sampler &sampler,
                                 const std::vector<int> &nLightSamples,
@@ -70,7 +71,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
         const Point2f *uLightArray = sampler.Get2DArray(nSamples);
         const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
 
-		// 如果样本数组被用光时，只进行单次采样
+		// P853, 如果样本数组被用光时，只进行单次采样
         if (!uLightArray || !uScatteringArray) 
         {
             // Use a single sample for illumination from _light_
@@ -78,9 +79,9 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
             Point2f uScattering = sampler.Get2D();
             L += EstimateDirect(it, uScattering, *light, uLight, scene, sampler,
                                 arena, handleMedia);
-        } 
-		// 否则根据 nSamples 的大小，在光源上取 n 个采样点，计算平均辐射度
-        else 
+        }
+		// 否则在光源/BSDF上进行 nSamples 次采样，使用蒙特卡洛积分, 计算平均辐射度(TODO: 类似的使用 MC 积分的地方, BSDF, rho, SolidAngle)
+        else
         {
             // Estimate direct lighting using sample arrays
             Spectrum Ld(0.f);
@@ -94,6 +95,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
     return L;
 }
 
+// P855
 Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
                                MemoryArena &arena, Sampler &sampler,
                                bool handleMedia, const Distribution1D *lightDistrib) 
@@ -109,10 +111,13 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     int lightNum;
     Float lightPdf;
 	// 如果光源的功率分布可用，则根据其功率分布（由逆变换算法）选取一个光源，并计算其概率密度
-    if (lightDistrib) {
+    if (lightDistrib) 
+    {
         lightNum = lightDistrib->SampleDiscrete(sampler.Get1D(), &lightPdf);
         if (lightPdf == 0) return Spectrum(0.f);
-    } else {
+    } 
+    else 
+    {
         lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
         lightPdf = Float(1) / nLights;
     }
@@ -120,10 +125,13 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     const std::shared_ptr<Light> &light = scene.lights[lightNum];
     Point2f uLight = sampler.Get2D();
     Point2f uScattering = sampler.Get2D();
-	// 采样单个光源，并除以其功率的概率密度（power_pdf），得到近似采样所有光源的结果
+
+	// 只在单个光源上采样一点(nSamples == 1), 估算其 Li; 并除以其功率的概率密度(power_pdf), 得到近似采样所有光源的结果
     return EstimateDirect(it, uScattering, *light, uLight,
                           scene, sampler, arena, handleMedia) / lightPdf;
 }
+
+
 
 // 计算单个 light 经由 isect 向 wo 方向发射的辐射度
 //
@@ -136,7 +144,7 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
 //    ------
 //    isect
 //
-// P797
+// P797, P851, P857(Figure 14.13, 使用多重重要性采样的优势)
 // 当 bsdf 呈镜面分布而光源分布较广时(环境光源)从 bsdf 采样较为高效
 // 当 bsdf 呈漫反射分布而光源较小时(点光源)从光源采样更高效
 // 因而使用多重重要性采样（MIS）分别对 light 和 bsdf 进行采样
@@ -156,33 +164,44 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     Vector3f wi;
     Float lightPdf = 0, scatteringPdf = 0;
     VisibilityTester visibility;
-	// 传入交点，在光源上选取一点，计算选到该点的概率密度，交点到该点的方向 wi、入射辐射度 Li 及可见性
+	// 传入交点 it，在光源上选取一点，计算选到该点的概率密度 lightPdf，交点到该点的方向 wi、入射辐射度 Li 及可见性
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
+
     VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li << ", wi: "
             << wi << ", pdf: " << lightPdf;
 
+    // light.Sample_Li + bsdf.f/Pdf
     if (lightPdf > 0 && !Li.IsBlack())
     {
         // Compute BSDF or phase function's value for light sample
-		// 计算 BSDF（如果交点在 surface 中）或相位函数（如果交点在 medium 中）的值
+		// 计算 BSDF（如果交点在 surface 上）或相位函数（如果交点在 medium 中）的值
         Spectrum f;
-        if (it.IsSurfaceInteraction()) {
+
+        if (it.IsSurfaceInteraction()) 
+        {
             // Evaluate BSDF for light sampling strategy
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
+
 			// 计算 f(p, wo, wi) * cos(eta_light_isect) 项
             f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
                 AbsDot(wi, isect.shading.n);
             scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
+
             VLOG(2) << "  surf f*dot :" << f << ", scatteringPdf: " << scatteringPdf;
-        } else {
+        } 
+        else 
+        {
             // Evaluate phase function for light sampling strategy
             const MediumInteraction &mi = (const MediumInteraction &)it;
             Float p = mi.phase->p(mi.wo, wi);
             f = Spectrum(p);
             scatteringPdf = p;
+
             VLOG(2) << "  medium p: " << p;
         }
-        if (!f.IsBlack()) {
+
+        if (!f.IsBlack()) // delta 分布的 bsdf 为 true???
+        {
             // Compute effect of visibility for light source sample
 			// visibility 负责处理光源上的采样点和交点的可见性问题，当两点不可见时 Li = 0
 			// 当需要考虑 medium 时，则调用 Tr(scene, sampler) 进一步计算 Li 的值
@@ -198,25 +217,29 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             }
 
             // Add light's contribution to reflected radiance
-            if (!Li.IsBlack()) {
+            if (!Li.IsBlack()) 
+            {
                 if (IsDeltaLight(light.flags))	// 如果是 delta 光源，无需使用 MIS
                     Ld += f * Li / lightPdf;	// return f * Li / lightPdf;
                 else {
-                    Float weight =
-                        PowerHeuristic(1, lightPdf, 1, scatteringPdf);	// 使用功率启发式方法计算权重
+                    Float weight = PowerHeuristic(1, lightPdf, 1, scatteringPdf);
                     Ld += f * Li * weight / lightPdf;
                 }
             }
         }
     }
 
+
     // Sample BSDF with multiple importance sampling
 	// 从 BSDF 部分进行多重重要性采样
-    if (!IsDeltaLight(light.flags)) 
+    // bsdf.Sample_f + light.Li/Pdf_Li
+    if (!IsDeltaLight(light.flags)) // 如果是 delta 分布的光源则无法采样到, 直接跳过
     {		   
         Spectrum f;
         bool sampledSpecular = false;
-        if (it.IsSurfaceInteraction()) {
+
+        if (it.IsSurfaceInteraction()) 
+        {
             // Sample scattered direction for surface interactions
             BxDFType sampledType;
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
@@ -227,7 +250,9 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 			// 计算 cos(eta_light_isect) 项
             f *= AbsDot(wi, isect.shading.n);
             sampledSpecular = (sampledType & BSDF_SPECULAR) != 0;
-        } else {
+        } 
+        else 
+        {
             // Sample scattered direction for medium interactions
             const MediumInteraction &mi = (const MediumInteraction &)it;
             Float p = mi.phase->Sample_p(mi.wo, &wi, uScattering);
@@ -236,16 +261,21 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         }
         VLOG(2) << "  BSDF / phase sampling f: " << f << ", scatteringPdf: " <<
             scatteringPdf;
-        if (!f.IsBlack() && scatteringPdf > 0) {
+
+        if (!f.IsBlack() && scatteringPdf > 0) 
+        {
             // Account for light contributions along sampled direction _wi_
 			// 计算沿采样方向 wi 的光照贡献
 
             Float weight = 1;
-            if (!sampledSpecular) {
+            if (!sampledSpecular) 
+            {
                 lightPdf = light.Pdf_Li(it, wi);	// 计算沿 wi 方向采样到 light 的概率
                 if (lightPdf == 0) return Ld;
                 weight = PowerHeuristic(1, scatteringPdf, 1, lightPdf);
             }
+            // else weight = 1; // 是镜面分布时, 无需使用 MIS, 或者看作赋予更大的权重???
+
 
             // Find intersection and compute transmittance
 			// 计算沿 wi 方向是否与（面积）光源相交
@@ -260,16 +290,20 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 			// 如果 wi 与面积光源相交，则需要进一步处理，否则直接计算 light 向 ray 方向发射的辐射度
             Spectrum Li(0.f);
             if (foundSurfaceInteraction) {
-                if (lightIsect.primitive->GetAreaLight() == &light)
+                if (lightIsect.primitive->GetAreaLight() == &light) // 如果这个区域光源正好是当前采样的光源   
                     Li = lightIsect.Le(-wi);
             } else
                 Li = light.Le(ray);
+
+
             if (!Li.IsBlack()) Ld += f * Li * Tr * weight / scatteringPdf;
         }
     }
 
     return Ld;
 }
+
+
 
 std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     const Scene &scene) 
@@ -284,6 +318,8 @@ std::unique_ptr<Distribution1D> ComputeLightPowerDistribution(
     return std::unique_ptr<Distribution1D>(
         new Distribution1D(&lightPower[0], lightPower.size()));
 }
+
+
 
 // SamplerIntegrator Method Definitions
 void SamplerIntegrator::Render(const Scene &scene) 
@@ -354,9 +390,10 @@ void SamplerIntegrator::Render(const Scene &scene)
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
 
-            // Loop over pixels in tile to render them
+            // Loop over pixels in tile to render them	
+            // 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
             for (Point2i pixel : tileBounds) 
-            {	// 遍历该二维包围盒上的每一个像素（Bounds2i 定义了相应的迭代器和 begin()、end() 函数）
+            {
                 {
                     ProfilePhase pp(Prof::StartPixel);
 					// 采样一个新的像素前，先对采样器进行一些设置
@@ -445,6 +482,8 @@ void SamplerIntegrator::Render(const Scene &scene)
 	// 渲染结束，保存图片
     camera->film->WriteImage();
 }
+
+
 
 Spectrum SamplerIntegrator::SpecularReflect(
     const RayDifferential &ray, const SurfaceInteraction &isect,
