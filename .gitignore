@@ -6,6 +6,5 @@ src/objs
 /build
 /.vs
 /.vscode
-/travel
 /out
 /CMakeSettings.json
