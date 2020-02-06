@@ -68,7 +68,7 @@ bool Sampler::StartNextSample() {
     // Starting at the first dimension of the next sample for the current pixel
     array1DOffset = array2DOffset = 0;
 
-    // 在到达预计的采样数量前, 都返回 true
+    // 在到达单个像素的采样数量前, 返回 true, 以此结束单个 pixelSample 的渲染
     return ++currentPixelSampleIndex < samplesPerPixel;
 }
 

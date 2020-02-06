@@ -47,6 +47,9 @@
 namespace pbrt {
 
 // ProjectionLight Declarations
+// 纹理投影光源, 效果参考 P725
+// The projection light acts like a slide projector, projecting an image onto objects in the scene.
+// 把这个光源当透视投影相机看, 会好理解点
 class ProjectionLight : public Light {
   public:
     // ProjectionLight Public Methods
@@ -69,8 +72,9 @@ class ProjectionLight : public Light {
     std::unique_ptr<MIPMap<RGBSpectrum>> projectionMap;
     const Point3f pLight;
     const Spectrum I;
+
     Transform lightProjection;
-    Float hither, yon;
+    Float hither, yon; // near, far
     Bounds2f screenBounds;
     Float cosTotalWidth;
 };

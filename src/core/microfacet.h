@@ -61,6 +61,7 @@ class MicrofacetDistribution {
 
     // 几何遮挡函数的辅助函数
     virtual Float Lambda(const Vector3f &w) const = 0;
+
     // P541, the Smith’s masking-shadowing function G1 gives the fraction of microfacets with normal ω_h that are visible from direction ω(wo or wi)
     // 大多数情况下微面元的可见性和其朝向是独立(无关)的, 所以这里省略了其法线 ω_h
     // 在大部分方向上(除了接近垂直于表面法线的方向), 其返回值都接近 1
@@ -79,12 +80,16 @@ class MicrofacetDistribution {
         return 1 / (1 + Lambda(wo) + Lambda(wi));
     }
 
+    // 根据出射方向 wo 采样法线
     virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
+
     Float Pdf(const Vector3f &wo, const Vector3f &wh) const;
+
     virtual std::string ToString() const = 0;
 
   protected:
     // MicrofacetDistribution Protected Methods
+    // P808, 默认只采样可见区域
     MicrofacetDistribution(bool sampleVisibleArea)
         : sampleVisibleArea(sampleVisibleArea) {}
 

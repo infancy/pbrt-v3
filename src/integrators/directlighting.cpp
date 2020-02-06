@@ -53,15 +53,15 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
             nLightSamples.push_back(sampler.RoundCount(light->nSamples));
 
         // Request samples for sampling all lights
-		// 在均匀采样所有光源前, 生成所有样本
+		// 在均匀采样所有光源前, 分配**单个像素**所有 pixelSample 对应的 SampleArray... 需要的空间
 
 		// Request2DArray() -> StartPixel() -> Get2DArray() -> StartNextSample()-----
-        //                                          ^                               v
+        //                                          ^                               |
 		//										    ^-------------------------------v
-		// 在渲染前由 Request2DArray() 计算需要的样本数组 sampler.sampleArray2D 的大小
-		// 在渲染每一个像素前调用 StartPixel()，初始化的同时生成样本
-		// 渲染像素中的某个采样点时调用 Get2DArray() 得到样本
-		// 渲染下一个采样点前调用 StartNextSample() 重置样本数组的下标
+		// 在渲染前由 Request2DArray() 计算单个像素需要的样本数组 sampler.sampleArray2D 的大小
+		// 在渲染每一个像素前调用 StartPixel()，生成这个像素的采样点(GenerateAllSamplesOfThisPixel)
+		//     渲染像素中的每个采样点时调用 Get2DArray() 得到样本
+		//     渲染下一个采样点前调用 StartNextSample() 重置样本数组的下标
 		// 采样器的这部分方法与渲染的整个流程紧密相关，可以结合 SamplerIntegrator::Render(const Scene &scene) 理解
         for (int i = 0; i < maxDepth; ++i) 
         {
@@ -69,6 +69,10 @@ void DirectLightingIntegrator::Preprocess(const Scene &scene,
             {
                 sampler.Request2DArray(nLightSamples[j]);
                 sampler.Request2DArray(nLightSamples[j]);
+
+                // inergrator.cpp UniformSampleAllLights
+                // const Point2f *uLightArray      = sampler.Get2DArray(nSamples);
+                // const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
             }
         }
     }
@@ -97,7 +101,7 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
     // Compute scattering functions for surface interaction
 	// 根据表面交点上的材质计算 bsdf
     isect.ComputeScatteringFunctions(ray, arena);
-    if (!isect.bsdf)
+    if (!isect.bsdf) // 碰到了参与介质, 就继续传播
         return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
 
     Vector3f wo = isect.wo;
@@ -126,6 +130,8 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential &ray,
 
     return L;
 }
+
+
 
 DirectLightingIntegrator *CreateDirectLightingIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,

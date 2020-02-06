@@ -59,8 +59,10 @@ std::unique_ptr<Sampler> RandomSampler::Clone(int seed) {
     return std::unique_ptr<Sampler>(rs);
 }
 
-void RandomSampler::StartPixel(const Point2i &p) {
+void RandomSampler::StartPixel(const Point2i &p) 
+{
     ProfilePhase _(Prof::StartPixel);
+
     for (size_t i = 0; i < sampleArray1D.size(); ++i)
         for (size_t j = 0; j < sampleArray1D[i].size(); ++j)
             sampleArray1D[i][j] = rng.UniformFloat();
@@ -68,6 +70,7 @@ void RandomSampler::StartPixel(const Point2i &p) {
     for (size_t i = 0; i < sampleArray2D.size(); ++i)
         for (size_t j = 0; j < sampleArray2D[i].size(); ++j)
             sampleArray2D[i][j] = {rng.UniformFloat(), rng.UniformFloat()};
+
     Sampler::StartPixel(p);
 }
 

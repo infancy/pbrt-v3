@@ -60,8 +60,9 @@ class PathIntegrator : public SamplerIntegrator {
 
   private:
     // PathIntegrator Private Data
-    const int maxDepth;
+    const int maxDepth; // 最大递归深度, 当达到该深度时, 即便没有因为 Russian Roulette 而停止, 也会终止这条路径
     const Float rrThreshold;	// Russian Roulette Threshold，俄罗斯轮盘赌的阀限
+
     const std::string lightSampleStrategy;
     std::unique_ptr<LightDistribution> lightDistribution;
 };

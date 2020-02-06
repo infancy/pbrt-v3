@@ -50,6 +50,7 @@
 namespace pbrt {
 
 // Integrator Declarations
+// P806, evaluating the integral equation that describes the equilibrium distribution of radiance in an environment
 class Integrator {
   public:
     // Integrator Interface
@@ -85,12 +86,15 @@ class SamplerIntegrator : public Integrator {
                       std::shared_ptr<Sampler> sampler,
                       const Bounds2i &pixelBounds)
         : camera(camera), sampler(sampler), pixelBounds(pixelBounds) {}
+
     virtual void Preprocess(const Scene &scene, Sampler &sampler) {}
     void Render(const Scene &scene);
+
 	// 计算沿这条光线的辐射度
     virtual Spectrum Li(const RayDifferential &ray, const Scene &scene,
                         Sampler &sampler, MemoryArena &arena,
                         int depth = 0) const = 0;
+
     Spectrum SpecularReflect(const RayDifferential &ray,
                              const SurfaceInteraction &isect,
                              const Scene &scene, Sampler &sampler,

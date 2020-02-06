@@ -46,7 +46,7 @@
 namespace pbrt {
 
 // LightStrategy Declarations
-// 对光源进行采样的策略
+// P852, 对光源进行采样的策略(每次都采样所有光源, 或随机采样一个光源), 各有各的优势
 enum class LightStrategy { UniformSampleAll, UniformSampleOne };
 
 // DirectLightingIntegrator Declarations
@@ -60,6 +60,7 @@ class DirectLightingIntegrator : public SamplerIntegrator {
         : SamplerIntegrator(camera, sampler, pixelBounds),
           strategy(strategy),
           maxDepth(maxDepth) {}
+
     Spectrum Li(const RayDifferential &ray, const Scene &scene,
                 Sampler &sampler, MemoryArena &arena, int depth) const;
     void Preprocess(const Scene &scene, Sampler &sampler);
@@ -67,8 +68,8 @@ class DirectLightingIntegrator : public SamplerIntegrator {
   private:
     // DirectLightingIntegrator Private Data
     const LightStrategy strategy;
-    const int maxDepth;
-    std::vector<int> nLightSamples; // 记录需要对每个光源进行采样的数量，用于 uniform_sample_all_lights
+    const int maxDepth; // 对完美镜面分布(delta 分布)的最大递归深度
+    std::vector<int> nLightSamples; // 记录需要对每个光源进行采样的数量，用于 LightStrategy::UniformSampleAll, uniform_sample_all_lights
 };
 
 DirectLightingIntegrator *CreateDirectLightingIntegrator(

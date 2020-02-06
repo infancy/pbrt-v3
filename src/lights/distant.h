@@ -47,7 +47,7 @@
 namespace pbrt {
 
 // DistantLight Declarations
-// 平行光源/有向光源(太阳光...)
+// 平行光源/方向光源(太阳光..., 假设它处于距场景无穷远的真空中, 到达场景的光线都是近似平行的), LightFlags::DeltaDirection
 class DistantLight : public Light {
   public:
     // DistantLight Public Methods
@@ -55,7 +55,7 @@ class DistantLight : public Light {
                  const Vector3f &w);
     void Preprocess(const Scene &scene) 
     {
-        scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius);
+        scene.WorldBound().BoundingSphere(&worldCenter, &worldRadius); // 据此计算总功率
     }
     Spectrum Sample_Li(const Interaction &ref, const Point2f &u, Vector3f *wi,
                        Float *pdf, VisibilityTester *vis) const;
@@ -69,8 +69,9 @@ class DistantLight : public Light {
 
   private:
     // DistantLight Private Data
-    const Spectrum L;
-    const Vector3f wLight;
+    const Spectrum L; // 该方向上的辐射度
+    const Vector3f wLight; // 在世界空间中的方向
+
     Point3f worldCenter;
     Float worldRadius;
 };

@@ -59,7 +59,7 @@ Light::~Light() {}
 
 bool VisibilityTester::Unoccluded(const Scene &scene) const 
 {
-    // 如果从 p0 到 p1 的光线未与场景物体相交, 则这两个点是可见的???
+    // 如果从 p0 到 p1 的光线未与场景物体相交, 则这两个点是可见的
     return !scene.IntersectP(p0.SpawnRayTo(p1));
 }
 
@@ -72,16 +72,19 @@ Spectrum VisibilityTester::Tr(const Scene &scene, Sampler &sampler) const
     {
         SurfaceInteraction isect;
         bool hitSurface = scene.Intersect(ray, &isect);
+
         // Handle opaque surface along ray's path
-		// 沿着光线的路径处理不透明的表面
+        // 如果光线前进时碰到了不透明的表面(即便是半透明的, 也会发射折射), 则两点不可见
         if (hitSurface && isect.primitive->GetMaterial() != nullptr)
             return Spectrum(0.0f);
 
         // Update transmittance for current ray segment
+        // surfaces with a nullptr material pointer should be ignored in ray
+        // visibility tests, as those surfaces are only used to bound the extent of participating media
         if (ray.medium) Tr *= ray.medium->Tr(ray, sampler);
 
         // Generate next ray segment or return final transmittance
-		// 当从 p1 所处的位置生成的光线与场景物体相交时，退出循环
+		// 如果没有再碰到任何(可见)表面, 则从 p0 开始的光线到达了 p1, 退出循环; 否则继续测试
         if (!hitSurface) 
             break;
 

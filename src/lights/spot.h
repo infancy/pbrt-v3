@@ -46,6 +46,8 @@
 namespace pbrt {
 
 // SpotLight Declarations
+// 聚光灯, 只在圆锥内辐射能量的点光源
+// 聚光灯处于其对象空间的源点, 朝向 +z 方向
 class SpotLight : public Light {
   public:
     // SpotLight Public Methods
@@ -66,7 +68,7 @@ class SpotLight : public Light {
     // SpotLight Private Data
     const Point3f pLight;
     const Spectrum I;
-    const Float cosTotalWidth, cosFalloffStart;
+    const Float cosTotalWidth, cosFalloffStart; // P722, Figure12.8:  falloffStart <= totalWidth
 };
 
 std::shared_ptr<SpotLight> CreateSpotLight(const Transform &l2w,

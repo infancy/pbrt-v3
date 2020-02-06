@@ -67,7 +67,7 @@ class PointLight : public Light {
   private:
     // PointLight Private Data
     const Point3f pLight;
-    const Spectrum I;
+    const Spectrum I; // 点光源的辐射强度, 即点光源在单位立体角上的辐射功率
 };
 
 std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world,

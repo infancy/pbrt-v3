@@ -58,7 +58,7 @@ void PlasticMaterial::ComputeScatteringFunctions(
         si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(kd));
 
     // Initialize specular component of plastic material
-    Spectrum ks = Ks->Evaluate(*si).Clamp();
+    Spectrum ks = Ks->Evaluate(*si).Clamp(); // 如何保证能量守恒???
     if (!ks.IsBlack()) 
     {
         Fresnel *fresnel = ARENA_ALLOC(arena, FresnelDielectric)(1.5f, 1.f);

@@ -44,7 +44,8 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
                                      const Spectrum &L, int nSamples,
                                      const std::string &texmap)
     : Light((int)LightFlags::Infinite, LightToWorld, MediumInterface(),
-            nSamples) {
+            nSamples) 
+{
     // Read texel data from _texmap_ and initialize _Lmap_
     Point2i resolution;
     std::unique_ptr<RGBSpectrum[]> texels(nullptr);
@@ -61,6 +62,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
     }
     Lmap.reset(new MIPMap<RGBSpectrum>(resolution, texels.get()));
 
+
     // Initialize sampling PDFs for infinite area light
 
     // Compute scalar-valued image _img_ from environment map
@@ -68,10 +70,13 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
     std::unique_ptr<Float[]> img(new Float[width * height]);
     float fwidth = 0.5f / std::min(width, height);
     ParallelFor(
-        [&](int64_t v) {
+        [&](int64_t v) 
+        {
             Float vp = (v + .5f) / (Float)height;
             Float sinTheta = std::sin(Pi * (v + .5f) / height);
-            for (int u = 0; u < width; ++u) {
+
+            for (int u = 0; u < width; ++u) 
+            {
                 Float up = (u + .5f) / (Float)width;
                 img[u + v * width] = Lmap->Lookup(Point2f(up, vp), fwidth).y();
                 img[u + v * width] *= sinTheta;
@@ -80,6 +85,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform &LightToWorld,
         height, 32);
 
     // Compute sampling distributions for rows and columns of image
+    // 通过 distribution2d 使光源的概率分布尽可能匹配其功率分布, 以减少积分时的方差
     distribution.reset(new Distribution2D(img.get(), width, height));
 }
 
@@ -89,7 +95,8 @@ Spectrum InfiniteAreaLight::Power() const {
                     SpectrumType::Illuminant);
 }
 
-Spectrum InfiniteAreaLight::Le(const RayDifferential &ray) const {
+Spectrum InfiniteAreaLight::Le(const RayDifferential &ray) const 
+{
     Vector3f w = Normalize(WorldToLight(ray.d));
     Point2f st(SphericalPhi(w) * Inv2Pi, SphericalTheta(w) * InvPi);
     return Spectrum(Lmap->Lookup(st), SpectrumType::Illuminant);
@@ -97,8 +104,10 @@ Spectrum InfiniteAreaLight::Le(const RayDifferential &ray) const {
 
 Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
                                       Vector3f *wi, Float *pdf,
-                                      VisibilityTester *vis) const {
+                                      VisibilityTester *vis) const 
+{
     ProfilePhase _(Prof::LightSample);
+
     // Find $(u,v)$ sample coordinates in infinite light texture
     Float mapPdf;
     Point2f uv = distribution->SampleContinuous(u, &mapPdf);
@@ -121,8 +130,10 @@ Spectrum InfiniteAreaLight::Sample_Li(const Interaction &ref, const Point2f &u,
     return Spectrum(Lmap->Lookup(uv), SpectrumType::Illuminant);
 }
 
-Float InfiniteAreaLight::Pdf_Li(const Interaction &, const Vector3f &w) const {
+Float InfiniteAreaLight::Pdf_Li(const Interaction &, const Vector3f &w) const 
+{
     ProfilePhase _(Prof::LightPdf);
+    
     Vector3f wi = WorldToLight(w);
     Float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
     Float sinTheta = std::sin(theta);
@@ -133,8 +144,10 @@ Float InfiniteAreaLight::Pdf_Li(const Interaction &, const Vector3f &w) const {
 
 Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
                                       Float time, Ray *ray, Normal3f *nLight,
-                                      Float *pdfPos, Float *pdfDir) const {
+                                      Float *pdfPos, Float *pdfDir) const 
+{
     ProfilePhase _(Prof::LightSample);
+
     // Compute direction for infinite light sample ray
     Point2f u = u1;
 
@@ -163,8 +176,10 @@ Spectrum InfiniteAreaLight::Sample_Le(const Point2f &u1, const Point2f &u2,
 }
 
 void InfiniteAreaLight::Pdf_Le(const Ray &ray, const Normal3f &, Float *pdfPos,
-                               Float *pdfDir) const {
+                               Float *pdfDir) const 
+{
     ProfilePhase _(Prof::LightPdf);
+
     Vector3f d = -WorldToLight(ray.d);
     Float theta = SphericalTheta(d), phi = SphericalPhi(d);
     Point2f uv(phi * Inv2Pi, theta * InvPi);
