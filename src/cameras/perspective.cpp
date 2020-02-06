@@ -141,7 +141,7 @@ image(像平面)
                                    *         *                   |
                |            *           *                        |
                |     *             *                             |
-   len sample->|*              *     center ray                  |
+   len sample->|*              *     primary ray                 |
                |          *                                      |
                |      *                                          |
                |  *                                              |
@@ -149,7 +149,7 @@ image(像平面)
                |
                |
                |
-             lens
+             lens(z = 0)
 
 先使用穿过透镜中心的主光线(这条光线不会发生折射)确定焦平面的采样位置，
 再根据 len sample 和 scene sample 生成采样光线, 发射到场景中进行采样
