@@ -236,6 +236,7 @@ std::string SpecularTransmission::ToString() const {
 Spectrum LambertianReflection::f(const Vector3f &wo, const Vector3f &wi) const 
 {
     // TODO: f(wo, wi) = rho_d / \int cos theta_o d omega_o = R / InvPi
+    // ²Î¿¼ MatteMaterial, ¼´ Kd * InvPi
     return R * InvPi;
 }
 

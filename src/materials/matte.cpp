@@ -55,6 +55,8 @@ void MatteMaterial::ComputeScatteringFunctions(SurfaceInteraction *si,
     // 这里用 MemoryArena 对象来分配内存
     si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
 
+    // 反射率 albedo 的大小由反射率纹理 Kd 来控制
+    // Spectrum LambertianReflection::f(const Vector3f &wo, const Vector3f &wi) const { return R * InvPi;}
     Spectrum r = Kd->Evaluate(*si).Clamp();
     Float sig = Clamp(sigma->Evaluate(*si), 0, 90);
 
