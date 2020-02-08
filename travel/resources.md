@@ -1,79 +1,16 @@
 # resources of ray tracing and more
 
-## pbrt
-
-### pbrt
-
-- code: https://github.com/mmp/pbrt-v3
-- book: http://www.pbr-book.org/3ed-2018/contents.html
-- errata: https://www.pbrt.org/errata-3ed.html
-- courses: https://www.pbrt.org/courses.html
-
-### 中文翻译&笔记
-
-- https://github.com/zq317157782/raiden
-- https://book.douban.com/subject/26974215/
-- https://zhuanlan.zhihu.com/wayonpbrt
-- https://www.zhihu.com/people/lou-jia-jie-95/posts
-- https://www.qiujiawei.com/
-
-## detail
-
-- Moving Frostbite to PBR
-- https://www.scratchapixel.com/lessons/digital-imaging/colors
-
-### light sources
-
-### light transport
-
-- https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing
-
-### monte carlo integration
-
-- https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/monte-carlo-methods-in-practice/monte-carlo-methods
-
-### ray–object intersections, acceleration structures and more
-
-- 用线性代数知识解决光线和三角形的交点问题: https://www.qiujiawei.com/triangle-intersect/
-
-- 微分几何与渲染(1): https://www.qiujiawei.com/partial-derivatives/
-
-- https://www.qiujiawei.com/bvh-1/
-- https://www.qiujiawei.com/bvh-2/
-
-### material and texture
-
-- https://zhuanlan.zhihu.com/p/53086060
-- https://belcour.github.io/blog/research/2018/05/05/brdf-realtime-layered.html
-
-### surface scattering
-
-- 基于物理着色: https://zhuanlan.zhihu.com/p/20091064
-- 基于物理着色：BRDF https://zhuanlan.zhihu.com/p/21376124
-
-### camera
-
-### sampling and reconstruction
-
-- 低差异序列（一）- 常见序列的定义及性质: https://zhuanlan.zhihu.com/p/20197323
-- 低差异序列（二）- 高效实现以及应用: https://zhuanlan.zhihu.com/p/20374706
-- http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
-
-
-
-## more
-
-### introduce
+## introduce
 
 - https://en.wikipedia.org/wiki/Ray_tracing_(graphics)
 
-### tutorials
+## tutorials
 
 - https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-overview
 - http://www.smallvcm.com/
 - https://github.com/hi2p-perim/minpt
 
-### courses
+## courses
 
 - https://github.com/prakhar1989/awesome-courses#computer-graphics
 
@@ -98,7 +35,21 @@
 
 - http://am207.github.io/2016/index.html
 
-### book
+
+
+## 学者/实验室
+
+[fun-with-graphics/Researchers](https://github.com/FancyVin/fun-with-graphics#head9)
+
+[Kun Xu(徐昆)](https://cg.cs.tsinghua.edu.cn/people/~kun/)
+[Lingqi Yan(闫令琪)](https://sites.cs.ucsb.edu/~lingqi/)
+[Rui Wang(王锐)](http://www.cad.zju.edu.cn/home/rwang/)
+[Toshiya Hachisuka](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/) : PPM, SPPM, 
+[Yuanming Hu(胡渊鸣)](http://taichi.graphics/me/)
+
+
+
+## book
 
 - 《Ray Tracing from the Ground Up》: http://www.raytracegroundup.com/
 - 《Fundamentals of Computer Graphics, Fourth Edition》: https://book.douban.com/subject/26868819/
@@ -109,15 +60,16 @@
 - 《Real-Time Rendering》: http://www.realtimerendering.com/
 - 《Ray Tracing Gems》: http://raytracinggems.com/
 
-### scene
+
+
+## scene
 
 - https://www.pbrt.org/resources.html
 - https://casual-effects.com/data/
 - https://benedikt-bitterli.me/resources/
 
-### real time raytracing
 
-### renderers
+## renderers
 
 - mitsuba: http://www.mitsuba-renderer.org/
 - mitsuba2: https://rgl.epfl.ch/publications/NimierDavidVicini2019Mitsuba2
@@ -132,7 +84,7 @@
 - Maxwell Render
 - Arnold
 
-### projects
+## projects
 
 - Embree
 - OptiX
@@ -141,7 +93,7 @@
 - https://github.com/xelatihy/yocto-gl
 - https://google.github.io/filament/
 
-### blog ...
+## blog ...
 
 - https://blog.selfshadow.com/
 - https://interplayoflight.wordpress.com/
@@ -168,7 +120,13 @@
 - https://corona-renderer.com/forum
 - https://ompf2.com/
 
-### 更多资料
+
+
+## real time raytracing
+
+
+
+## 更多资料
 
 - https://github.com/ericjang/awesome-graphics
 - https://github.com/FancyVin/fun-with-graphics
@@ -177,3 +135,43 @@
 - https://github.com/mattdesl/graphics-resources
 - https://extremeistan.wordpress.com/2014/05/11/realtime-global-illumination-techniques-collection/
 - http://blog.hvidtfeldts.net/index.php/generative-art-links/
+
+
+
+# Paper
+
+[游戏程序员的自我修养](https://neil3d.gitee.io/reading/index.html)
+
+## overview
+
+[The Path to Path-Traced Movies]()
+
+[Phong]()
+[Blinn-Phong]()
+
+## ray tracing
+[1968 ray cast]
+[1979 recursive ray tracing]
+[1984 stochastic ray tracing]
+[]()
+
+[2001 Realistic Image Synthesis Using Photon Mapping]()
+[2008 PPM: Progressive Photon Mapping](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/ppm.pdf)
+[2009 SPPM: ]()
+
+[2012 VCM: Light Transport Simulation with Vertex Connection and Merging](http://iliyan.com/publications/VertexMerging)
+[2016 ups-vcm_mcmc: Robust Light Transport Simulation via Metropolized Bidirectional Estimators](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/ups-vcm_mcmc.pdf)
+
+## monte carlo methods
+
+[Veach97: Robust monte carlo methods for light transport simulation](https://graphics.stanford.edu/papers/veach_thesis/)
+
+### bias
+
+[理解–偏差[bias]–的关键是什么](http://readers.thegibook.org/t/topic/55)
+
+[2013 Five Common Misconceptions about Bias in Light Transport Simulation]()
+
+## BRDF
+
+[Cook-Torrance82: A Reflectance Model for Computer Graphics](http://inst.cs.berkeley.edu/~cs294-13/fa09/lectures/cookpaper.pdf)

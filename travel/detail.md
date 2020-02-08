@@ -1,7 +1,7 @@
 <!--
 -->
 
-# pbrt-v3 阅读笔记(三): 更多细节
+# pbrt-v3 阅读笔记(二): 更多细节
 
 tree_crown.jpg
 
@@ -15,7 +15,16 @@ tree_crown.jpg
 类似的, sampler, camera, light 等都通过各自的接口隐藏了其细节, 让我们可以把注意力集中在某一点上, 而不必了解整个系统的所有细节
 通过接口把细节隐藏起来, 不然没法读下去
 
-# Geometry
+
+# 引论和模块划分
+
+第一章的 1.7 小结和每一章的 Further Reading 都会介绍这一章内容的历史发展, 梳理脉络, 非常有意义
+
+## 资源和引用
+
+[]()
+
+# 第一部分: Geometry
 
 ## 几何 & 变换
 
@@ -33,17 +42,26 @@ todo
 
 ## 光线加速结构
 
+## 资源和引用
+
+[]()
 
 
-# spectrum/radiance
+# 第二部分: spectrum/radiance
 
 
+## 资源和引用
 
-# sample/filter/denoise
+[]()
+
+# 第三部分: sample/filter/denoise
 
 
+## 资源和引用
 
-# Camera/Light
+[]()
+
+# 第四部分: Camera/Light
 
 ## Camera
 
@@ -53,7 +71,12 @@ todo
 
 在 pbrt-v3 里, 如果某个 shape 是 AreaLight 的话, 那它必须一整个都是 AreaLight. 
 
-# Shading
+## 资源和引用
+
+[]()
+
+
+# 第五部分: Shading
 
 ## BRDFs
 
@@ -70,6 +93,91 @@ todo
 
 圆锥型传感器 => 光线型传感器
 
-# Rendering
+## 资源和引用
+
+[基于物理着色：BRDF](https://zhuanlan.zhihu.com/p/21376124)
+
+[BRDF - Wakapon](http://wiki.nuaj.net/index.php?title=BRDF)
+
+[More DETAILS! PBR的下一个发展在哪里？](https://zhuanlan.zhihu.com/p/32209554)
+
+[]()
+
+[]()
+
+[]()
+
+[]()
 
 
+
+# 第六部分: Rendering
+
+## 资源和引用
+
+[]()
+
+
+
+# more
+
+
+
+# 资源和引用
+
+## pbrt
+
+- code: https://github.com/mmp/pbrt-v3
+- book: http://www.pbr-book.org/3ed-2018/contents.html
+- errata: https://www.pbrt.org/errata-3ed.html
+- courses: https://www.pbrt.org/courses.html
+
+## 中文翻译&笔记
+
+- https://github.com/zq317157782/raiden
+- https://book.douban.com/subject/26974215/
+- https://zhuanlan.zhihu.com/wayonpbrt
+- https://www.zhihu.com/people/lou-jia-jie-95/posts
+- https://www.qiujiawei.com/
+
+# detail
+
+- Moving Frostbite to PBR
+- https://www.scratchapixel.com/lessons/digital-imaging/colors
+
+## light sources
+
+## light transport
+
+- https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing
+
+## monte carlo integration
+
+- https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/monte-carlo-methods-in-practice/monte-carlo-methods
+
+## ray–object intersections, acceleration structures and more
+
+- 用线性代数知识解决光线和三角形的交点问题: https://www.qiujiawei.com/triangle-intersect/
+
+- 微分几何与渲染(1): https://www.qiujiawei.com/partial-derivatives/
+
+- https://www.qiujiawei.com/bvh-1/
+- https://www.qiujiawei.com/bvh-2/
+
+## material and texture
+
+- https://zhuanlan.zhihu.com/p/53086060
+- https://belcour.github.io/blog/research/2018/05/05/brdf-realtime-layered.html
+
+## surface scattering
+
+- 基于物理着色: https://zhuanlan.zhihu.com/p/20091064
+- 基于物理着色：BRDF https://zhuanlan.zhihu.com/p/21376124
+
+## camera
+
+## sampling and reconstruction
+
+- 低差异序列（一）- 常见序列的定义及性质: https://zhuanlan.zhihu.com/p/20197323
+- 低差异序列（二）- 高效实现以及应用: https://zhuanlan.zhihu.com/p/20374706
+- http://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/

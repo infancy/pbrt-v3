@@ -1,14 +1,17 @@
 <!--
-pbrt-v3 阅读笔记(一)
-
 假设读者已经了解了一点内容, 不然要讲的东西太多了
 面向知识本身吧, 不然太难写了
 讲到直接光照
 
+前文尽量不要依赖于后文
+
 ## 蒙特卡洛积分
 -->
 
-# 基础概念
+# pbrt-v3 阅读笔记(一): 主要知识
+
+
+## 基础概念
 
 root.jpg
 
@@ -34,11 +37,11 @@ class Transform;
 
 ```
 
-限于篇幅, 这里没有按历史介绍光线投射(ray cast), 递归光线跟踪(recursive ray tracing), 随机光线跟踪(stochastic ray tracing) 等内容, 以上算法可以参考 [Ray Tracing Essentials, Part 1: Basics of Ray Tracing(中文字幕)][RTE1], [][GIBook]
+限于篇幅, 这里没有按历史介绍光线投射(ray cast), 递归光线跟踪(recursive ray tracing), 随机光线跟踪(stochastic ray tracing) 等内容, 以上算法可以参考 [Ray Tracing Essentials, Part 1: Basics of Ray Tracing(中文字幕)][RTE1], [全局光照技术进化史1-光线追踪篇][GIBook]
 
-## 经典的 Phong 光照模型(向量, 矩阵, 坐标/空间变换, 相机, 图像)
+## 1. 经典的 Phong 光照模型(向量, 矩阵, 坐标/空间变换, 相机, 图像)
 
-## 简单的光线跟踪程序(光线跟踪, 光线-对象相交, )
+## 2. 简单的光线跟踪程序(光线跟踪, 光线-对象相交, )
 
 回顾一个简单的光线跟踪实例, 我们会设置一个场景(scene), 场景中包含相机(camera), 若干个光源(lights)和要渲染的模型(models)
 
@@ -64,6 +67,20 @@ class Renderer
 };
 ```
 
+
+
+## 3. 基于物理的渲染
+
+能量守恒
+
+![](img/wikipedia_raytracing_variant.png)
+
+<font size=2 color="gray">wikipedia, 略有修改</font>
+
+让我们从这个场景开始讲起吧, 可以看到
+
+
+
 很多简化, 假设, 在一开始学习时是有帮助的, 就好像我们中学时学的是牛顿三大定律而非相对论, 几何光学而非波动光学一样, 可以
 
 如果把这个程序和现实世界联系在一起, 会发现它有很多不足之处(或者说过于理想): 
@@ -83,64 +100,137 @@ class Renderer
 
 你可以以后再回过头来看这个修改的意义
 
+## 资源和引用
+
+[如何开始学习图形学编程](https://zhuanlan.zhihu.com/p/55518151)([原文](https://erkaman.github.io/posts/beginner_computer_graphics.html))
+[系统的学习计算机图形学，有哪些不同阶段的书籍的推荐？](https://www.zhihu.com/question/26720808)
+[]()
+[]()
+[]()
 
 
+[图形学课程列表](https://www.zhihu.com/question/26720808/answer/761502017)
+[fun-with-graphics](https://github.com/FancyVin/fun-with-graphics)
 
-# 基于物理的渲染
+[GAMES在线课程——现代计算机图形学入门](http://games-cn.org/intro-graphics/)
+[UCSB CS291A: Real-Time High Quality Rendering](http://www.cs.ucsb.edu/~lingqi/teaching/cs291a.html)
+[Stanford CS148: Introduction to Computer Graphics and Imaging](https://web.stanford.edu/class/cs148/index.html)
+[Stanford CS348b: Image Synthesis Techniques](http://graphics.stanford.edu/courses/cs348b/)
+[Dartmouth CS77/117: Computer Graphics](https://canvas.dartmouth.edu/courses/37957/files/folder/slides)
+[Dartmouth CS87/187: Rendering Algorithms](https://canvas.dartmouth.edu/courses/35073/files/folder/Slides)([Rendering Competition](https://www.cs.dartmouth.edu/~rendering-competition/))
+[Berkeley cs184/284a: Computer Graphics and Imaging](https://cs184.eecs.berkeley.edu/sp19)
 
-能量守恒
+[Ray Tracing Essentials, Part 1: Basics of Ray Tracing(中文字幕)][RTE1]: 通过视频简介光线跟踪算法的历史
+[全局光照技术进化史1-光线追踪篇][GIBook]: <全局光照技术>一书中对光线跟踪的历史简介
 
-![](img/wikipedia_raytracing_variant.png)
-
-让我们从这个场景开始讲起吧, 可以看到
-
+[Ray Tracing in One Weekend Series](https://raytracing.github.io/): 大概是目前最简洁的光线跟踪教程
+[Learn OpenGL](https://learnopengl-cn.github.io/)([原博客](https://learnopengl.com/))
 
 
-# 场景一: 自发光
+[编译 pbrt-v3]()
+[编译 mitsuba]()
+
+
+[RTE1]: https://developer.nvidia.com/rtx/raytracing-essentials-part1/cn
+[GIBook]: https://zhuanlan.zhihu.com/p/24063586
+
+# 场景一: 只包含相机和光源
 
 ![](img/wikipedia_raytracing_emitted1.png)
 
-<font size=2>图 wikipedia_raytracing_emitted1, 这里请先忽略掉右下的物体</font>
-
-
+<!--
+需要的时候才加上解释
+-->
+<font size=2 color="gray">图 wikipedia_raytracing_emitted1, 这里请先忽略掉右下的物体</font>
 
 下面我们就先考虑整个场景只包含光源的情况, 这种情况下 Film 上自然也只有光源, 这样就只需要考虑相机和光源的关系了, 即(这里为了统一, 光线是从相机指向光源的, 与现实中相反):
 
 ![](img/wikipedia_raytracing_emitted2.png)
 
-<!--需要的时候再加 Figure...
-图 wikipedia_raytracing_emitted1
--->
 
-## 人眼的成像原理
+虽然图上画了一个比较大的光源, 但为了方便分析, 我们可以把它当作是理想的点光源, 那光源射向相机的, 也就只有一条光线.
 
+## 相机的成像原理
+
+
+### 1. 针孔相机
 在分析人眼之前, 我们不妨先来看看相机的成像原理
 
 当然, 在实际开发时, 我们一般把图像平面 Film 放在 Camera 前面, 这样更方便计算
 
+<details><summary><b>* 拓展 </b></summary><p>
+
+针孔相机确实是可以工作的
+
+</p></details>
+
+
+### 2. 数码相机
+
+虽然针孔相机也可以工作, 但现实中常用的数码相机, 一般是采用薄透镜模组作为
+
+图像处理器: 光信号转换为电信号
+
+<!--
 数码相机的简单理解
 薄透镜
 DCC, CMOS 传感器的工作原理
 
+上面是一张人眼的示意图, 晶状体, 视网膜...比较, 我们可以直观的看到, 人眼的成像其实类似于数码相机, 视网膜接受到光信号后, 由大脑形成最后的视觉, 也就是各种各样的颜色. 这里有一点非常重要, 那就是颜色是在人的视觉中枢中形成的, 视网膜上接受的只是一段电磁波而已.
+-->
+
+### 3. 人的视觉
+
+在简单分析了数码相机的成像原理后, 我们来看看人的视觉是如何工作
+
+人眼的成像原理.
 
 ![](img/eye.jpg)
 
-上面是一张人眼的示意图, 晶状体, 视网膜...比较, 我们可以直观的看到, 人眼的成像其实类似于数码相机, 视网膜接受到光信号后, 由大脑形成最后的视觉, 也就是各种各样的颜色. 这里有一点非常重要, 那就是颜色是在人的视觉中枢中形成的, 视网膜上接受的只是一段电磁波而已.
+外界的光信号最后会, 最后光线汇聚到眼球后方的视网膜上
 
-换句话说, **颜色是人的主观感觉, 可见光并不是颜色**
+![](img/eye_nerve.jpg)
+
+在这之后, 视网膜还会继续通过, 将传送给视觉神经中枢, 在视觉中枢中才会形成最后的视觉. 在这个过程中, 眼球同时承担了收集和采集光信号的作用.
+
+![](img/camera_eye_light.jpg)
+
+<font size=2 color="gray"> 数码相机的传感器应该集成在主板上, 左侧 '3' 代表的导线只是方便示意而已 </font>
+
+我们可以通过上面这张图来比较数码相机和人类的视觉系统, 两者有很大的相似之处, 都通过一个镜头(薄透镜/视网膜)收集光信号, 通过传感器(图像传感器/视网膜)采集信号, 处理器(图像处理器/视觉神经中枢)来处理信号. 当然, 以上都是简略的分析, 还有很多细节未涉及到.
+
+<details><summary><b>* 拓展</b></summary><p>
+</p></details>
+
+
+在这里笔者想强调一个重点, 那就是视觉是在视神经中枢形成的, 我们所看到的五颜六色的世界, 眼球接受到的仅仅只是光信号而已, 换句话说, **颜色是人的主观感觉, 可见光并不是颜色**
 
 <!--
 不知道读到这里, 您会不会有一点反应不过来, 
 -->
 笔者在第一次认识到这一点时, 是有点反应不过来的, 毕竟无论是自己长期的生活经验, 还是中学的光学课程, 都让笔者形成了可见光就是颜色的看法, 忽然要重新认识这两者的关系, 打破以往长期的生活经验, 还是有点不适应的.(多少有点像第一次听到相对论的概念一样)
 
+如果您也有类似困惑的话, 请继续阅读下面的拓展部分
+
+<details><summary><b>* 拓展</b></summary><p>
+
+### 视网膜
+
 这里不妨多举几个例子, 譬如狗只有..., 只能看到黑白的世界; 墨鱼/鸟类的视网膜上有四种感光细胞, 可以感知到更多的光线, 有比人眼更丰富的颜色; 蜜蜂能看到紫外线, 帮助它们寻找花粉...
 
+<!--
 **可见光是客观存在的**, 是空间中的一段电磁波. 而大千世界的生物具体感知到了什么, 则取决于它们自己, 具体到人类, 看到了颜色, **颜色是人的主观感受**
 
 不过为了实现基于物理的渲染, 与笔者有着类似观念的读者们, 需要好好重新认识可见光和颜色的关系
+-->
 
-## 光是什么
+</p></details>
+
+
+
+## 从光源射向相机的光线
+
+在上一小结, 我们简单介绍了成像原理, 以及光和颜色的关系, 下面
 
 人眼所能看到的光, 是电磁波中 300nm 到 700nm 左右的一段, 也就是可见光是电磁波的一个子集. 那么电磁波具有什么样的属性呢? 频率和波长.
 
@@ -151,11 +241,11 @@ DCC, CMOS 传感器的工作原理
 -->
 
 
-## 光是什么
-
 ### 颜色/能量
 
 瞬间的能量分布, 严格一点来说, 就是单位时间的能量(不用一开始详细的讲)
+
+### 辐射度和光度
 
 ## 光源
 
@@ -163,9 +253,47 @@ DCC, CMOS 传感器的工作原理
 
 ## 回顾场景一
 
-# 场景二: 直接光照
+现在再来看场景一, 我们知道了 
 
-## 物体表面的材质特性
+<!--
+怎么介绍自发光呢, 放场景二讲完区域光源后再说
+-->
+
+## small pbrt v1
+
+
+## 资源和引用
+
+[]()
+
+
+# 场景二: 加入物体
+
+![](img/scene_direct_lighting.png)
+
+<font size=2 color="gray">图 scene_direct_lighting, 考虑到右上的光源是个点光源, 我们在 Film 上就忽略掉它吧 </font>
+
+我们管这种光线从光源发射后, 经过单个物体反射后才入射相机的情况, 叫"直接光照"(可以理解为光线直接照射到了物体上, 反正就是一种约定的叫法, 对于场景一中光线从光源照射到相机的情况, 有另外的叫法, 下文会将), 而对于光线在物体间经过多次反射后才抵达相机的情况, 则称为间接光照, 间接光照会留待最后才分析.
+
+这种情况下, 我们应该会对光线经过物体表面时的反射比较感兴趣:
+
+![](img/scene_direct_lighting_model.png)
+
+简单联系现实生活, 就会发现不同物体表面的反射有非常大的差别
+
+## 物体表面的材质属性
+
+<details hidden><summary></summary>
+
+#### > BRDF
+
+</details>
+
+### 1. 漫反射
+
+### 2. 镜面反射
+
+### 3. 光泽反射
 
 当光线入射至物体表面时，表面根据其材质特性, 会对光线进行不同种类的反射(我们暂且不考虑折射等现象), 比较理想的两种模型, 是完全漫反射和完全镜面反射, 此外现实中比较常见的则是光泽反射 glossy reflect:
 
@@ -180,7 +308,7 @@ DCC, CMOS 传感器的工作原理
 我们可以用一个函数来描述这些反射在空间上的分布情况, 即给定位置 p, 入射方向 wi 和出射方向 wo, 这个函数可以告诉我们入射方向的辐射度在出射方向上的分布, 即:
 
 $$
-f_{\mathrm{r}}\left(\mathrm{p}, \omega_{\mathrm{o}}, \omega_{\mathrm{i}}\right)=\frac{\mathrm{d} L_{\mathrm{o}}\left(\mathrm{p}, \omega_{\mathrm{o}}\right)}{\mathrm{d} E\left(\mathrm{p}, \omega_{\mathrm{i}}\right)}=\frac{\mathrm{d} L_{\mathrm{o}}\left(\mathrm{p}, \omega_{\mathrm{o}}\right)}{L_{\mathrm{i}}\left(\mathrm{p}, \omega_{\mathrm{i}}\right) \cos \theta_{\mathrm{i}} \mathrm{d} \omega_{\mathrm{i}}}
+f_{\mathrm{r}}\left(\mathrm{p}, \omega_{\mathrm{o}}, \omega_{\mathrm{i}}\right)=\frac{\mathrm{d} L_{\mathrm{o}}\left(\mathrm{p}, \omega_{\mathrm{o}}\right)}{\mathrm{d} E\left(\mathrm{p}, \omega_{\mathrm{i}}\right)}=\frac{\mathrm{d} L_{\mathrm{o}}\left(\mathrm{p}, \omega_{\mathrm{o}}\right)}{L_{\mathrm{i}}\left(\mathrm{p}, \omega_{\mathrm{i}}\right) \cos \theta_{\mathrm{i}} \mathrm{d} \omega_{\mathrm{i}}} \tag{BRDF}
 $$
 
 <!--
@@ -213,6 +341,26 @@ $$
 
 关于材质还有很多内容可以讲述, 但目前介绍的知识足够我们继续讲下去, 有关材质的更多细节就留待之后的文章讲吧
 
+## small pbrt v2
+
+## 资源和引用
+
+[brdf为什么要定义为一个单位是sr-1的量？](https://www.zhihu.com/question/28476602)
+
+[]()
+
+[]()
+
+[]()
+
+[]()
+
+
+
+# 场景三 加入更多光源
+
+## 加入更多点光源
+
 ```C++
 // ...
 
@@ -226,8 +374,21 @@ class Renderer
 
 formula
 
+## 加入面积光源
 
+<details hidden><summary></summary>
 
+#### target: 反射方程
+
+</details>
+
+## 用数值方法求解积分
+
+我们先暂且不去理会上面的反射方程, 先去解决另外一个问题: 如何求解积分?
+
+解析法, 数值法
+
+对于
 
 ## 求解反射方程
 
@@ -236,7 +397,37 @@ formula
 ~~限于篇幅, 这里暂且先略过蒙特卡洛积分的推导过程, 只从概念上帮助大家来理解~~
 -->
 
-## small pbrt
+### 1. 选取光源
+
+<details hidden><summary></summary>
+
+#### > 逆变换算法
+
+</details>
+
+
+
+### 2. 在选取概率高的位置放置更多采样点
+
+<details hidden><summary></summary> 
+
+#### > 重要性采样
+
+</details>
+
+
+
+### 3. 根据光源和 BRDF 的特征选取采样位置
+
+<details hidden><summary></summary>
+
+#### > 多重重要性采样
+
+</details>
+
+
+
+## small pbrt v3
 
 "我无法实现的, 我就无法理解" -- 费曼
 
@@ -267,22 +458,65 @@ class Renderer
 目前这个程序只有一堆接口, 主要是为了表达概念, ~还无法运行, 在下一篇文章里笔者会尝试去实现一个可以跑起来的程序~没有给出实现, 在下一篇文章中, 我们将结合具体的代码来讲解. 另外对文中的错漏之处, 欢迎各位读者批评指正, 笔者也将持续改进本系列文章.
 
 
+## 小结
 
-# 间接光照
+
+
+## 资源和引用
+
+[解析解、闭合解、数值解](http://blog.sina.com.cn/s/blog_65838c3c0101e7tg.html)
+
+
+
+
+
+# * 场景四: 加入更多物体
+
+<font size=4 color="gray">本节介绍了一些稍为复杂的内容, 可以留待以后再看</font>
+
+
+cornell_box.jpg
+
+这次我们换一个新的场景来分析, 上图是图形学中一个非常经典的场景(wiki), 我们的分析就从这里开始.
+
+<!--
+间接光照
+-->
 
 ## LET
 
 ## 路径积分
 
+## 求解路径积分
+
+### 终止路径
+
+<details hidden><summary></summary>
+
+#### > 俄罗斯轮盘赌
+
+</details>
+
+理论上这条路径是可以无限递归下去的, 但在实际实现是我们必然要在一定的步长后终止路径, 但又不能影响到最终结果, 那么要怎么做呢?
+
+按概率终止.
+
+
+## small pbrt v4
+
+## 资源和引用
+
+[]()
+
+
 # 总结
 
 限于时间和经验, 很多地方讲的比较简略, 希望之后能慢慢补充
 
-# 资源
-
-ray tracing essential(中文字幕): 光线跟踪历史简介
-光线跟踪进化史: <全局光照技术>一书中对光线跟踪的历史简介
+## 资源和引用
 
 An Explanation of the Rendering Equation: 反射方程的视频介绍
 
-[RTE1]: https://developer.nvidia.com/rtx/raytracing-essentials-part1/cn
+<!--
+全文引用
+-->
