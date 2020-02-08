@@ -109,17 +109,6 @@ class Renderer
 []()
 
 
-[图形学课程列表](https://www.zhihu.com/question/26720808/answer/761502017)
-[fun-with-graphics](https://github.com/FancyVin/fun-with-graphics)
-
-[GAMES在线课程——现代计算机图形学入门](http://games-cn.org/intro-graphics/)
-[UCSB CS291A: Real-Time High Quality Rendering](http://www.cs.ucsb.edu/~lingqi/teaching/cs291a.html)
-[Stanford CS148: Introduction to Computer Graphics and Imaging](https://web.stanford.edu/class/cs148/index.html)
-[Stanford CS348b: Image Synthesis Techniques](http://graphics.stanford.edu/courses/cs348b/)
-[Dartmouth CS77/117: Computer Graphics](https://canvas.dartmouth.edu/courses/37957/files/folder/slides)
-[Dartmouth CS87/187: Rendering Algorithms](https://canvas.dartmouth.edu/courses/35073/files/folder/Slides)([Rendering Competition](https://www.cs.dartmouth.edu/~rendering-competition/))
-[Berkeley cs184/284a: Computer Graphics and Imaging](https://cs184.eecs.berkeley.edu/sp19)
-
 [Ray Tracing Essentials, Part 1: Basics of Ray Tracing(中文字幕)][RTE1]: 通过视频简介光线跟踪算法的历史
 [全局光照技术进化史1-光线追踪篇][GIBook]: <全局光照技术>一书中对光线跟踪的历史简介
 
