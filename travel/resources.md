@@ -30,31 +30,36 @@ https://github.com/hi2p-perim/minpt
 
 ## courses
 
-[图形学课程列表](c)
+[图形学课程列表](https://www.zhihu.com/question/26720808/answer/761502017)
 [fun-with-graphics#Course](https://github.com/FancyVin/fun-with-graphics#head3)
 [awesome-courses#computer-graphics](https://github.com/prakhar1989/awesome-courses#computer-graphics)
 
 [GAMES在线课程——现代计算机图形学入门(UCSB CS180)](http://games-cn.org/intro-graphics/)
 
 [Berkeley cs184/284a Computer Graphics and Imaging](https://cs184.eecs.berkeley.edu/sp19)
-[brown CS123 Introduction To Computer Graphics](https://cs.brown.edu/courses/cs123/lectures.shtml): 这个主页太可爱了
+[Brown CS123 Introduction To Computer Graphics](https://cs.brown.edu/courses/cs123/lectures.shtml): 这个主页太可爱了
 [Cornell CS4620 Introduction to Computer Graphics](http://www.cs.cornell.edu/courses/cs4620/2019fa/)
-[Cornell CS6630 Realistic Image Synthesis](http://www.cs.cornell.edu/courses/cs6630/2015fa/index.shtml)
 [CMU 15-462/662 Computer Graphics](http://15462.courses.cs.cmu.edu/fall2019/)
 [Dartmouth CS77/117 Computer Graphics](https://canvas.dartmouth.edu/courses/37957/files/folder/slides)
 [Dartmouth CS87/187 Rendering Algorithms](https://canvas.dartmouth.edu/courses/35073/files/folder/Slides)([Rendering Competition](https://www.cs.dartmouth.edu/~rendering-competition/))
 [ETH Computer Graphics](https://cgl.ethz.ch/teaching/cg19/notes.php)
-[McGill ecse446 Realistic (& Advanced) Image Synthesis](http://www.cim.mcgill.ca/~derek/ecse446.html)
 [Stanford CS148 Introduction to Computer Graphics and Imaging](https://web.stanford.edu/class/cs148/index.html)
 [Stanford CS348b Computer Graphics: Image Synthesis Techniques](http://graphics.stanford.edu/courses/cs348b/)
+[Tuwien VU.SS2018](https://www.cg.tuwien.ac.at/courses/Rendering/VU.SS2018.html)
 [UCSB CS291A Real-Time High Quality Rendering](http://www.cs.ucsb.edu/~lingqi/teaching/cs291a.html): 比较前沿
-[uwaterloo CS 488/688: Introduction to Computer Graphics](https://www.student.cs.uwaterloo.ca/~cs488/Winter2020/index.html)
-[uwaterloo CS781 - Colour in Computer Graphics](http://www.cgl.uwaterloo.ca/wmcowan/teaching/cs781/index.html)
+
+[Cornell CS6630 Realistic Image Synthesis](http://www.cs.cornell.edu/courses/cs6630/2015fa/index.shtml)
+[McGill ecse446 Realistic (& Advanced) Image Synthesis](http://www.cim.mcgill.ca/~derek/ecse446.html)
+[Tokyo rend2017 Realistic Image Synthesis](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/rend2017/)
+[Uwaterloo CS 488/688: Introduction to Computer Graphics](https://www.student.cs.uwaterloo.ca/~cs488/Winter2020/index.html)
+[Uwaterloo CS781 - Colour in Computer Graphics](http://www.cgl.uwaterloo.ca/wmcowan/teaching/cs781/index.html)
 
 <!--
-[brown CS125 Introduction to Computer Animation](http://cs.brown.edu/courses/csci1250/courseinfo.html): 目前无法访问课程资料
-[brown CSCI1280 Intermediate 3D Computer Animation](http://cs.brown.edu/courses/info/csci1280/): 目前无法访问课程资料
-[oxford Computer Graphics: 2019-2020](https://www.cs.ox.ac.uk/teaching/courses/2019-2020/graphics/): 目前无法访问课程资料
+目前无法访问课程资料:
+[brown CS125 Introduction to Computer Animation](http://cs.brown.edu/courses/csci1250/courseinfo.html)
+[brown CSCI1280 Intermediate 3D Computer Animation](http://cs.brown.edu/courses/info/csci1280/)
+[oxford Computer Graphics: 2019-2020](https://www.cs.ox.ac.uk/teaching/courses/2019-2020/graphics/)
+[tokyo anim2018 Physically Based Animation](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/anim2018/)
 
 [Princeton COS 426](https://www.cs.princeton.edu/courses/archive/spring19/cos426/syllabus.php)
 [Princeton COS 526](https://www.cs.princeton.edu/courses/archive/fall16/cos526/syllabus.php)
@@ -69,8 +74,8 @@ http://am207.github.io/2016/index.html
 
 [milo 的豆列: 计算机图形: 进阶/专门](https://www.douban.com/doulist/1445680/)
 
-[Fundamentals of Computer Graphics](https://book.douban.com/subject/26868819/)
 [Computer Graphics: Principles and Practice](https://book.douban.com/subject/4770734/)([计算机图形学：原理及实践](https://book.douban.com/subject/30402778/))
+[Fundamentals of Computer Graphics](https://book.douban.com/subject/26868819/)([计算机图形学](https://book.douban.com/subject/2116178/))
 [Principles of Digital Image Synthesis](http://www.realtimerendering.com/Principles_of_Digital_Image_Synthesis_v1.0.1.pdf)
 
 
@@ -176,21 +181,22 @@ https://google.github.io/filament/
 [2019 Ray Tracing Gems](http://raytracinggems.com/)
 
 [全局光照技术: 从离线到实时渲染](https://book.douban.com/subject/30264315/)
-
 [游戏程序员的自我修养](https://neil3d.gitee.io/reading/index.html)
 
 
 
-## 学者/实验室
+## researcher/lab
 
 [fun-with-graphics/Researchers](https://github.com/FancyVin/fun-with-graphics#head9)
 
 [Kun Xu(徐昆)](https://cg.cs.tsinghua.edu.cn/people/~kun/)
 [Lingqi Yan(闫令琪)](https://sites.cs.ucsb.edu/~lingqi/)
 [Rui Wang(王锐)](http://www.cad.zju.edu.cn/home/rwang/)
-[Toshiya Hachisuka](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/) : PPM, SPPM, 
-[Yuanming Hu(胡渊鸣)](http://taichi.graphics/me/)
+[Toshiya Hachisuka](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/): PPM, SPPM, UPS, ups_vcm_mcmc
+[Yuanming Hu(胡渊鸣)](http://taichi.graphics/me/): taichi
 
+
+[UCSB MIRAGE Lab](http://graphics.cvc.ucsb.edu/)
 
 
 ## overview
@@ -201,18 +207,19 @@ https://google.github.io/filament/
 [Blinn-Phong]()
 
 ## ray tracing
-[1968 ray cast]
-[1979 recursive ray tracing]
-[1984 stochastic ray tracing]
-[]()
+
+[1968 Ray Cast]()
+[1979 Recursive Ray Tracing]()
+[1984 Stochastic Ray Tracing]()
+[1986 The Rendering Equation]()
 
 [2001 Realistic Image Synthesis Using Photon Mapping](https://book.douban.com/subject/4322339/)
 [2008 PPM: Progressive Photon Mapping](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/ppm.pdf)
 [2009 SPPM: Stochastic Progressive Photon Mapping](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/sppm.pdf)
 
 [2012 VCM: Light Transport Simulation with Vertex Connection and Merging](http://iliyan.com/publications/VertexMerging)
-[2012 UPS: ]()
-[2016 ups-vcm_mcmc: Robust Light Transport Simulation via Metropolized Bidirectional Estimators](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/ups-vcm_mcmc.pdf)
+[2012 UPS: A Path Space Extension for Robust Light Transport Simulation]()
+[2016 ups-vcm_mcmc: Robust Light Transport Simulation via Metropolized Bidirectional Estimators](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/ups-vcm_mcmc.pdf)([解读](https://zhuanlan.zhihu.com/p/24316493))
 
 ## monte carlo methods
 

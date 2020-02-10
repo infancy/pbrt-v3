@@ -6,11 +6,17 @@
 
 Lambert BRDF + Cook-Torrance BRDF
 
+## 资源与引用
+
+[如何看懂这些"该死的"图形学公式](https://zhuanlan.zhihu.com/p/21489591)
+
 
 
 # Lambert BRDF
 
 ## 除以 pi, 能量守恒
+
+
 
 
 # Cook-Torrance BRDF

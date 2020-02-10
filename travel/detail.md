@@ -96,7 +96,6 @@ todo
 ## 资源和引用
 
 [基于物理着色：BRDF](https://zhuanlan.zhihu.com/p/21376124)
-
 [BRDF - Wakapon](http://wiki.nuaj.net/index.php?title=BRDF)
 
 [More DETAILS! PBR的下一个发展在哪里？](https://zhuanlan.zhihu.com/p/32209554)
