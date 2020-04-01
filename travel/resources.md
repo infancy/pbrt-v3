@@ -36,7 +36,7 @@ https://github.com/hi2p-perim/minpt
 
 [GAMES在线课程——现代计算机图形学入门(UCSB CS180)](http://games-cn.org/intro-graphics/)
 
-[Berkeley cs184/284a Computer Graphics and Imaging](https://cs184.eecs.berkeley.edu/sp19)
+[Berkeley cs184/284a Computer Graphics and Imaging](https://cs184.eecs.berkeley.edu/sp20)([sp19](https://cs184.eecs.berkeley.edu/sp19))
 [Brown CS123 Introduction To Computer Graphics](https://cs.brown.edu/courses/cs123/lectures.shtml): 这个主页太可爱了
 [Cornell CS4620 Introduction to Computer Graphics](http://www.cs.cornell.edu/courses/cs4620/2019fa/)
 [CMU 15-462/662 Computer Graphics](http://15462.courses.cs.cmu.edu/fall2019/)
@@ -48,6 +48,7 @@ https://github.com/hi2p-perim/minpt
 [Tuwien VU.SS2018](https://www.cg.tuwien.ac.at/courses/Rendering/VU.SS2018.html)
 [UCSB CS291A Real-Time High Quality Rendering](http://www.cs.ucsb.edu/~lingqi/teaching/cs291a.html): 比较前沿
 
+[Berkeley CS283, Advanced Computer Graphics Algorithms and Techniques](https://inst.eecs.berkeley.edu/~cs283/sp13/)
 [Cornell CS6630 Realistic Image Synthesis](http://www.cs.cornell.edu/courses/cs6630/2015fa/index.shtml)
 [McGill ecse446 Realistic (& Advanced) Image Synthesis](http://www.cim.mcgill.ca/~derek/ecse446.html)
 [Tokyo rend2017 Realistic Image Synthesis](https://www.ci.i.u-tokyo.ac.jp/~hachisuka/rend2017/)
