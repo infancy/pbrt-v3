@@ -67,7 +67,16 @@ https://github.com/hi2p-perim/minpt
 [MIT 6-837 computer-graphics-fall-2012](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/)
 -->
 
-http://am207.github.io/2016/index.html
+
+
+## video
+
+[Light Transport, Ray Tracing and Global Illumination (Two Minute Papers)](https://www.youtube.com/playlist?list=PLujxSBD-JXgk1hb8lyu6sTYsLL39r_3bG)
+[Fluid, Cloth and Hair Simulations (Two Minute Papers)](https://www.youtube.com/playlist?list=PLujxSBD-JXgnnd16wIjedAcvfQcLw0IJI)
+[TU Wien Rendering/Ray Tracing Course (Two Minute Papers)](https://www.youtube.com/playlist?list=PLujxSBD-JXgnGmsn7gEyN28P1DnRZG7qi)
+
+[The Story of Light](https://www.youtube.com/watch?v=TbWQ4lMnLNw)
+
 
 
 
@@ -140,7 +149,8 @@ https://benedikt-bitterli.me/resources/
 
 [smallpt]()
 [smallppm]()
-[SmallVCM]()
+[SmallVCM](http://www.smallvcm.com/)
+[SmallUPBP](http://www.smallupbp.com/)
 
 ### personal
 
