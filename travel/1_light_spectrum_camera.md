@@ -78,7 +78,7 @@ markdown:
 
 光线(ray)对于整套渲染系统来说, 就像电流, 血液一样. 在解释光源是如何发射光线, 相机接收光线之前, 我们先来看看光线到底是什么.
 
-### 光是什么
+### 光(light)是什么
 
 首先当说到"光线"这个词时, 我们就已经把光(light)抽象成了一条直线(ray), 或者说光是沿直线传播的. 在日常生活中, 很多时候光线就是光的代名词, 因为光线是一个很直观的几何模型, 可以解释生活中很多常见的光学现象(反射, 折射, 阴影等, 参考上一篇文章中列举的各种现象). 在之后的内容中, 笔者也会不自觉的混用光和光线.
 
@@ -142,21 +142,100 @@ markdown:
 
 
 
-## 光源 I
+## 光源 I: 不同的光源
 <!--
 发射能量
-感觉可以前置一点, 放到成像原理后面
 
 通过发热, 电离等方式
 
+为什么不同的光源发射的光线会有区别呢, 我们可以怎么比较, 分析不同的光源呢
+
 -->
+![](1/LED_vs_Incandescent_vs_CFL.jpg)
+
+<p class="figure"> 从左往右依次是白炽灯, 卤素灯, 节能灯, LED 灯, 放这张图片是想表达不同种类光源**发出的光的区别**, https://www.slideshare.net/IngerGmo/the-eu-lightbulb-ban-47366507 </p> 
+
+光源, 就是发光的物体. 日常的光源, 有阳光(太阳核聚变), 烛光(燃烧), 白炽灯(发热), 荧光灯/节能灯(气体放电), LED灯/发光二极管(固体电场发光)等, 就渲染而言, 我们不需要深究它们发光的原理. 
+
+不同光源发出的光线往往也不同, 白炽灯的发光往往给人温暖的感觉, LED 灯的明亮里却有着一丝冷色调, 上图中它们对场景产生了很大的影响, 这会是我们感兴趣的地方. 
+
+几何光学研究的是..., 因而从几何光学中是找不到相关解释的. 而用量子光学则是杀鸡用牛刀. 我们把目光放到光是电磁波这件事上. 我们已经知道了光线具有的基本性质, 也就是频率和波长. 如果能得到这些光源发光的频率/波长的话, 分析就是直接明了的吧.
+
+### *小插曲: 三棱镜实验
+
+![](1/prism.jpg)
+> 1666年, [牛顿](https://zh.wikipedia.org/wiki/牛頓)发现太阳光经**三棱镜**的折射后可呈现彩色光，这被称为光的[色散](https://zh.wikipedia.org/wiki/色散_(光學))现象。    引自 wikipedia
+
+不同波长的可见光, 除了人眼感受的颜色不同外, 它们的折射率也不一样. 通过三棱镜的折射就可以将一束可见光分解成不同的**[光谱](https://zh.wikipedia.org/wiki/光譜)**. 这里光谱指的是类似太阳光这样的复色光, 经过色散后分解成的一系列按波长排列的色带. 有了光谱就可以帮助我们分析光的组成.
+
+![](1/Linear_visible_spectrum.svg)
+<p class="figure"> 模拟的自然光光谱图案, https://zh.wikipedia.org/wiki/光譜 </p> 
+
+### 比较不同光源的发光
+
+![](1/CD_ROM.jpg)
+
+生活中有一种非常常见的物品可以帮助我们分析可见光的光谱组成, 那就是光碟, 具体原理请见下方的引用, 下面直接引用了 [LED vs compact fluorescent colour spectrum](https://woodgears.ca/misc/led.html) 文中的结果:
+
+![](1/light_color_spectrum.jpg)
+<p class="figure"> 上: LED 灯的光谱 下: 节能灯的光谱 </p> 
+
+对比连续的太阳光谱, 这两种灯具的光谱都不全, LED 灯在蓝绿色之间很弱, 而节能灯在这个基础上, 某些频率的光似乎又特别强(对应图中下面特别亮的地方). 这样的分析只能说明两者直接存在区别, 局限于目前的数据, 我们只能定性的分析一下, 能不能做定量的分析呢?
+
+
+
+
+### *单色光和复色光
+
+单色光(monochromatic light)和复色光
+
+光的分解, 复合
+
+
+
+### 小结
+
+本节我们花了一些功夫来比较不同光源发光的区别, 借此了解了光谱图的意义.
+
+### 资源和引用
+
+* 维基百科
+  * [电光源](https://zh.wikipedia.org/wiki/%E9%9B%BB%E5%85%89%E6%BA%90)
+  * [List_of_light_sources](https://en.wikipedia.org/wiki/List_of_light_sources)([光源列表](https://zh.wikipedia.org/wiki/%E5%85%89%E6%BA%90%E5%88%97%E8%A1%A8))
+  * [太阳光](https://zh.wikipedia.org/wiki/%E5%A4%AA%E9%98%B3%E5%85%89)
+  * [节能灯](https://zh.wikipedia.org/wiki/%E4%B8%80%E4%BD%93%E5%BC%8F%E8%8D%A7%E5%85%89%E7%81%AF)
+  * [Light-emitting diode(LED)](https://en.wikipedia.org/wiki/Light-emitting_diode)([发光二极管](https://zh.wikipedia.org/wiki/%E7%99%BC%E5%85%89%E4%BA%8C%E6%A5%B5%E7%AE%A1))
+  * [Prism](https://en.wikipedia.org/wiki/Prism)([三棱镜](https://zh.wikipedia.org/wiki/%E4%B8%89%E7%A8%9C%E9%8F%A1))
+* [分光计的使用和三棱镜折射率的测定](https://www.bilibili.com/video/av47189158/)
+* *把光盘作为简易色谱仪
+  * [用光盘自制光谱仪](https://www.cs.cmu.edu/~zhuxj/astro/cn/html/spectrometer.html)
+  * [为什么CD的反光是彩色的？](https://www.guokr.com/question/443318/?answer=449736#answer449736)
+  * [基于CD/DVD光盘的光栅衍射演示实验](https://www.ixueshu.com/document/be6c862ae782c14152084ff234651b67318947a18e7f9386.html)
+  * [衍射](https://zh.wikipedia.org/wiki/%E8%A1%8D%E5%B0%84)
+
+## 光源 II: 定量分析
+
+在上一节的最后我们取得了不同光源的光谱图, 但借此只能进行定性的分析, 我们能不能继续前进一步, 做定量的分析呢?
+
+现代的光学仪器显然是可以帮我们这个忙的, 最大的问题在于我们选择哪个物理量进行分析.
+
+### 光谱功率
+
+用光谱图((spectrogram)来描述
+
+#### 光谱上的功率分布情况
+
+<details><summary><b>* 拓展</b></summary><p>
+
+#### * 测量光谱的功率分布
+</p></details>
+
+### 光谱功率的分布
+
+"分布"是什么意思
 
 ### 太阳
 <!-- 全光谱 -->
-
-
-
-太阳的辐射通量非常高, 
 
 ### 灯泡
 <!-- 部分光谱 -->
@@ -170,37 +249,6 @@ markdown:
 
 
 其实日常生活还要一个很重要的"光源", 那就是显示器, 但这个我们留到后面再说
-
-### 光源的比较
-
-从上面的介绍来看, 不同的光源之间可以有很大的差异. 几何光学研究的是 因而从几何光学中是找不到相关解释的, 我们把目光放到光是电磁波这件事上.
-
-### 三棱镜实验
-
-
-### 光的分解
-
-单色光(monochromatic light)和复色光
-
-
-
-
-## 光谱图
-
-为什么不同的光源发射的光线也有区别呢, 我们可以怎么比较, 分析不同的光源呢
-
-### 光谱图
-
-用光谱图((spectrogram)来描述
-
-#### 光谱上的功率分布情况
-
-<details><summary><b>* 拓展</b></summary><p>
-
-#### * 测量光谱的功率分布
-</p></details>
-
-### 光谱功率分布
 
 ### 小结
 
@@ -376,6 +424,7 @@ Spectral response of human cone cells (S, M, L) , 而不是 RGB
 ## 辐射度学
 
 定量描述分析它们的方法. 
+太阳的辐射通量非常高, 
 
 ### 纯物理的辐射度
 <!--全光谱, 客观-->
@@ -423,7 +472,10 @@ Spectral response of human cone cells (S, M, L) , 而不是 RGB
 
 ## 光源 II
 
-在之前颜色那一节, 我们介绍了颜色匹配实验和异谱同色现象, 显示器正是依靠这些事情背后的原理来工作的. 
+![](1/RBG_LED.jpg)
+<p class="figure"> LED 灯, https://upload.wikimedia.org/wikipedia/commons/c/cb/RBG-LED.jpg </p> 
+
+在之前的光源 I 中, 我们提及了 LED 灯;在颜色那一节, 则介绍了颜色匹配实验和异谱同色现象, 显示器正是依靠这些事情背后的原理来工作的. 
 
 ...所以在渲染中, 全光谱的光源不是必须的, 我们用一个三色光源也可以渲染
 
