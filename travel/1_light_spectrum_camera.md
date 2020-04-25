@@ -192,10 +192,18 @@ markdown:
 光的分解, 复合
 
 
+<details><summary><b>* 番外篇 </b></summary><p>
+
+#### * 天空为什么是蓝色的?
+
+#### * 早霞和晚霞
+
+</p></details>
+
 
 ### 小结
 
-本节我们花了一些功夫来比较不同光源发光的区别, 借此了解了光谱图的意义.
+本节我们花了一些功夫来比较不同光源发光的区别, 借此了解光谱图的作用.
 
 ### 资源和引用
 
@@ -207,7 +215,7 @@ markdown:
   * [Light-emitting diode(LED)](https://en.wikipedia.org/wiki/Light-emitting_diode)([发光二极管](https://zh.wikipedia.org/wiki/%E7%99%BC%E5%85%89%E4%BA%8C%E6%A5%B5%E7%AE%A1))
   * [Prism](https://en.wikipedia.org/wiki/Prism)([三棱镜](https://zh.wikipedia.org/wiki/%E4%B8%89%E7%A8%9C%E9%8F%A1))
 * [分光计的使用和三棱镜折射率的测定](https://www.bilibili.com/video/av47189158/)
-* *把光盘作为简易色谱仪
+* *把光盘作为简易光谱仪
   * [用光盘自制光谱仪](https://www.cs.cmu.edu/~zhuxj/astro/cn/html/spectrometer.html)
   * [为什么CD的反光是彩色的？](https://www.guokr.com/question/443318/?answer=449736#answer449736)
   * [基于CD/DVD光盘的光栅衍射演示实验](https://www.ixueshu.com/document/be6c862ae782c14152084ff234651b67318947a18e7f9386.html)
@@ -217,7 +225,9 @@ markdown:
 
 在上一节的最后我们取得了不同光源的光谱图, 但借此只能进行定性的分析, 我们能不能继续前进一步, 做定量的分析呢?
 
-现代的光学仪器显然是可以帮我们这个忙的, 最大的问题在于我们选择哪个物理量进行分析.
+现代的光学仪器可以帮我们这个忙, 最大的问题在于我们选择光谱种的哪个物理量进行分析.
+
+图片, 不同功率的灯泡
 
 ### 光谱功率
 
@@ -252,7 +262,7 @@ markdown:
 
 ### 小结
 
-光谱图和 SPD 将成为我们之后分析的重要工具.
+通过 SPD, 我们可以精确的分析光源的特征. 光谱图和 SPD 将成为我们之后分析的重要工具.
 
 ### 资源和引用
 
@@ -420,6 +430,7 @@ Spectral response of human cone cells (S, M, L) , 而不是 RGB
 
 * [Basic Color Science for Graphics Engineers](https://agraphicsguy.wordpress.com/2018/11/29/basic-color-science-for-graphics-engineers/)
 
+* [colour science packages](https://github.com/colour-science/colour#see-also)
 
 ## 辐射度学
 
