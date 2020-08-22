@@ -406,9 +406,9 @@ PBRT_NOINLINE static Float RadicalInverseSpecialized(uint64_t a)
     uint64_t reversedDigits = 0;
     Float invBaseN = 1;
 
+    // base2, e.g. 4 = 0b100 => 1 * 1/8 + 0 * 1/4 + 0 * 1/2 => ((0 * 2 + 0) * 2 + 1) * 1/2^3 = 1/8
     while (a) 
     {
-        // 4 = 0b100 -> ((0 * 2 + 0) * 2 + 1) * 1/2^3 = 1/8
         uint64_t next = a / base;
         uint64_t digit = a - next * base; // 余数, 反正都做了除法, 为什么不用 std::div 呢
         reversedDigits = reversedDigits * base + digit;
