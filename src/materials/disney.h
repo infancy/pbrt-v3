@@ -48,6 +48,7 @@ namespace pbrt {
 class DisneyMaterial : public Material {
   public:
     // DisneyMaterial Public Methods
+    // using const_texture_sp = template<typename T> const std::shared_ptr<Texture<T>>;
     DisneyMaterial(const std::shared_ptr<Texture<Spectrum>> &color,
                    const std::shared_ptr<Texture<Float>> &metallic,
                    const std::shared_ptr<Texture<Float>> &eta,

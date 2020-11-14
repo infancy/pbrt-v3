@@ -70,6 +70,7 @@ class Light {
           const MediumInterface &mediumInterface, int nSamples = 1);
 
 
+
     // P716, Figure 12.5 / P835
     // 在多重重要性采样中, 对光源进行采样
     //
@@ -86,17 +87,24 @@ class Light {
     virtual Float Pdf_Li(const Interaction &ref, const Vector3f &wi) const = 0;
 
 
+
     // 光源向外辐射的总功率, 因为使用的范围很有限, 具体实现都只计算了近似值
     virtual Spectrum Power() const = 0;
     //在开始渲染前记录场景的一些特征，如 DistanceLight 会通过整个场景的包围盒来计算自己的功率大小
     virtual void Preprocess(const Scene &scene) {}
 
-
+    // 只有两种光源会直接向相机贡献辐射度: 环境光源, 区域光源
+    //
     // 光源向 -r 方向发射的辐射度
     // 当视点发出的光线未与场景中物体相交时，计算光源朝视点方向的辐射度
+    // 实际上是单独给环境光源准备的方法(Chapter12.6), 默认为 0, 只有 InfiniteAreaLight 实现了这个方法
     virtual Spectrum Le(const RayDifferential &r) const;
 
 
+
+    // P716, Figure 12.5 / P835
+    // 在多重重要性采样中, 对 BRDF 进行采样
+    //
     // Section 16.1.2
     // 从 ref->wi->light 的概率
     virtual Spectrum Sample_Le(const Point2f &u1, const Point2f &u2, Float time,
@@ -105,6 +113,7 @@ class Light {
     // 传入 ray 和 light_normal，计算 pdfPos，pdfDir
     virtual void Pdf_Le(const Ray &ray, const Normal3f &nLight, Float *pdfPos,
                         Float *pdfDir) const = 0;
+
 
 
     // Light Public Data
@@ -144,7 +153,9 @@ class AreaLight : public Light {
     AreaLight(const Transform &LightToWorld, const MediumInterface &medium,
               int nSamples);
 
-    // 给定区域光源表面上一点 intr, 计算出射方向 wi 上的发射辐射度 Li(SurfaceInteraction->Le)
+    // 只有两种光源会直接向相机贡献辐射度: 环境光源, 区域光源
+    //
+    // 给定区域光源表面上一点 intr, 计算出射方向 wi 到相机上的发射辐射度 Li(SurfaceInteraction->Le)
     // Spectrum SurfaceInteraction::Le(const Vector3f &w) const {
     //     const AreaLight *area = primitive->GetAreaLight();
     //     return area ? area->L(*this, w) : Spectrum(0.f); }

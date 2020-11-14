@@ -349,6 +349,7 @@ inline Point3<T> Transform::operator()(const Point3<T> &p) const {
 
 template <typename T>
 inline Vector3<T> Transform::operator()(const Vector3<T> &v) const {
+    // ºöÂÔÎ»ÒÆ
     T x = v.x, y = v.y, z = v.z;
     return Vector3<T>(m.m[0][0] * x + m.m[0][1] * y + m.m[0][2] * z,
                       m.m[1][0] * x + m.m[1][1] * y + m.m[1][2] * z,
