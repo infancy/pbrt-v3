@@ -52,12 +52,14 @@ class MicrofacetDistribution {
     // MicrofacetDistribution Public Methods
     virtual ~MicrofacetDistribution();
 
+
     // 微面元分布函数/法线分布函数
     // return the differential area of microfacets oriented with the given normal vector $omega$
     // 参考 P540 Figure8.16 的曲线
     // 1. 表面粗糙度越大时, 曲线越平缓
     // 2. 给定法线方向(其实是 wi 和 wo 的半法线)和表面法线夹角越大时, 朝向该方向的微面元越少, 反射光线越少
     virtual Float D(const Vector3f &wh) const = 0;
+
 
     // 几何遮挡函数的辅助函数
     virtual Float Lambda(const Vector3f &w) const = 0;
@@ -79,6 +81,7 @@ class MicrofacetDistribution {
     {
         return 1 / (1 + Lambda(wo) + Lambda(wi));
     }
+
 
     // 根据出射方向 wo 采样法线
     virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
@@ -103,16 +106,30 @@ inline std::ostream &operator<<(std::ostream &os,
     return os;
 }
 
+
+
 class BeckmannDistribution : public MicrofacetDistribution {
   public:
     // BeckmannDistribution Public Methods
-    // P540, roughness 从 [0, 1] 更符合直觉, 方便用户调节, 这个函数负责把 roughness 从 [0, 1] 映射到 ???
+    // P540, roughness 从 [0, 1] 线性变化更符合直觉, 为了方便用户调节, 这个函数负责把 roughness 从 (0, ∞) 映射到...总之增量的很慢
+    /*
+             0:   0.047
+             1:   1.621
+            10:   4.655
+           100:  11.035
+          1000:  22.661
+         10000:  41.870
+        100000:  71.427
+       1000000: 114.532
+      10000000: 174.817
+    */
     static Float RoughnessToAlpha(Float roughness) {
         roughness = std::max(roughness, (Float)1e-3);
         Float x = std::log(roughness);
         return 1.62142f + 0.819955f * x + 0.1734f * x * x +
                0.0171201f * x * x * x + 0.000640711f * x * x * x * x;
     }
+
     BeckmannDistribution(Float alphax, Float alphay, bool samplevis = true)
         : MicrofacetDistribution(samplevis),
           alphax(std::max(Float(0.001), alphax)),
@@ -129,6 +146,8 @@ class BeckmannDistribution : public MicrofacetDistribution {
     // BeckmannDistribution Private Data
     const Float alphax, alphay; // 控制各向异性分布的椭圆形状
 };
+
+
 
 class TrowbridgeReitzDistribution : public MicrofacetDistribution {
   public:
