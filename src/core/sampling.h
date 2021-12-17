@@ -230,7 +230,7 @@ inline Float BalanceHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
     return (nf * fPdf) / (nf * fPdf + ng * gPdf);
 }
 
-// P799, 幂(根据 veach 的经验, 平方效果最好)启发式
+// P799, 平方启发式(根据 veach 的经验, 平方效果最好)
 inline Float PowerHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
     Float f = nf * fPdf, g = ng * gPdf;
     return (f * f) / (f * f + g * g);

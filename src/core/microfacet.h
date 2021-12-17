@@ -83,7 +83,7 @@ class MicrofacetDistribution {
     }
 
 
-    // 根据出射方向 wo 采样法线
+    // 根据出射方向 wo 采样半法线 $\omega_{\mathrm{h}}$(half vector)
     virtual Vector3f Sample_wh(const Vector3f &wo, const Point2f &u) const = 0;
 
     Float Pdf(const Vector3f &wo, const Vector3f &wh) const;

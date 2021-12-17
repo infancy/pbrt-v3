@@ -60,18 +60,18 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
     ProfilePhase p(Prof::DirectLighting);
     Spectrum L(0.f);
     
-	// 计算所有光源经由交点 it 向 it.wo 方向发射的辐射度
+    // 计算所有光源经由交点 it 向 it.wo 方向发射的辐射度
     for (size_t j = 0; j < scene.lights.size(); ++j) 
     {
         // Accumulate contribution of _j_th light to _L_
         const std::shared_ptr<Light> &light = scene.lights[j];
         int nSamples = nLightSamples[j];
-		
+        
         // 使用 sampler.Get1D/2DArray 前, 要保证已调用 sampler.Request1D/2DArray 生成了采样点
         const Point2f *uLightArray = sampler.Get2DArray(nSamples);
         const Point2f *uScatteringArray = sampler.Get2DArray(nSamples);
 
-		// P853, 如果样本数组被用光时，只进行单次采样
+        // P853, 如果样本数组被用光时，只进行单次采样
         if (!uLightArray || !uScatteringArray) 
         {
             // Use a single sample for illumination from _light_
@@ -80,7 +80,7 @@ Spectrum UniformSampleAllLights(const Interaction &it, const Scene &scene,
             L += EstimateDirect(it, uScattering, *light, uLight, scene, sampler,
                                 arena, handleMedia);
         }
-		// 否则在光源/BSDF上进行 nSamples 次采样，使用蒙特卡洛积分, 计算平均辐射度(TODO: 类似的使用 MC 积分的地方, BSDF, rho, SolidAngle)
+        // 否则在光源/BSDF上进行 nSamples 次采样，使用蒙特卡洛积分, 计算平均辐射度(TODO: 类似的使用 MC 积分的地方, BSDF, rho, SolidAngle)
         else
         {
             // Estimate direct lighting using sample arrays
@@ -103,14 +103,14 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     ProfilePhase p(Prof::DirectLighting);
 
     // Randomly choose a single light to sample, _light_
-	// 从光源中随机选取一个进行采样
+    // 从光源中随机选取一个进行采样
     int nLights = int(scene.lights.size());
     if (nLights == 0) 
         return Spectrum(0.f);
 
     int lightNum;
     Float lightPdf;
-	// 如果光源的功率分布可用，则根据其功率分布（由逆变换算法）选取一个光源，并计算其概率密度
+    // 如果光源的功率分布可用，则根据其功率分布（由逆变换算法）选取一个光源，并计算其概率密度
     if (lightDistrib) 
     {
         lightNum = lightDistrib->SampleDiscrete(sampler.Get1D(), &lightPdf);
@@ -126,7 +126,7 @@ Spectrum UniformSampleOneLight(const Interaction &it, const Scene &scene,
     Point2f uLight = sampler.Get2D();
     Point2f uScattering = sampler.Get2D();
 
-	// 只在单个光源上采样一点(nSamples == 1), 估算其 Li; 并除以其功率的概率密度(power_pdf), 得到近似采样所有光源的结果
+    // 只在单个光源上采样一点(nSamples == 1), 估算其 Li; 并除以其功率的概率密度(power_pdf), 得到近似采样所有光源的结果
     return EstimateDirect(it, uScattering, *light, uLight,
                           scene, sampler, arena, handleMedia) / lightPdf;
 }
@@ -162,12 +162,12 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
     Spectrum Ld(0.f);
 
-	// Sample light source with multiple importance sampling
-	// 从光源部分进行多重重要性采样
+    // Sample light source with multiple importance sampling
+    // 从光源部分进行多重重要性采样
     Vector3f wi;
     Float lightPdf = 0, scatteringPdf = 0;
     VisibilityTester visibility;
-	// 传入交点 it，在光源上选取一点，计算选到该点的概率密度 lightPdf，交点到该点的方向 wi、入射辐射度 Li 及可见性
+    // 传入交点 it，在光源上选取一点，计算选到该点的概率密度 lightPdf，交点到该点的方向 wi、入射辐射度 Li 及可见性
     Spectrum Li = light.Sample_Li(it, uLight, &wi, &lightPdf, &visibility);
 
     VLOG(2) << "EstimateDirect uLight:" << uLight << " -> Li: " << Li << ", wi: "
@@ -177,7 +177,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
     if (lightPdf > 0 && !Li.IsBlack())
     {
         // Compute BSDF or phase function's value for light sample
-		// 计算 BSDF（如果交点在 surface 上）或相位函数（如果交点在 medium 中）的值
+        // 计算 BSDF（如果交点在 surface 上）或相位函数（如果交点在 medium 中）的值
         Spectrum f;
 
         if (it.IsSurfaceInteraction()) 
@@ -185,7 +185,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             // Evaluate BSDF for light sampling strategy
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
 
-			// 计算 f(p, wo, wi) * cos(eta_light_isect) 项
+            // 计算 f(p, wo, wi) * cos(eta_light_isect) 项
             f = isect.bsdf->f(isect.wo, wi, bsdfFlags) *
                 AbsDot(wi, isect.shading.n);
             scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
@@ -206,8 +206,8 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         if (!f.IsBlack()) // delta 分布的 bsdf 为 true???
         {
             // Compute effect of visibility for light source sample
-			// visibility 负责处理光源上的采样点和交点的可见性问题，当两点不可见时 Li = 0
-			// 当需要考虑 medium 时，则调用 Tr(scene, sampler) 进一步计算 Li 的值
+            // visibility 负责处理光源上的采样点和交点的可见性问题，当两点不可见时 Li = 0
+            // 当需要考虑 medium 时，则调用 Tr(scene, sampler) 进一步计算 Li 的值
             if (handleMedia) {	
                 Li *= visibility.Tr(scene, sampler);
                 VLOG(2) << "  after Tr, Li: " << Li;
@@ -234,7 +234,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 
 
     // Sample BSDF with multiple importance sampling
-	// 从 BSDF 部分进行多重重要性采样
+    // 从 BSDF 部分进行多重重要性采样
     // bsdf.Sample_f + light.Li/Pdf_Li
     if (!IsDeltaLight(light.flags)) // 如果是 delta 分布的光源则无法采样到, 直接跳过
     {		   
@@ -246,11 +246,11 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
             // Sample scattered direction for surface interactions
             BxDFType sampledType;
             const SurfaceInteraction &isect = (const SurfaceInteraction &)it;
-			// 在交点上半球方向随机选取一点，计算相应的 wi、scatteringPdf 和 sampledType
-			// 并计算 f(p, wo, wi) 项
+            // 在交点上半球方向随机选取一点，计算相应的 wi、scatteringPdf 和 sampledType
+            // 并计算 f(p, wo, wi) 项
             f = isect.bsdf->Sample_f(isect.wo, &wi, uScattering, &scatteringPdf,
                                      bsdfFlags, &sampledType);
-			// 计算 cos(eta_light_isect) 项
+            // 计算 cos(eta_light_isect) 项
             f *= AbsDot(wi, isect.shading.n);
             sampledSpecular = (sampledType & BSDF_SPECULAR) != 0;
         } 
@@ -268,7 +268,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
         if (!f.IsBlack() && scatteringPdf > 0) 
         {
             // Account for light contributions along sampled direction _wi_
-			// 计算沿采样方向 wi 的光照贡献
+            // 计算沿采样方向 wi 的光照贡献
 
             Float weight = 1;
             if (!sampledSpecular) 
@@ -281,7 +281,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
 
 
             // Find intersection and compute transmittance
-			// 计算沿 wi 方向是否与（面积）光源相交
+            // 计算沿 wi 方向是否与（面积）光源相交
             SurfaceInteraction lightIsect;
             Ray ray = it.SpawnRay(wi);
             Spectrum Tr(1.f);
@@ -290,7 +290,7 @@ Spectrum EstimateDirect(const Interaction &it, const Point2f &uScattering,
                             : scene.Intersect(ray, &lightIsect);
 
             // Add light contribution from material sampling
-			// 如果 wi 与面积光源相交，则需要进一步处理，否则直接计算 light 向 ray 方向发射的辐射度
+            // 如果 wi 与面积光源相交，则需要进一步处理，否则直接计算 light 向 ray 方向发射的辐射度
             Spectrum Li(0.f);
             if (foundSurfaceInteraction) {
                 if (lightIsect.primitive->GetAreaLight() == &light) // 如果这个区域光源正好是当前采样的光源   
@@ -330,58 +330,58 @@ void SamplerIntegrator::Render(const Scene &scene)
     Preprocess(scene, *sampler);
 
     // Render image tiles in parallel
-	// (0,0) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-	//		|		|		|		|		|
-	//		| tile	| tile	| tile	| tile	|
-	//		|_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|		
-	//		|		|		|		|		|
-	//		| tile	| tile	| tile	| tile	|
-	//		|_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
-	//		|		|		|		|		|
-	//		| tile	| tile	| tile	| tile	|
-	//		|_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
-	//		|		|		|		|		|
-	//		| tile	| tile	| tile	| tile	|
-	//		|_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
-	//										 (filmResolution.width, filmResolution.height)
-	// 将图像平面分成一块块 tile，每个线程每次渲染一块 tile
+    // (0,0) _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+    //      |       |       |       |       |
+    //      | tile  | tile  | tile  | tile  |
+    //      |_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
+    //      |       |       |       |       |
+    //      | tile  | tile  | tile  | tile  |
+    //      |_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
+    //      |       |       |       |       |
+    //      | tile  | tile  | tile  | tile  |
+    //      |_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
+    //      |       |       |       |       |
+    //      | tile  | tile  | tile  | tile  |
+    //      |_ _ _ _|_ _ _ _|_ _ _ _|_ _ _ _|
+    //                                      (filmResolution.width, filmResolution.height)
+    // 将图像平面分成一块块 tile，每个线程每次渲染一块 tile
 
     // Compute number of tiles, _nTiles_, to use for parallel rendering
-	// 计算 tile 的数量（为了简单起见，pbrt 总是使用 16*16 像素大小的 tile）
+    // 计算 tile 的数量（为了简单起见，pbrt 总是使用 16*16 像素大小的 tile）
     const int tileSize = 16;
 
-	Bounds2i sampleBounds = camera->film->GetSampleBounds(); // 考虑默认的三角过滤器时, floatBounds 为 [-2, -2] 到 [1922, 1082]	
+    Bounds2i sampleBounds = camera->film->GetSampleBounds(); // 考虑默认的三角过滤器时, floatBounds 为 [-2, -2] 到 [1922, 1082]	
     Vector2i sampleExtent = sampleBounds.Diagonal();	// 相当于计算生成图像的分辨率
-	// 计算 tile_numbers 时向上取整
+    // 计算 tile_numbers 时向上取整
     Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize,
                    (sampleExtent.y + tileSize - 1) / tileSize);
 
-	// 提供一个关于 pbrt 当前进度的直观反馈
-	ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
+    // 提供一个关于 pbrt 当前进度的直观反馈
+    ProgressReporter reporter(nTiles.x * nTiles.y, "Rendering");
     {
-		// 每个 tile 由单独的线程执行，每次对 lambda 表达式传入一个该 tile 在 nTiles 中的位置
+        // 每个 tile 由单独的线程执行，每次对 lambda 表达式传入一个该 tile 在 nTiles 中的位置
         ParallelFor2D([&](Point2i tile) {
             // Render section of image corresponding to _tile_
 
             // Allocate _MemoryArena_ for tile
-			// 每个线程使用单独的内存池
+            // 每个线程使用单独的内存池
             MemoryArena arena;
 
             // Get sampler instance for tile
-			// 每个线程使用单独的采样器
+            // 每个线程使用单独的采样器
             int seed = tile.y * nTiles.x + tile.x;
-			std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
+            std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
 
             // Compute sample bounds for tile
-			// 计算这个 tile 在 image 中覆盖到的像素范围
+            // 计算这个 tile 在 image 中覆盖到的像素范围
 
-			// 假设 image 的分辨率为 1920 * 1080，则 nTiles 的大小为 120 * 80（即有 119 * 79 块 tile 等待渲染，不包含右下方的边界）
-			// 当某个线程在某次调用 lambda 表达式并接收到一个位置为 (119, 79) 的 tile 时
-			// 这个 tile 在 image 中覆盖到的像素范围为（则假设 pMin 为 0）：
-			// x0 = 119 * 16 = 1904，y0 = 79 * 16 = 1064，x1 = 1920， y1 = 1080
-			// 即这个线程需要渲染从图像坐标 (1904, 1064) 开始，(1920, 1080) 结束的这个矩形区域内的像素（也不包含右边和下边的边界）
+            // 假设 image 的分辨率为 1920 * 1080，则 nTiles 的大小为 120 * 80（即有 119 * 79 块 tile 等待渲染，不包含右下方的边界）
+            // 当某个线程在某次调用 lambda 表达式并接收到一个位置为 (119, 79) 的 tile 时
+            // 这个 tile 在 image 中覆盖到的像素范围为（则假设 pMin 为 0）：
+            // x0 = 119 * 16 = 1904，y0 = 79 * 16 = 1064，x1 = 1920， y1 = 1080
+            // 即这个线程需要渲染从图像坐标 (1904, 1064) 开始，(1920, 1080) 结束的这个矩形区域内的像素（也不包含右边和下边的边界）
             // （如果限制渲染的图像长宽总为 16（或 tileSize）的倍数，可以把这段代码简化不少）
-			int x0 = sampleBounds.pMin.x + tile.x * tileSize;
+            int x0 = sampleBounds.pMin.x + tile.x * tileSize;
             int x1 = std::min(x0 + tileSize, sampleBounds.pMax.x);	
             int y0 = sampleBounds.pMin.y + tile.y * tileSize;
             int y1 = std::min(y0 + tileSize, sampleBounds.pMax.y);
@@ -389,7 +389,7 @@ void SamplerIntegrator::Render(const Scene &scene)
             LOG(INFO) << "Starting image tile " << tileBounds;
 
             // Get _FilmTile_ for tile
-			// 先将渲染得到的图像存入这个 filmTile 中，待渲染结束后将 filmTile 合并到 film 中
+            // 先将渲染得到的图像存入这个 filmTile 中，待渲染结束后将 filmTile 合并到 film 中
             std::unique_ptr<FilmTile> filmTile =
                 camera->film->GetFilmTile(tileBounds);
 
@@ -399,12 +399,12 @@ void SamplerIntegrator::Render(const Scene &scene)
             {
                 {
                     ProfilePhase pp(Prof::StartPixel);
-					// 采样一个新的像素前，先对采样器进行一些设置
+                    // 采样一个新的像素前，先对采样器进行一些设置
                     tileSampler->StartPixel(pixel);		
                 }
                 
-				// 检查该像素是否在 pixelBounds 内（为了照顾过滤器, pixelBounds 可能超出了图像平面）
-				// 这可以保持（大多数）采样器中所使用的 RNG 值的一致性，方便重现？？？、调试
+                // 检查该像素是否在 pixelBounds 内（为了照顾过滤器, pixelBounds 可能超出了图像平面）
+                // 这可以保持（大多数）采样器中所使用的 RNG 值的一致性，方便重现？？？、调试
                 // Do this check after the StartPixel() call; this keeps
                 // the usage of RNG values from (most) Samplers that use
                 // RNGs consistent, which improves reproducability /
@@ -419,7 +419,7 @@ void SamplerIntegrator::Render(const Scene &scene)
                         tileSampler->GetCameraSample(pixel);
 
                     // Generate camera ray for current sample
-					// 为当前样本生成相机光线
+                    // 为当前样本生成相机光线
                     RayDifferential ray;
                     Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray);
                     ray.ScaleDifferentials(1 / std::sqrt((Float)tileSampler->samplesPerPixel));
@@ -427,14 +427,14 @@ void SamplerIntegrator::Render(const Scene &scene)
                     ++nCameraRays;
 
                     // Evaluate radiance along camera ray
-					//计算沿这条光线（-ray.direction)的辐射度
-					Spectrum L(0.f);
+                    //计算沿这条光线（-ray.direction)的辐射度
+                    Spectrum L(0.f);
                     if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
 
                     // Issue warning if unexpected radiance value returned
-					//对得到的辐射度做检查
+                    //对得到的辐射度做检查
                     {
-					    if (L.HasNaNs()) {
+                        if (L.HasNaNs()) {
                             LOG(ERROR) << StringPrintf(
                                 "Not-a-number radiance value returned "
                                 "for pixel (%d, %d), sample %d. Setting to black.",
@@ -472,7 +472,7 @@ void SamplerIntegrator::Render(const Scene &scene)
             LOG(INFO) << "Finished image tile " << tileBounds;
 
             // Merge image tile into _Film_
-			// 将 filmTile 合并到 film 中
+            // 将 filmTile 合并到 film 中
             camera->film->MergeFilmTile(std::move(filmTile));
             reporter.Update();
         }, nTiles);
@@ -482,7 +482,7 @@ void SamplerIntegrator::Render(const Scene &scene)
     LOG(INFO) << "Rendering finished";
 
     // Save final image after rendering
-	// 渲染结束，保存图片
+    // 渲染结束，保存图片
     camera->film->WriteImage();
 }
 
@@ -496,17 +496,17 @@ Spectrum SamplerIntegrator::SpecularReflect(
     Vector3f wo = isect.wo, wi;
     Float pdf;
     BxDFType type = BxDFType(BSDF_REFLECTION | BSDF_SPECULAR);
-	// 在 isect 上半球面选取一方向 wi，并计算相应的概率密度及 f(p, wo, wi)
+    // 在 isect 上半球面选取一方向 wi，并计算相应的概率密度及 f(p, wo, wi)
     Spectrum f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, type);
 
     // Return contribution of specular reflection
-	// 计算镜面反射的贡献
+    // 计算镜面反射的贡献
     const Normal3f &ns = isect.shading.n;
     if (pdf > 0.f && !f.IsBlack() && AbsDot(wi, ns) != 0.f) 
     {
         // Compute ray differential _rd_ for specular reflection
         RayDifferential rd = isect.SpawnRay(wi);
-		// P605, TODO
+        // P605, TODO
         if (ray.hasDifferentials) 
         {
             rd.hasDifferentials = true;
@@ -544,7 +544,7 @@ Spectrum SamplerIntegrator::SpecularTransmit(
     Float pdf;
     const Point3f &p = isect.p;
     const BSDF &bsdf = *isect.bsdf;
-	// 在 isect 下半球面选取一方向 wi，并计算相应的概率密度及 f(p, wo, wi)
+    // 在 isect 下半球面选取一方向 wi，并计算相应的概率密度及 f(p, wo, wi)
     Spectrum f = bsdf.Sample_f(wo, &wi, sampler.Get2D(), &pdf,
                                BxDFType(BSDF_TRANSMISSION | BSDF_SPECULAR));
     Spectrum L = Spectrum(0.f);
